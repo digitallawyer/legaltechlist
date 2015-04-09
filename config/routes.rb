@@ -1,5 +1,8 @@
 Rails.application.routes.draw do
   resources :companies
+
+  root to: 'static_pages#home'
+
   get 'static_pages/home'
 
   get 'static_pages/about'
