@@ -1,4 +1,4 @@
-== README
+== README SAM1
 
 Legal Tech List is an easy way to explore legal technology and legal startups.
 
