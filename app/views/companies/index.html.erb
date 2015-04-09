@@ -1,0 +1,45 @@
+<p id="notice"><%= notice %></p>
+
+<h1>Listing Companies</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Location</th>
+      <th>Founded date</th>
+      <th>Category</th>
+      <th>Description</th>
+      <th>Main url</th>
+      <th>Twitter url</th>
+      <th>Angellist url</th>
+      <th>Crunchbase url</th>
+      <th>Employee count</th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @companies.each do |company| %>
+      <tr>
+        <td><%= company.name %></td>
+        <td><%= company.location %></td>
+        <td><%= company.founded_date %></td>
+        <td><%= company.category %></td>
+        <td><%= company.description %></td>
+        <td><%= company.main_url %></td>
+        <td><%= company.twitter_url %></td>
+        <td><%= company.angellist_url %></td>
+        <td><%= company.crunchbase_url %></td>
+        <td><%= company.employee_count %></td>
+        <td><%= link_to 'Show', company %></td>
+        <td><%= link_to 'Edit', edit_company_path(company) %></td>
+        <td><%= link_to 'Destroy', company, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Company', new_company_path %>

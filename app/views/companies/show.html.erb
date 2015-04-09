@@ -1,0 +1,54 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Name:</strong>
+  <%= @company.name %>
+</p>
+
+<p>
+  <strong>Location:</strong>
+  <%= @company.location %>
+</p>
+
+<p>
+  <strong>Founded date:</strong>
+  <%= @company.founded_date %>
+</p>
+
+<p>
+  <strong>Category:</strong>
+  <%= @company.category %>
+</p>
+
+<p>
+  <strong>Description:</strong>
+  <%= @company.description %>
+</p>
+
+<p>
+  <strong>Main url:</strong>
+  <%= @company.main_url %>
+</p>
+
+<p>
+  <strong>Twitter url:</strong>
+  <%= @company.twitter_url %>
+</p>
+
+<p>
+  <strong>Angellist url:</strong>
+  <%= @company.angellist_url %>
+</p>
+
+<p>
+  <strong>Crunchbase url:</strong>
+  <%= @company.crunchbase_url %>
+</p>
+
+<p>
+  <strong>Employee count:</strong>
+  <%= @company.employee_count %>
+</p>
+
+<%= link_to 'Edit', edit_company_path(@company) %> |
+<%= link_to 'Back', companies_path %>
