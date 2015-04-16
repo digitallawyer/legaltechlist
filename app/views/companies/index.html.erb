@@ -1,8 +1,20 @@
+<div class="container">
 <p id="notice"><%= notice %></p>
 
 <h1>Listing Companies</h1>
+<% @companies.each do |company| %>
 
-<table>
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title"><%= company.name %></h3>
+    </div>
+    <div class="panel-body">
+      <%= company.description %>
+    </div>
+  </div>
+<% end %>
+
+<!-- <table>
   <thead>
     <tr>
       <th>Name</th>
@@ -40,6 +52,7 @@
   </tbody>
 </table>
 
-<br>
+<br> -->
 
 <%= link_to 'New Company', new_company_path %>
+</div>
