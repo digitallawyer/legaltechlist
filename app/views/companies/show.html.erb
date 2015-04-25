@@ -1,34 +1,51 @@
 <p id="notice"><%= notice %></p>
 
-<p>
-  <strong>Name:</strong>
-  <%= @company.name %>
-</p>
+<div class="container">
+  <div class="panel panel-default" style="background-color: lavender; width:600px; height:50px">
+    <p class="text-left" style="font-size: 24px;">
+   <!--<strong>Name:</strong>-->
+    <strong><%= @company.name %></strong>
+  </p>
+</div>
 
-<p>
-  <strong>Location:</strong>
-  <%= @company.location %>
-</p>
+<!-- Middle Container that has Picture, Funding Info, Basic Company Info, including location, 
+brief description, Founding Date, Categories, Website-->
+  
+<div class="container">
+  <div class="panel panel-default" style="width:600px">
+    <p>
+      <strong>Location:</strong>
+      <%= @company.location %>
+    </p>
 
-<p>
-  <strong>Founded date:</strong>
-  <%= @company.founded_date %>
-</p>
+    <p>
+      <strong>Founded date:</strong>
+      <%= @company.founded_date %>
+    </p>
 
-<p>
-  <strong>Category:</strong>
-  <%= @company.category %>
-</p>
+    <p>
+      <strong>Category:</strong>
+      <%= @company.category %>
+    </p>
 
-<p>
-  <strong>Description:</strong>
-  <%= @company.description %>
-</p>
+    <p>
+      <strong>Description:</strong>
+      <%= @company.description %>
+    </p>
 
-<p>
-  <strong>Main url:</strong>
-  <%= @company.main_url %>
-</p>
+    <p>
+      <strong>Main url:</strong>
+      <%= @company.main_url %>
+    </p>
+
+    <p>
+      <strong>Employee count:</strong>
+      <%= @company.employee_count %>
+    </p>
+  </div>
+</div>
+
+
 
 <p>
   <strong>Twitter url:</strong>
@@ -45,10 +62,8 @@
   <%= @company.crunchbase_url %>
 </p>
 
-<p>
-  <strong>Employee count:</strong>
-  <%= @company.employee_count %>
-</p>
+
 
 <%= link_to 'Edit', edit_company_path(@company) %> |
 <%= link_to 'Back', companies_path %>
+

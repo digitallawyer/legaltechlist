@@ -1,4 +1,16 @@
-<nav class="navbar navbar-default">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Bootstrap Example</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+<nav class="navbar navbar-default navbar-fixed-top">
   <div class="container-fluid">
     <!-- Brand and toggle get grouped for better mobile display -->
     <div class="navbar-header">
@@ -14,13 +26,14 @@
     <!-- Collect the nav links, forms, and other content for toggling -->
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav navbar-nav">
-        <li><a href="#">about</a></li>
-      <form class="navbar-form navbar-left" role="search">
+        <li><a href="/static_pages/about">About</a></li>
+        <li><a href="/companies">Companies</a></li>
+    <!-- <form class="navbar-form navbar-left" role="search">
         <div class="form-group">
           <input type="text" class="form-control" placeholder="Search">
         </div>
         <button type="submit" class="btn btn-default">Submit</button>
-      </form>
+      </form>-->
       <ul class="nav navbar-nav navbar-right">
             <li class="divider"></li>
             <li><a href="#"></a></li>
@@ -31,15 +44,42 @@
   </div><!-- /.container-fluid -->
 </nav>
 <p></p>
-<div class="jumbotron">
-  <h1>legaltechlist</h1>
-  <p>makes big law, look a whole lot smaller</p>
-</div>s
+
+<div class="jumbotron" style="background-color:lavender;">
+  <h1 class="text-center">legaltechlist</h1>
+  <p class="text-info text-center">makes big law, look a whole lot smaller</p>
+
+<!--Search box in jumbotron-->
+  	<%= form_tag companies_path, method: :get do %>
+  	<p class="text-center">
+    	<%= text_field_tag :query, params[:query] %>
+		<%= submit_tag "Search", name: nil %>
+  	</p>
+	<% end %>
+
+</div>
+
+<div class="container">
+	<div class="col-md-4">
+		<h3>Category 1</h3>
+		<p>Picture of Category 1</p>
+	</div>
+	<div class="col-md-4">
+		<h3>Category 2</h3>
+		<p>Picture of Category 2</p>
+	</div>
+	<div class="col-md-4">
+		<h3>Category 3</h3>
+		<p>Picture of Category 3</p>
+	</div>
+</div>
+
+
 <form class="navbar-form navbar-left" role="search">
-  <div class="form-group">
+  <!--<div class="form-group">
     <input type="text" class="form-control" placeholder="Search">
   </div>
-  <button type="submit" class="btn btn-default">Submit</button>
+  <button type="submit" class="btn btn-default">Submit</button> -->
  <div class="media">
   <div class="media-left media-middle">
     <a href="#">
@@ -61,3 +101,9 @@
   </table>
 </div>
 <img src="..." class="img-responsive" alt="Responsive image">
+
+<div class="container">
+	<button type="button" class="btn btn-info btn-block" style="background-color: SkyBlue;">Find a Job</button>
+</div>
+</body>
+</html>
