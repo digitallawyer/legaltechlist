@@ -1,4 +1,8 @@
-<%= render 'static_pages/nav' %>
+<%= render '/static_pages/nav' %>
+
+<head>
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+</head>
 
 <div class="container">
 <p id="notice"><%= notice %></p>
@@ -13,10 +17,15 @@
 <h1>Listing Companies</h1>
 <% @companies.each do |company| %>
 
-  <div class="list-group" style="width:600px">
-    <a href="/companies/<%= company.id %>" class="list-group-item list-group-item-info">
-      <h3 class="list-group-item-heading"><%= company.name %></h3>
-      <p><%= company.description %></p></a>
+  <div class="col-sm-12" style="background-color:white">
+    <div class="btn-group">
+      <a href="/companies/<%= company.id %>" class="btn">
+        <h3 class="list-group-item-heading"><%= company.name %></h3></a>
+      <a href="<%= company.twitter_url %>"><i class="btn fa fa-twitter fa-2x"></i></a>
+    </div>
+      <h4><%= company.description %></h4>
+      <br>
+    
   </div>
 <% end %>
 
