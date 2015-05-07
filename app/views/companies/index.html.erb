@@ -14,20 +14,22 @@
   </p>
 <% end %>
 
-<h1>Listing Companies</h1>
+  <div class="col-sm-12" style="background-color:white">
+
 <% @companies.each do |company| %>
 
-  <div class="col-sm-12" style="background-color:white">
-    <div class="btn-group">
-      <a href="/companies/<%= company.id %>" class="table table-default">
-        <h3 class="list-group-item-heading"><%= company.name %></h3></a>
-      <a href="<%= company.twitter_url %>"><i class="btn fa fa-twitter fa-2x"></i></a>
-    </div>
-      <h4><%= company.description %></h4>
-      <br>
+      <div>
+        <a href="/companies/<%= company.id %>">
+          <h3 class="list-group-item-heading"><%= company.name %></h3>
+        </a>
+          <a href="<%= company.twitter_url %>"><i class="btn fa fa-twitter fa-2x"></i></a>
+
+        
+      <p><%= company.description %></p>
+      </div>
     
-  </div>
 <% end %>
+  </div>
 
 <!-- <table>
   <thead>
