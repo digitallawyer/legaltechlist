@@ -45,15 +45,16 @@
 </nav>
 <p></p>
 
-<div class="jumbotron" style="background-color:lavender;">
-  <h1 class="text-center">legaltechlist</h1>
-  <p class="text-info text-center">makes big law, look a whole lot smaller</p>
+<div class="jumbotron" style="background:url(images/blue.png); background-size: cover;">
+  <h1 class="text-center" style="color:white;">legaltechlist</h1>
+  <h2 class="text-info text-center" style="color:white; margin-bottom:40px;">A list of legal technology companies.</h2>
 
 <!--Search box in jumbotron-->
-  	<%= form_tag companies_path, method: :get do %>
+
+  <%= form_tag companies_path, :class => 'form-inline', method: :get do %>
   	<p class="text-center">
-    	<%= text_field_tag :query, params[:query] %>
-		<%= submit_tag "Search", name: nil %>
+    	<%= text_field_tag :query, params[:query], class: "form-control input-lg" %>
+		<%= submit_tag "Search", name: nil, class: "btn btn-primary btn-lg" %>
   	</p>
 	<% end %>
 
