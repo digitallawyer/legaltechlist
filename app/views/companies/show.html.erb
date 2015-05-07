@@ -9,26 +9,19 @@ brief description, Founding Date, Categories, Website-->
   
   <div class="row">
     <div class="col-md-12" style="background-color:white;">
-    <h1><%= @company.name %></h1>
-    <p>
-      <strong>Location:</strong>
-      <%= @company.location %>
-    </p>
+    <h1 class="text-center"><%= @company.name %></h1>
 
-    <p>
-      <strong>Founded date:</strong>
-      <%= @company.founded_date %>
-    </p>
-
-    <p>
-      <strong>Category:</strong>
-      <%= @company.category %>
-    </p>
-
-    <p>
-      <strong>Description:</strong>
+    <p class="text-center">
       <%= @company.description %>
     </p>
+    <p class="text-muted text-center">
+      <%= @company.location %>
+      &bull;
+      <%= @company.category %>
+      &bull;
+      Founded in <%= @company.founded_date %>
+    </p>
+
 
     <p>
       <strong>Main url:</strong>
