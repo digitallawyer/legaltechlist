@@ -1,18 +1,14 @@
 <p id="notice"><%= notice %></p>
 
 <div class="container">
-  <div class="panel panel-default" style="background-color: lavender; width:600px; height:50px">
-    <p class="text-left" style="font-size: 24px;">
-   <!--<strong>Name:</strong>-->
-    <strong><%= @company.name %></strong>
-  </p>
-</div>
 
 <!-- Middle Container that has Picture, Funding Info, Basic Company Info, including location, 
 brief description, Founding Date, Categories, Website-->
   
 <div class="container">
-  <div class="panel panel-default" style="width:600px">
+  <div class="row">
+    <div class="col-md-12" style="background-color:white;">
+    <h1><%= @company.name %></h1>
     <p>
       <strong>Location:</strong>
       <%= @company.location %>
@@ -42,12 +38,8 @@ brief description, Founding Date, Categories, Website-->
       <strong>Employee count:</strong>
       <%= @company.employee_count %>
     </p>
-  </div>
-</div>
 
-
-
-<p>
+    <p>
   <strong>Twitter url:</strong>
   <%= @company.twitter_url %>
 </p>
@@ -66,4 +58,10 @@ brief description, Founding Date, Categories, Website-->
 
 <%= link_to 'Edit', edit_company_path(@company) %> |
 <%= link_to 'Back', companies_path %>
+
+
+  </div>
+</div>
+
+
 
