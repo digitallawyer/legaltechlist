@@ -9,9 +9,15 @@ a {
 .e{
 	margin: 6px -15px;
 	padding: 6px 15px;
+	a {
+		text-decoration: none;
+	}
 }
 
 .e:hover{
 	background-color:#D3D3D3;
+	a {
+		text-decoration: none;
+	}
 }
 

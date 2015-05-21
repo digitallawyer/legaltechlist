@@ -5,25 +5,24 @@
 </head>
 
 <div class="container">
-<p id="notice"><%= notice %></p>
-
-<div class="col-md-3">
-<div class="panel panel-default">
-  <div class="panel-body">
-<%= form_tag companies_path, method: :get do %>
-  <h5>Search</h5>
-  <p>
-    <%= text_field_tag :query, params[:query] %>
-    <%= submit_tag "Search", name: nil, class: "btn btn-warning btn-xs" %>
-  </p>
-<% end %>
-</div>
-</div>
-</div>
+  <p id="notice"><%= notice %></p>
+  <div class="col-md-3">
+    <div class="panel panel-default">
+      <div class="panel-body">
+        <%= form_tag companies_path, method: :get do %>
+          <h5>Search</h5>
+          <p>
+            <%= text_field_tag :query, params[:query] %>
+            <%= submit_tag "Search", name: nil, class: "btn btn-warning btn-xs" %>
+          </p>
+        <% end %>
+      </div>
+    </div>
+  </div>
 
 <div class="col-md-9">
 <div class="panel panel-default">
-  <div class="panel-body">
+  <div class="panel-body" style="margin: -20px 0px;">
   <% @companies.each do |company| %>
       
 
