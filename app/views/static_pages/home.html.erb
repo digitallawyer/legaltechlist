@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Bootstrap Example</title>
+  <title>Legal Tech List</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
@@ -13,16 +13,16 @@
 
 <%= render 'nav' %>
 
-<div class="jumbotron" style="background:url(images/blue.png); background-size: cover;">
-  <h1 class="text-center" style="color:white; font-family: Ubuntu">Legal Tech List</h1>
-  <h2 class="text-info text-center" style="color:white; margin-bottom:40px; font-family: Ubuntu">A list of legal technology companies.</h2>
+<div class="jumbotron" style="background:url(/images/blue_gradient.jpg);">
+  <h1 class="text-center" style="color:white; margin-top:40px; ">Legal Tech List</h1>
+  <h2 class="text-info text-center" style="color:white; margin-bottom:40px;">A list of legal technology companies.</h2>
 
 <!--Search box in jumbotron-->
 
   <%= form_tag companies_path, :class => 'form-inline', method: :get do %>
   	<p class="text-center">
     	<%= text_field_tag :query, params[:query], class: "form-control input-lg" %>
-		<%= submit_tag "Search", name: nil, class: "btn btn-primary btn-lg" %>
+		<%= submit_tag "Search", name: nil, class: "btn btn-warning btn-lg" %>
   	</p>
 	<% end %>
 

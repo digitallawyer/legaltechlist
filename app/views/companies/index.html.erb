@@ -7,30 +7,36 @@
 <div class="container">
 <p id="notice"><%= notice %></p>
 
+<div class="col-md-3">
+<div class="panel panel-default">
+  <div class="panel-body">
 <%= form_tag companies_path, method: :get do %>
+  <h5>Search</h5>
   <p>
     <%= text_field_tag :query, params[:query] %>
-    <%= submit_tag "Search", name: nil %>
+    <%= submit_tag "Search", name: nil, class: "btn btn-warning btn-xs" %>
   </p>
 <% end %>
+</div>
+</div>
+</div>
 
-<div class="col-sm-12" style="background-color:white">
-
+<div class="col-md-9">
+<div class="panel panel-default">
+  <div class="panel-body">
   <% @companies.each do |company| %>
+      
 
-      <div>
-        <a href="/companies/<%= company.id %>" style="float: left; margin-top: 9px">
-          <h3 class="list-group-item-heading"><%= company.name %></h3>
-        </a>
+      <div class="e">
+          <h5><a href="/companies/<%= company.id %>"><%= company.name %></a>&nbsp;<span class="label label-default"><%= company.category %></span></h5>
 
-          <a href="<%= company.twitter_url %>"><i class="btn fa fa-twitter fa-2x"></i></a>
 
-        
-      <p style="font-family: Vollkorn; font-size: 16px"><%= company.description %></p>
+        <p><%= company.description %></p>
       </div>
 
-    
   <% end %>
+</div>
+</div>
 </div>
 
 <!-- <table>
@@ -75,4 +81,3 @@
 
 <%= link_to 'New Company', new_company_path %>
 </div>
-
