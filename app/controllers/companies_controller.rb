@@ -4,8 +4,13 @@ class CompaniesController < ApplicationController
   # GET /companies
   # GET /companies.json
   def index
-    @companies = Company.text_search(params[:query])
+    if params[:category]
+      @companies = Company.where(:category => params[:category])
+    else
+      @companies = Company.text_search(params[:query])  
+    end
   end
+
 
   # GET /companies/1
   # GET /companies/1.json

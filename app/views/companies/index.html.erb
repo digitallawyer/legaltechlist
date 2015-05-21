@@ -4,8 +4,9 @@
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
 </head>
 
+
 <div class="container">
-  <p id="notice"><%= notice %></p>
+<p id="notice"><%= notice %></p>
   <div class="col-md-3">
     <div class="panel panel-default">
       <div class="panel-body">
@@ -16,26 +17,30 @@
             <%= submit_tag "Search", name: nil, class: "btn btn-warning btn-xs" %>
           </p>
         <% end %>
+        <br>
+        <h5>Categories</h5>
+          <%= link_to "Case Management", companies_path(:category => "Case Management - Litigation") %>
+          
+        </div>
       </div>
     </div>
-  </div>
+
+
 
 <div class="col-md-9">
-<div class="panel panel-default">
-  <div class="panel-body" style="margin: -20px 0px;">
-  <% @companies.each do |company| %>
-      
+  <div class="panel panel-default">
+      <div class="panel-body">
+      <% @companies.each do |company| %>
+          
+          <div class="e">
+              <h5><a href="/companies/<%= company.id %>"><%= company.name %></a>&nbsp;<span class="label label-default"><%= company.category %></span></h5>
 
-      <div class="e">
-          <h5><a href="/companies/<%= company.id %>"><%= company.name %></a>&nbsp;<span class="label label-default"><%= company.category %></span></h5>
+            <p><%= company.description %></p>
+          </div>
 
-
-        <p><%= company.description %></p>
+      <% end %>
       </div>
-
-  <% end %>
-</div>
-</div>
+  </div>
 </div>
 
 <!-- <table>
@@ -79,4 +84,7 @@
 <br> -->
 
 <%= link_to 'New Company', new_company_path %>
+
 </div>
+
+
