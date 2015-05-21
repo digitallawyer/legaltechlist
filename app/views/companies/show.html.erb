@@ -12,7 +12,7 @@ brief description, Founding Date, Categories, Website-->
     <h1 class="text-center"><%= @company.name %></h1>
 
     <p class="text-center">
-      <%= @company.description %>
+      <strong><%= @company.description %></strong>
     </p>
     <p class="text-muted text-center">
       <%= @company.location %>
@@ -25,7 +25,7 @@ brief description, Founding Date, Categories, Website-->
 
     <p>
       <strong>Main url:</strong>
-      <%= @company.main_url %>
+      <a href="<%= @company.main_url %>"><%= @company.main_url %></a>
     </p>
 
     <p>
@@ -34,19 +34,19 @@ brief description, Founding Date, Categories, Website-->
     </p>
 
     <p>
-  <strong>Twitter url:</strong>
-  <%= @company.twitter_url %>
-</p>
+      <strong>Twitter url:</strong>
+      <a href="<%= @company.twitter_url %>"><%= @company.twitter_url %></a>
+    </p>
 
-<p>
-  <strong>Angellist url:</strong>
-  <%= @company.angellist_url %>
-</p>
+    <p>
+      <strong>Angellist url:</strong>
+      <a href="<%= @company.angellist_url %>"><%= @company.angellist_url %></a>
+    </p>
 
-<p>
-  <strong>Crunchbase url:</strong>
-  <%= @company.crunchbase_url %>
-</p>
+    <p>
+      <strong>Crunchbase url:</strong>
+      <a href="<%= @company.crunchbase_url %>"><%= @company.crunchbase_url %></a>
+    </p>
 
 
 
