@@ -13,7 +13,7 @@
 
 <%= render 'nav' %>
 
-<div class="jumbotron" style="background:url(/images/blue_gradient.jpg);">
+<div class="jumbotron" style="background:url(/images/bg.jpg); background-size: cover;">
   <h1 class="text-center" style="color:white; margin-top:40px; ">Legal Tech List</h1>
   <h2 class="text-info text-center" style="color:white; margin-bottom:40px;">A list of legal technology companies.</h2>
 
@@ -21,7 +21,7 @@
 
   <%= form_tag companies_path, :class => 'form-inline', method: :get do %>
   	<p class="text-center">
-    	<%= text_field_tag :query, params[:query], class: "form-control input-lg" %>
+    	<%= text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for legal technology companies" %>
 		<%= submit_tag "Search", name: nil, class: "btn btn-warning btn-lg" %>
   	</p>
 	<% end %>
