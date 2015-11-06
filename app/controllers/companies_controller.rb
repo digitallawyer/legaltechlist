@@ -4,13 +4,16 @@ class CompaniesController < ApplicationController
   # GET /companies
   # GET /companies.json
   def index
-    if params[:category]
-      @companies = Company.where(:category => params[:category])
+    if params[:tag]
+      @companies = Company.tagged_with(params[:tag])
     else
-      @companies = Company.text_search(params[:query])  
+      if params[:category]
+        @companies = Company.where(:category => params[:category])
+      else
+        @companies = Company.text_search(params[:query]) 
+      end
     end
   end
-
 
   # GET /companies/1
   # GET /companies/1.json
@@ -74,6 +77,6 @@ class CompaniesController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def company_params
-      params.require(:company).permit(:name, :location, :founded_date, :category, :description, :main_url, :twitter_url, :angellist_url, :crunchbase_url, :employee_count)
+      params.require(:company).permit(:name, :location, :founded_date, :category, :description, :main_url, :twitter_url, :angellist_url, :crunchbase_url, :employee_count, :all_tags)
     end
 end

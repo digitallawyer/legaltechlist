@@ -27,7 +27,13 @@
           </br>
           <%= link_to "Lawyer Matching", companies_path(:category => "Lawyer Matching") %></br>
           <%= link_to "Lawyer Referrals Network", companies_path(:category => "Lawyer Referrals Network") %></br>
-          
+         <br>
+			 <div class="tags-cloud glassy-bg">
+				 <h5> Tags Cloud </h5>
+				 <% tag_cloud Tag.counts, %w{css1 css2 css3 css4} do |tag, css_class| %>
+				 <%= link_to tag.name, tag_path(tag.name), class: css_class %>
+				 <%end%>
+			 </div>
         </div>
       </div>
     </div>
@@ -39,8 +45,10 @@
       <div class="panel-body">
       <% @companies.each do |company| %>
           
-          <div class="e">
-              <h5><a href="/companies/<%= company.id %>"><%= company.name %></a>&nbsp;<span class="label label-default"><%= company.category %></span></h5>
+          <!-- This was causing the whole class to go to the one link, defeating the tags. Something in the CSS?
+		  <div class="e"> -->
+		  <div class="bandaid">
+              <h5><a href="/companies/<%= company.id %>"><%= company.name %></a>&nbsp;<span class="label label-default"><%= company.category %></span></h5> <strong>Tags: </strong><%= raw tag_links(company.all_tags)%>
 
             <p><%= company.description %></p>
           </div>

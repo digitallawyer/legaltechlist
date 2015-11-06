@@ -13,23 +13,23 @@
 
   <div class="field">
     <%= f.label :name %><br>
-    <%= f.text_field :name %>
+    <%= f.text_field :name, placeholder: "LegalTech, Inc." %>
   </div>
   <div class="field">
     <%= f.label :location %><br>
-    <%= f.text_field :location %>
+    <%= f.text_field :location, placeholder: "Palo Alto" %>
   </div>
   <div class="field">
     <%= f.label :founded_date %><br>
-    <%= f.text_field :founded_date %>
+    <%= f.text_field :founded_date, placeholder: "2015" %>
   </div>
   <div class="field">
     <%= f.label :category %><br>
-    <%= f.text_field :category %>
+    <%= f.text_field :category, placeholder: "Case Management" %>
   </div>
   <div class="field">
     <%= f.label :description %><br>
-    <%= f.text_area :description %>
+    <%= f.text_area :description, placeholder: "Full Case Management." %>
   </div>
   <div class="field">
     <%= f.label :main_url %><br>
@@ -49,7 +49,11 @@
   </div>
   <div class="field">
     <%= f.label :employee_count %><br>
-    <%= f.text_field :employee_count %>
+    <%= f.text_field :employee_count, placeholder: "1" %>
+  </div>
+  <div class="field">
+	  <%= f.label :tags %><br>
+	  <%= f.text_field :all_tags, placeholder: "Tags separated by a comma."%>
   </div>
   <div class="actions">
     <%= f.submit %>

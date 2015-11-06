@@ -13,4 +13,5 @@
  *= require_self
  *= require bootstrap.min
  *= require overrides
+ *= require tags
  */

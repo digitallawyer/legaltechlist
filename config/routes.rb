@@ -1,15 +1,19 @@
 Rails.application.routes.draw do
+
   devise_for :admin_users, ActiveAdmin::Devise.config
   ActiveAdmin.routes(self)
   resources :companies
 
   root to: 'static_pages#home'
 
+get 'tags/:tag' => 'companies#index', as: :tag
+    
   get 'static_pages/home'
 
   get 'static_pages/about'
 
   get 'static_pages/casemanagement'
+  
 
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
