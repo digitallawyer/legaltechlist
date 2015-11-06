@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+#get 'companies/new' => 'static_pages#home'
+#get 'companies/edit' => 'static_pages#home'
 
   devise_for :admin_users, ActiveAdmin::Devise.config
   ActiveAdmin.routes(self)
@@ -6,7 +8,7 @@ Rails.application.routes.draw do
 
   root to: 'static_pages#home'
 
-get 'tags/:tag' => 'companies#index', as: :tag
+  get 'tags/:tag' => 'companies#index', as: :tag
     
   get 'static_pages/home'
 
