@@ -11,6 +11,7 @@ index do
   column :description
 	column :main_url
   column :all_tags
+  actions
 end
 
 # or
