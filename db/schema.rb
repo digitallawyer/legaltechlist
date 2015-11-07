@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151106235318) do
+ActiveRecord::Schema.define(version: 20151107195843) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -49,6 +49,13 @@ ActiveRecord::Schema.define(version: 20151106235318) do
   add_index "admin_users", ["email"], name: "index_admin_users_on_email", unique: true, using: :btree
   add_index "admin_users", ["reset_password_token"], name: "index_admin_users_on_reset_password_token", unique: true, using: :btree
 
+  create_table "business_models", force: :cascade do |t|
+    t.string   "name"
+    t.text     "description"
+    t.datetime "created_at",  null: false
+    t.datetime "updated_at",  null: false
+  end
+
   create_table "categories", force: :cascade do |t|
     t.string   "name"
     t.text     "description"
@@ -60,19 +67,22 @@ ActiveRecord::Schema.define(version: 20151106235318) do
     t.string   "name"
     t.string   "location"
     t.string   "founded_date"
-    t.string   "category_name"
     t.text     "description"
     t.string   "main_url"
     t.string   "twitter_url"
     t.string   "angellist_url"
     t.string   "crunchbase_url"
     t.string   "employee_count"
-    t.datetime "created_at",     null: false
-    t.datetime "updated_at",     null: false
+    t.datetime "created_at",        null: false
+    t.datetime "updated_at",        null: false
     t.integer  "category_id"
+    t.integer  "target_client_id"
+    t.integer  "business_model_id"
   end
 
+  add_index "companies", ["business_model_id"], name: "index_companies_on_business_model_id", using: :btree
   add_index "companies", ["category_id"], name: "index_companies_on_category_id", using: :btree
+  add_index "companies", ["target_client_id"], name: "index_companies_on_target_client_id", using: :btree
 
   create_table "taggings", force: :cascade do |t|
     t.integer  "company_id"
@@ -90,7 +100,16 @@ ActiveRecord::Schema.define(version: 20151106235318) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "target_clients", force: :cascade do |t|
+    t.string   "name"
+    t.text     "description"
+    t.datetime "created_at",  null: false
+    t.datetime "updated_at",  null: false
+  end
+
+  add_foreign_key "companies", "business_models"
   add_foreign_key "companies", "categories"
+  add_foreign_key "companies", "target_clients"
   add_foreign_key "taggings", "companies"
   add_foreign_key "taggings", "tags"
 end

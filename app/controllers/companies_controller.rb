@@ -3,15 +3,21 @@ class CompaniesController < ApplicationController
 
   # GET /companies
   # GET /companies.json
+  
+  # this search could easily be made much more complex and powerful
+  # with ands and ors if necessary
   def index
+    # search by the appropriate method
     if params[:tag]
       @companies = Company.tagged_with(params[:tag])
+    elsif params[:category]
+      @companies = Company.where(:category => params[:category])
+    elsif params[:business_model]
+      @companies = Company.where(:business_model => params[:business_model])
+    elsif params[:target_client]
+      @companies = Company.where(:target_client => params[:target_client])
     else
-      if params[:category]
-        @companies = Company.where(:category => params[:category])
-      else
-        @companies = Company.text_search(params[:query]) 
-      end
+      @companies = Company.text_search(params[:query]) 
     end
   end
 
@@ -77,6 +83,9 @@ class CompaniesController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def company_params
-      params.require(:company).permit(:name, :location, :founded_date, :category, :description, :main_url, :twitter_url, :angellist_url, :crunchbase_url, :employee_count, :all_tags)
+      params.require(:company).permit(:name, :location, :founded_date, :category,
+                                      :business_model, :target_client, :description, :main_url, 
+                                      :twitter_url, :angellist_url, :crunchbase_url, :employee_count, 
+                                      :all_tags)
     end
 end

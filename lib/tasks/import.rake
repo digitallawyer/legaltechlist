@@ -11,14 +11,40 @@ namespace :csv do
       #row["category"] = Category.where(:name => row["category"]).first_or_create!
       #Company.create(row)
 
-      cat = Category.where(:name => row["category"]).first_or_create!
+      # clean up data to ensure validation on import
       count = row["employee_count"]
       if count.nil?
         count = 1
       elsif count < 1
         count = 1
       end
+      
+      if row["business_model"].nil?
+        row["business_model"] = "Unknown"
+      end
+      
+      if row["all_tags"].nil?
+        row["all_tags"] = ""
+      end
+      
+      #if BusinessModel.where(:name => row["business_model"])
+      #  row["business_model"] = "Unknown"
+      #end
+      
+      if row["target_client"].nil?
+        row["target_client"] = "Unknown"
+      end
+      
+      #if TargetClient.where(:name => row["target_client"])
+      #  row["target_client"] = "Unknown"
+      #end
+        
+      # find references
+      cat = Category.where(:name => row["category"]).first_or_create!
+      biz = BusinessModel.where(:name => row["business_model"]).first
+      trg = TargetClient.where(:name => row["target_client"]).first
 
+      # add the entry to the database
       c = Company.where(:name => row["name"]).first_or_create!(
         :name => row["name"],
         :location => row["location"],
@@ -29,7 +55,10 @@ namespace :csv do
         :twitter_url => row["twitter_url"],
         :angellist_url => row["angellist_url"],
         :crunchbase_url => row["crunchbase_url"],
-        :employee_count => count
+        :employee_count => count,
+        :business_model => biz,
+        :target_client => trg,
+        :all_tags => row["all_tags"]
       )
       
     end

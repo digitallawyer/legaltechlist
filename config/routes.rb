@@ -9,6 +9,9 @@ Rails.application.routes.draw do
   root to: 'static_pages#home'
 
   get 'tags/:tag' => 'companies#index', as: :tag
+  get 'categories/:category' => 'companies#index', as: :category
+  get 'business_models/:business_model' => 'companies#index', as: :business_model
+  get 'target_clients/:target_client' => 'companies#index', as: :target_client
     
   get 'static_pages/home'
 
