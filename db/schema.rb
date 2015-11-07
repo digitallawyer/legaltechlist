@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151107195843) do
+ActiveRecord::Schema.define(version: 20151107213241) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -78,11 +78,23 @@ ActiveRecord::Schema.define(version: 20151107195843) do
     t.integer  "category_id"
     t.integer  "target_client_id"
     t.integer  "business_model_id"
+    t.integer  "sub_category_id"
   end
 
   add_index "companies", ["business_model_id"], name: "index_companies_on_business_model_id", using: :btree
   add_index "companies", ["category_id"], name: "index_companies_on_category_id", using: :btree
+  add_index "companies", ["sub_category_id"], name: "index_companies_on_sub_category_id", using: :btree
   add_index "companies", ["target_client_id"], name: "index_companies_on_target_client_id", using: :btree
+
+  create_table "sub_categories", force: :cascade do |t|
+    t.string   "name"
+    t.text     "description"
+    t.integer  "category_id"
+    t.datetime "created_at",  null: false
+    t.datetime "updated_at",  null: false
+  end
+
+  add_index "sub_categories", ["category_id"], name: "index_sub_categories_on_category_id", using: :btree
 
   create_table "taggings", force: :cascade do |t|
     t.integer  "company_id"
@@ -109,7 +121,9 @@ ActiveRecord::Schema.define(version: 20151107195843) do
 
   add_foreign_key "companies", "business_models"
   add_foreign_key "companies", "categories"
+  add_foreign_key "companies", "sub_categories"
   add_foreign_key "companies", "target_clients"
+  add_foreign_key "sub_categories", "categories"
   add_foreign_key "taggings", "companies"
   add_foreign_key "taggings", "tags"
 end

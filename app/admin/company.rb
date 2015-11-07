@@ -10,6 +10,7 @@ permit_params :name, :location, :founded_date, :category, :business_model, :targ
 index do
 	column :name
 	column :category
+  column :sub_category
   column :description
 	column :main_url
   column :all_tags
@@ -22,6 +23,7 @@ form do |f|
     f.input :location,      :placeholder => "Palo Alto, CA",           :required => true
     f.input :founded_date,  :placeholder => "2015",                    :required => true
     f.input :category,     as: :select,  collection: Category.all,    :required => true
+    f.input :sub_category, as: :select,  :required => false
     f.input :target_client, as: :select, collection: TargetClient.all, :required => true
     f.input :business_model, as: :select,collection: BusinessModel.all, :required => true
     f.input :description,   :placeholder => "Makes great legal tech",  :required => true

@@ -4,11 +4,13 @@ class Company < ActiveRecord::Base
   
   #this should be has_one, but apparently there's a known bug
   belongs_to :category
+  belongs_to :sub_category
   belongs_to :business_model
   belongs_to :target_client
   
   # I'm not 100% sure these are required.
   accepts_nested_attributes_for :category
+  accepts_nested_attributes_for :sub_category
   accepts_nested_attributes_for :business_model
   accepts_nested_attributes_for :target_client
   

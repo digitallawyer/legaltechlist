@@ -52,10 +52,15 @@
       <div class="panel-body">
       <% @companies.each do |company| %>
           
-          <!-- This was causing the whole class to go to the one link, defeating the tags. Something in the CSS?
+          <!-- This was causing the whole class to go to the one link, defeating the linked tags. Something in the CSS?
 		  <div class="e"> -->
 		  <div class="bandaid">
-              <h5><a href="/companies/<%= company.id %>"><%= company.name %></a>&nbsp;<span class="label label-default"><%= Category.find(company.category).name %></span></h5> <strong>Tags: </strong><%= raw tag_links(company.all_tags)%>
+              <h5><a href="/companies/<%= company.id %>"><%= company.name %></a>&nbsp;<span class="label label-default"><%= Category.find(company.category).name %>
+				  <% if SubCategory.find(company.sub_category).name != "" %>
+				   - <%=SubCategory.find(company.sub_category).name %>
+				   <%end%>
+			  </span></h5>
+			  <p class="text-muted">Tagged <%= raw tag_links(company.all_tags)%> </p>
 
             <p><%= company.description %></p>
           </div>

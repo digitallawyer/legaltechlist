@@ -19,28 +19,29 @@ namespace :csv do
         count = 1
       end
       
-      if row["business_model"].nil?
+      if row["business_model"].nil? || row["business_model"] == ""
         row["business_model"] = "Unknown"
       end
       
       if row["all_tags"].nil?
         row["all_tags"] = ""
       end
-      
-      #if BusinessModel.where(:name => row["business_model"])
-      #  row["business_model"] = "Unknown"
-      #end
-      
-      if row["target_client"].nil?
+
+      if row["target_client"].nil? || row["target_client"] == ""
         row["target_client"] = "Unknown"
       end
-      
-      #if TargetClient.where(:name => row["target_client"])
-      #  row["target_client"] = "Unknown"
-      #end
         
-      # find references
-      cat = Category.where(:name => row["category"]).first_or_create!
+      # split category into category and sub-category
+      catFullname = row["category"].split('-')
+      catName = catFullname[0].strip
+      if catFullname[1].nil?
+        catFullname[1]=""
+      end
+      
+      cat = Category.where(:name => catName).first_or_create!
+      sub = SubCategory.where(:name => catFullname[1]).first_or_create!(:name => catFullname[1], :category => cat)
+      
+      #find references
       biz = BusinessModel.where(:name => row["business_model"]).first
       trg = TargetClient.where(:name => row["target_client"]).first
 
@@ -50,6 +51,7 @@ namespace :csv do
         :location => row["location"],
         :founded_date => row["founded_date"],
         :category => cat,
+        :sub_category => sub,
         :description => row["description"],
         :main_url => row["main_url"],
         :twitter_url => row["twitter_url"],
