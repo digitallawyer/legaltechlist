@@ -2,6 +2,11 @@ class Company < ActiveRecord::Base
   has_many :taggings
   has_many :tags, through: :taggings
   
+  #this should be has_one, but apparently there's a bug?
+  belongs_to :category
+  
+  accepts_nested_attributes_for :category
+  
   validates :name, presence: true, length: {minimum: 5}
   validates :location, presence: true, length: {minimum: 5}
   validates :founded_date, presence: true, format: {with: /\d\d\d\d/, message: "must be a 4-digit year."}

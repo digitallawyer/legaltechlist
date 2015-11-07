@@ -3,8 +3,9 @@ ActiveAdmin.register Company do
 # See permitted parameters documentation:
 # https://github.com/activeadmin/activeadmin/blob/master/docs/2-resource-customization.md#setting-up-strong-parameters
 
-permit_params :name, :location, :founded_date, :category, :description, :main_url, :twitter_url, :angellist_url, 
-  :crunchbase_url, :employee_count, :all_tags
+permit_params :name, :location, :founded_date, :category, :description, :main_url, 
+  :twitter_url, :angellist_url, :crunchbase_url, :employee_count, :all_tags, 
+  :category_id
 
 index do
 	column :name
@@ -20,7 +21,7 @@ form do |f|
     f.input :name,          :placeholder => "LegalTech, Inc.",         :required => true
     f.input :location,      :placeholder => "Palo Alto, CA",           :required => true
     f.input :founded_date,  :placeholder => "2015",                    :required => true
-    f.input :category,      :placeholder => "Case Management",         :required => true
+    f.inputs :category#, as: :select, collection: Category.all, :required => true
     f.input :description,   :placeholder => "Makes great legal tech",  :required => true
     f.input :main_url,      :placeholder => "www.legaltech.com"
     f.input :twitter_url,   :placeholder => "@LegalTechInc"
