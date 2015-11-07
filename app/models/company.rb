@@ -7,11 +7,11 @@ class Company < ActiveRecord::Base
   
   accepts_nested_attributes_for :category
   
-  validates :name, presence: true, length: {minimum: 5}
+  validates :name, presence: true, length: {minimum: 3}
   validates :location, presence: true, length: {minimum: 5}
   validates :founded_date, presence: true, format: {with: /\d\d\d\d/, message: "must be a 4-digit year."}
   validates :category, presence: true
-  validates :description, presence: true, length: {minimum: 25}
+  validates :description, presence: true, length: {minimum: 5}
   validates :employee_count, presence: true, format: {with: /[\d]+/, message: "must contain a number."}
   
 	include PgSearch
