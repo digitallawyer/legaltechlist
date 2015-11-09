@@ -5,6 +5,7 @@ Rails.application.routes.draw do
   devise_for :admin_users, ActiveAdmin::Devise.config
   ActiveAdmin.routes(self)
   resources :companies
+  resources :sub_categories
 
   root to: 'static_pages#home'
 
@@ -12,6 +13,8 @@ Rails.application.routes.draw do
   get 'categories/:category' => 'companies#index', as: :category
   get 'business_models/:business_model' => 'companies#index', as: :business_model
   get 'target_clients/:target_client' => 'companies#index', as: :target_client
+  
+ # get 'sub_category/:category' => 'sub_category#index', as: :category
     
   get 'static_pages/home'
 

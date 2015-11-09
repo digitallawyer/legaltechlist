@@ -4,4 +4,8 @@ class Category < ActiveRecord::Base
 
   accepts_nested_attributes_for :companies
   
+  def sub_category
+    SubCategory.where(:category => id)
+  end
+  
 end

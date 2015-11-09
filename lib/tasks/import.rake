@@ -39,7 +39,10 @@ namespace :csv do
       end
       
       cat = Category.where(:name => catName).first_or_create!
-      sub = SubCategory.where(:name => catFullname[1]).first_or_create!(:name => catFullname[1], :category => cat)
+      sub = SubCategory.where(:name => catFullname[1],
+                              :category => cat
+                            ).first_or_create!(:name => catFullname[1],
+                                               :category => cat)
       
       #find references
       biz = BusinessModel.where(:name => row["business_model"]).first

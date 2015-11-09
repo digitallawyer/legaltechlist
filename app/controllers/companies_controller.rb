@@ -20,7 +20,7 @@ class CompaniesController < ApplicationController
       @companies = Company.text_search(params[:query]) 
     end
   end
-
+  
   # GET /companies/1
   # GET /companies/1.json
   def show
