@@ -1,0 +1,56 @@
+	
+    <div class="col-md-12" style="background-color:white;">
+    <h1 class="text-center"><%= @company.name %></h1>
+
+    <p class="text-center">
+      <strong><%= @company.description %></strong>
+    </p>
+    <p class="text-muted text-center">
+      <%= @company.location %>
+      &bull;
+      <%= Category.find(@company.category).name %>
+	  <% if SubCategory.find(@company.sub_category).name != "" %>
+	  	- <%= SubCategory.find(@company.sub_category).name %>
+	  <%end%>
+      &bull;
+      Founded in <%= @company.founded_date %>
+	</p>
+	<p class="text-muted text-center">
+	  Tagged with <%= @company.all_tags%>
+    </p>
+
+
+    <p>
+      <strong>Main url:</strong>
+      <a href="<%= @company.main_url %>"><%= @company.main_url %></a>
+    </p>
+
+    <p>
+      <strong>Employee count:</strong>
+      <%= @company.employee_count %>
+    </p>
+
+    <p>
+      <strong>Twitter url:</strong>
+      <a href="<%= @company.twitter_url %>"><%= @company.twitter_url %></a>
+    </p>
+
+    <p>
+      <strong>Angellist url:</strong>
+      <a href="<%= @company.angellist_url %>"><%= @company.angellist_url %></a>
+    </p>
+
+    <p>
+      <strong>Crunchbase url:</strong>
+      <a href="<%= @company.crunchbase_url %>"><%= @company.crunchbase_url %></a>
+    </p>
+
+	<p>
+		<strong>Target market:</strong>
+		<%= TargetClient.find(@company.target_client).name %>
+	</p>
+	
+	<p>
+		<strong>Business model:</strong>
+		<%= BusinessModel.find(@company.business_model).name %>
+	</p>

@@ -80,7 +80,8 @@ class CompaniesController < ApplicationController
         puts "====================================================================="
         SuggestionMailer.editcompany_email(@company).deliver_now
         
-        format.html { redirect_to @company, notice: 'Company updates were successfully submitted.' }
+        #redirect to the company we're editing, not the company changes we're submitting!
+        format.html { redirect_to Company.find(params[:id]), notice: 'Company updates were successfully submitted.' }
         format.json { render :show, status: :ok, location: @company }
       else
         format.html { render :edit }
