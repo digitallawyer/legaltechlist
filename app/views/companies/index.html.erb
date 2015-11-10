@@ -18,6 +18,8 @@
             <%= submit_tag "Search", name: nil, class: "btn btn-warning btn-xs" %>
           </p>
         <% end %>
+		<br>
+		<h5> <%= link_to "Submit a New Company", new_company_path %> </h4>
         <br>
         <h5>Categories</h5>
 			<% Category.all.each do |category| %>

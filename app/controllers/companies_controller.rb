@@ -7,6 +7,10 @@ class CompaniesController < ApplicationController
   # this search could easily be made much more complex and powerful
   # with ands and ors if necessary
   def index
+    puts "====================================================================="
+    puts "index!!!"
+    puts "====================================================================="
+    
     # search by the appropriate method
     if params[:tag]
       @companies = Company.tagged_with(params[:tag])
@@ -28,7 +32,7 @@ class CompaniesController < ApplicationController
 
   # GET /companies/new
   def new
-   # @company = Company.new
+    @company = Company.new
   end
 
   # GET /companies/1/edit
@@ -37,12 +41,21 @@ class CompaniesController < ApplicationController
 
   # POST /companies
   # POST /companies.json
-  def create
+  # Actual companies are created in the Admin module. This function will accept
+  # the values from the new form, verify them, and then e-mail them to the 
+  # administrator to be added later.
+  def create    
     @company = Company.new(company_params)
-
+    
     respond_to do |format|
-      if @company.save
-        format.html { redirect_to @company, notice: 'Company was successfully created.' }
+      if @company.valid?
+        puts "====================================================================="
+        puts "EMAIL THE REQUESTED NEW COMPANY!!!"
+        puts company_params
+        puts "====================================================================="
+        SuggestionMailer.newcompany_email(@company).deliver_now
+        
+        format.html { redirect_to @company, notice: 'Company was successfully submitted.' }
         format.json { render :show, status: :created, location: @company }
       else
         format.html { render :new }
@@ -53,10 +66,21 @@ class CompaniesController < ApplicationController
 
   # PATCH/PUT /companies/1
   # PATCH/PUT /companies/1.json
+  # Actual companies are edited in the Admin module. This function will accept the
+  # values from the edit form, verify them, and then e-mail them to the
+  # administrator to be added later.
   def update
+    @company = Company.new(company_params)
+    
     respond_to do |format|
-      if @company.update(company_params)
-        format.html { redirect_to @company, notice: 'Company was successfully updated.' }
+      if @company.valid?
+        puts "====================================================================="
+        puts "EMAIL THE REQUESTED CORRECTION TO THE COMPANY!!!"
+        puts company_params
+        puts "====================================================================="
+        SuggestionMailer.editcompany_email(@company).deliver_now
+        
+        format.html { redirect_to @company, notice: 'Company updates were successfully submitted.' }
         format.json { render :show, status: :ok, location: @company }
       else
         format.html { render :edit }
@@ -86,6 +110,7 @@ class CompaniesController < ApplicationController
       params.require(:company).permit(:name, :location, :founded_date, :category, :sub_category,
                                       :business_model, :target_client, :description, :main_url, 
                                       :twitter_url, :angellist_url, :crunchbase_url, :employee_count, 
-                                      :all_tags)
+                                      :all_tags, :category_id, :sub_category_id, :target_client_id, 
+                                      :business_model_id)
     end
 end

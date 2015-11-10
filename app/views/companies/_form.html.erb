@@ -1,61 +1,25 @@
-<%= form_for(@company) do |f| %>
-  <% if @company.errors.any? %>
-    <div id="error_explanation">
-      <h2><%= pluralize(@company.errors.count, "error") %> prohibited this company from being saved:</h2>
 
-      <ul>
-      <% @company.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-      </ul>
-    </div>
-  <% end %>
 
-  <div class="field">
-    <%= f.label :name %><br>
-    <%= f.text_field :name, placeholder: "LegalTech, Inc." %>
-  </div>
-  <div class="field">
-    <%= f.label :location %><br>
-    <%= f.text_field :location, placeholder: "Palo Alto" %>
-  </div>
-  <div class="field">
-    <%= f.label :founded_date %><br>
-    <%= f.text_field :founded_date, placeholder: "2015" %>
-  </div>
-  <div class="field">
-    <%= f.label :category %><br>
-    <%= f.text_field :category, placeholder: "Case Management" %>
-  </div>
-  <div class="field">
-    <%= f.label :description %><br>
-    <%= f.text_area :description, placeholder: "Full Case Management." %>
-  </div>
-  <div class="field">
-    <%= f.label :main_url %><br>
-    <%= f.text_field :main_url %>
-  </div>
-  <div class="field">
-    <%= f.label :twitter_url %><br>
-    <%= f.text_field :twitter_url %>
-  </div>
-  <div class="field">
-    <%= f.label :angellist_url %><br>
-    <%= f.text_field :angellist_url %>
-  </div>
-  <div class="field">
-    <%= f.label :crunchbase_url %><br>
-    <%= f.text_field :crunchbase_url %>
-  </div>
-  <div class="field">
-    <%= f.label :employee_count %><br>
-    <%= f.text_field :employee_count, placeholder: "1" %>
-  </div>
-  <div class="field">
-	  <%= f.label :tags %><br>
-	  <%= f.text_field :all_tags, placeholder: "Tags separated by a comma."%>
-  </div>
-  <div class="actions">
-    <%= f.submit %>
-  </div>
-<% end %>
+<%= semantic_form_for @company do |f| %>
+	<%= f.inputs do %>
+			<%= f.input :name,          :placeholder => "LegalTech, Inc.",  :required => true%>
+			<%= f.input :location,      :placeholder => "Palo Alto, CA",           :required => true %>
+			<%= f.input :founded_date,  :placeholder => "2015",                    :required => true%>
+			<%= f.input :category, as: :select,  collection: Category.all.order(:name), :required => true, :include_blank => false %>
+			<%= f.input :sub_category,  as: :select, collection: option_groups_from_collection_for_select(Category.all.order(:name), :sub_categories, :name, :id, :name), :required => true, :include_blank => false%>
+			<%= f.input :target_client, as: :select, collection: TargetClient.all, :required => true, :include_blank => false%>
+			<%= f.input :business_model,as: :select,collection: BusinessModel.all, :required => true, :include_blank => false%>
+			<%= f.input :description,   :placeholder => "Makes great legal tech",  :required => true%>
+			<%= f.input :main_url,      :placeholder => "www.legaltech.com"%>
+			<%= f.input :twitter_url,   :placeholder => "@LegalTechInc"%>
+			<%= f.input :angellist_url, :placeholder => "www.angellist.com/legaltech"%>
+			<%= f.input :crunchbase_url,:placeholder => "www.crunchbase.com/legaltech"%>
+			<%= f.input :employee_count,:placeholder => "1"%>
+			<%= f.input :all_tags,      :placeholder => "All relevant tags separated by commas"%>
+	<%end%>
+	
+	<%= f.actions do %>
+		<%= f.action :submit %>
+		<%= f.action :cancel %>
+	<%end%>
+<%end%>
