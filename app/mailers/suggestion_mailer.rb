@@ -1,26 +1,28 @@
 class SuggestionMailer < ApplicationMailer
   default from: 'do_not_reply@legaltechlist'
   
-  def newcompany_email(company)
-    puts "====================================================================="
-    puts "Execute new company e-mail:"
-    puts company
-    puts "====================================================================="
-    
+  #send a new company e-mail with the parameters passed in
+  def newcompany_email(company, email, suggester_name)
     @company = company
-    @message = "Hello! Add this company!"
-    mail(to: 'hello@markharrisevans.com', subject: 'Test e-mail')
+    @message = "New legal Tech Company Suggested"
+    @email = email
+    @suggester = suggester_name
+    
+    AdminUser.all.each do |admin|
+      mail(to: admin.email, subject: 'LegalTechList: New Company Suggestion')
+    end
   end
   
-  def editcompany_email(company)
-    puts "====================================================================="
-    puts "Execute edit company e-mail:"
-    puts company
-    puts "====================================================================="
-    
+  # send an edit company e-mail with the paramaters passed in
+  def editcompany_email(company, email, suggester_name)
     @company = company
-    @message = "Hello! Edit this company!"
-    mail(to: 'hello@markharrisevans.com', subject: 'Test e-mail')
+    @message = "Correction submitted for Legal Tech Company."
+    @email = email
+    @suggester = suggester_name
+    
+    AdminUser.all.each do |admin|
+      mail(to: admin.email, subject: 'LegalTechList: Company Correction')
+    end
   end
 
 end

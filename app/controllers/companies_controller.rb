@@ -33,10 +33,12 @@ class CompaniesController < ApplicationController
   # GET /companies/new
   def new
     @company = Company.new
+    @contact = Contact.new
   end
 
   # GET /companies/1/edit
   def edit
+    @contact = Contact.new
   end
 
   # POST /companies
@@ -46,14 +48,12 @@ class CompaniesController < ApplicationController
   # administrator to be added later.
   def create    
     @company = Company.new(company_params)
+    @contact = Contact.new(contact_params)
+    
     
     respond_to do |format|
-      if @company.valid?
-        puts "====================================================================="
-        puts "EMAIL THE REQUESTED NEW COMPANY!!!"
-        puts company_params
-        puts "====================================================================="
-        SuggestionMailer.newcompany_email(@company).deliver_now
+      if @company.valid? && @contact.valid?
+       SuggestionMailer.newcompany_email(@company, @contact.email, @contact.name).deliver_now
         
         format.html { redirect_to @company, notice: 'Company was successfully submitted.' }
         format.json { render :show, status: :created, location: @company }
@@ -71,14 +71,11 @@ class CompaniesController < ApplicationController
   # administrator to be added later.
   def update
     @company = Company.new(company_params)
+    @contact = Contact.new(contact_params)
     
     respond_to do |format|
-      if @company.valid?
-        puts "====================================================================="
-        puts "EMAIL THE REQUESTED CORRECTION TO THE COMPANY!!!"
-        puts company_params
-        puts "====================================================================="
-        SuggestionMailer.editcompany_email(@company).deliver_now
+      if @company.valid? && @contact.valid?
+        SuggestionMailer.editcompany_email(@company, @contact.email, @contact.name).deliver_now
         
         #redirect to the company we're editing, not the company changes we're submitting!
         format.html { redirect_to Company.find(params[:id]), notice: 'Company updates were successfully submitted.' }
@@ -113,5 +110,9 @@ class CompaniesController < ApplicationController
                                       :twitter_url, :angellist_url, :crunchbase_url, :employee_count, 
                                       :all_tags, :category_id, :sub_category_id, :target_client_id, 
                                       :business_model_id)
+    end
+    
+    def contact_params
+      params.require(:contact).permit(:name, :email)
     end
 end

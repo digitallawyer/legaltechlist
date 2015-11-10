@@ -1,7 +1,6 @@
 Rails.application.routes.draw do
-#get 'companies/new' => 'static_pages#home'
-#get 'companies/edit' => 'static_pages#home'
 
+  resources :contacts
   devise_for :admin_users, ActiveAdmin::Devise.config
   ActiveAdmin.routes(self)
   resources :companies

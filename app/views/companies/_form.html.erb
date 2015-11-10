@@ -1,21 +1,28 @@
-
-
+	
 <%= semantic_form_for @company do |f| %>
-	<%= f.inputs do %>
-			<%= f.input :name,          :placeholder => "LegalTech, Inc.",  :required => true%>
-			<%= f.input :location,      :placeholder => "Palo Alto, CA",           :required => true %>
-			<%= f.input :founded_date,  :placeholder => "2015",                    :required => true%>
-			<%= f.input :category, as: :select,  collection: Category.all.order(:name), :required => true, :include_blank => false %>
-			<%= f.input :sub_category,  as: :select, collection: option_groups_from_collection_for_select(Category.all.order(:name), :sub_categories, :name, :id, :name), :required => true, :include_blank => false%>
-			<%= f.input :target_client, as: :select, collection: TargetClient.all, :required => true, :include_blank => false%>
-			<%= f.input :business_model,as: :select,collection: BusinessModel.all, :required => true, :include_blank => false%>
-			<%= f.input :description,   :placeholder => "Makes great legal tech",  :required => true%>
-			<%= f.input :main_url,      :placeholder => "www.legaltech.com"%>
-			<%= f.input :twitter_url,   :placeholder => "@LegalTechInc"%>
-			<%= f.input :angellist_url, :placeholder => "www.angellist.com/legaltech"%>
-			<%= f.input :crunchbase_url,:placeholder => "www.crunchbase.com/legaltech"%>
-			<%= f.input :employee_count,:placeholder => "1"%>
-			<%= f.input :all_tags,      :placeholder => "All relevant tags separated by commas"%>
+
+	<%= semantic_fields_for @contact do |c|%>
+		<%= c.inputs "Contact Info" do %>
+			<%= c.input :name, :placeholder => "Your Name" %>
+			<%= c.input :email, :placeholder => "you@youremail.com" %>
+		<%end%>
+	<%end%>
+
+	<%= f.inputs "Company Info" do %>
+		<%= f.input :name, :placeholder => "LegalTech, Inc.",  :required => true%>
+		<%= f.input :location,      :placeholder => "Palo Alto, CA",           :required => true %>
+		<%= f.input :founded_date,  :placeholder => "2015",                    :required => true%>
+		<%= f.input :category, as: :select,  collection: Category.all.order(:name), :required => true, :include_blank => false %>
+		<%= f.input :sub_category,  as: :select, collection: option_groups_from_collection_for_select(Category.all.order(:name), :sub_categories, :name, :id, :name), :required => true, :include_blank => false%>
+		<%= f.input :target_client, as: :select, collection: TargetClient.all, :required => true, :include_blank => false%>
+		<%= f.input :business_model,as: :select,collection: BusinessModel.all, :required => true, :include_blank => false%>
+		<%= f.input :description,   :placeholder => "Makes great legal tech",  :required => true%>
+		<%= f.input :main_url,      :placeholder => "www.legaltech.com"%>
+		<%= f.input :twitter_url,   :placeholder => "@LegalTechInc"%>
+		<%= f.input :angellist_url, :placeholder => "www.angellist.com/legaltech"%>
+		<%= f.input :crunchbase_url,:placeholder => "www.crunchbase.com/legaltech"%>
+		<%= f.input :employee_count,:placeholder => "1"%>
+		<%= f.input :all_tags,      :placeholder => "All relevant tags separated by commas"%>
 	<%end%>
 	
 	<%= f.actions do %>
