@@ -27,7 +27,7 @@
 			<%end%>
 	   	 <div class="tags-cloud glassy-bg">
 	   		 <h5> Tag Cloud </h5>
-	   		 <% tag_cloud Tag.counts, %w{css1 css2 css3 css4} do |tag, css_class| %>
+	   		 <% tag_cloud Tag.counts.sort_by(&:name), %w{css1 css2 css3 css4 css5 css6 css7} do |tag, css_class| %>
 	   		 <%= link_to tag.name, tag_path(tag.name), class: css_class %>
 	   		 <%end%>
 	   	 </div>

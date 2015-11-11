@@ -7,10 +7,6 @@ class CompaniesController < ApplicationController
   # this search could easily be made much more complex and powerful
   # with ands and ors if necessary
   def index
-    puts "====================================================================="
-    puts "index!!!"
-    puts "====================================================================="
-    
     # search by the appropriate method
     if params[:tag]
       @companies = Company.tagged_with(params[:tag])
@@ -49,7 +45,6 @@ class CompaniesController < ApplicationController
   def create    
     @company = Company.new(company_params)
     @contact = Contact.new(contact_params)
-    
     
     respond_to do |format|
       if @company.valid? && @contact.valid?
