@@ -3,15 +3,28 @@ class CompaniesController < ApplicationController
 
   # GET /companies
   # GET /companies.json
+  
+  # this search could easily be made much more complex and powerful
+  # with ands and ors if necessary
   def index
-    if params[:category]
+    puts "====================================================================="
+    puts "index!!!"
+    puts "====================================================================="
+    
+    # search by the appropriate method
+    if params[:tag]
+      @companies = Company.tagged_with(params[:tag])
+    elsif params[:category]
       @companies = Company.where(:category => params[:category])
+    elsif params[:business_model]
+      @companies = Company.where(:business_model => params[:business_model])
+    elsif params[:target_client]
+      @companies = Company.where(:target_client => params[:target_client])
     else
-      @companies = Company.text_search(params[:query])  
+      @companies = Company.text_search(params[:query]) 
     end
   end
-
-
+  
   # GET /companies/1
   # GET /companies/1.json
   def show
@@ -20,20 +33,29 @@ class CompaniesController < ApplicationController
   # GET /companies/new
   def new
     @company = Company.new
+    @contact = Contact.new
   end
 
   # GET /companies/1/edit
   def edit
+    @contact = Contact.new
   end
 
   # POST /companies
   # POST /companies.json
-  def create
+  # Actual companies are created in the Admin module. This function will accept
+  # the values from the new form, verify them, and then e-mail them to the 
+  # administrator to be added later.
+  def create    
     @company = Company.new(company_params)
-
+    @contact = Contact.new(contact_params)
+    
+    
     respond_to do |format|
-      if @company.save
-        format.html { redirect_to @company, notice: 'Company was successfully created.' }
+      if @company.valid? && @contact.valid?
+       SuggestionMailer.newcompany_email(@company, @contact.email, @contact.name).deliver_now
+        
+        format.html { redirect_to @company, notice: 'Company was successfully submitted.' }
         format.json { render :show, status: :created, location: @company }
       else
         format.html { render :new }
@@ -44,10 +66,19 @@ class CompaniesController < ApplicationController
 
   # PATCH/PUT /companies/1
   # PATCH/PUT /companies/1.json
+  # Actual companies are edited in the Admin module. This function will accept the
+  # values from the edit form, verify them, and then e-mail them to the
+  # administrator to be added later.
   def update
+    @company = Company.new(company_params)
+    @contact = Contact.new(contact_params)
+    
     respond_to do |format|
-      if @company.update(company_params)
-        format.html { redirect_to @company, notice: 'Company was successfully updated.' }
+      if @company.valid? && @contact.valid?
+        SuggestionMailer.editcompany_email(@company, @contact.email, @contact.name).deliver_now
+        
+        #redirect to the company we're editing, not the company changes we're submitting!
+        format.html { redirect_to Company.find(params[:id]), notice: 'Company updates were successfully submitted.' }
         format.json { render :show, status: :ok, location: @company }
       else
         format.html { render :edit }
@@ -74,6 +105,14 @@ class CompaniesController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def company_params
-      params.require(:company).permit(:name, :location, :founded_date, :category, :description, :main_url, :twitter_url, :angellist_url, :crunchbase_url, :employee_count)
+      params.require(:company).permit(:name, :location, :founded_date, :category, :sub_category,
+                                      :business_model, :target_client, :description, :main_url, 
+                                      :twitter_url, :angellist_url, :crunchbase_url, :employee_count, 
+                                      :all_tags, :category_id, :sub_category_id, :target_client_id, 
+                                      :business_model_id)
+    end
+    
+    def contact_params
+      params.require(:contact).permit(:name, :email)
     end
 end

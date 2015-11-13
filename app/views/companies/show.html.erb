@@ -17,9 +17,15 @@ brief description, Founding Date, Categories, Website-->
     <p class="text-muted text-center">
       <%= @company.location %>
       &bull;
-      <%= @company.category %>
+      <%= Category.find(@company.category).name %>
+	  <% if SubCategory.find(@company.sub_category).name != "" %>
+	  	- <%= SubCategory.find(@company.sub_category).name %>
+	  <%end%>
       &bull;
       Founded in <%= @company.founded_date %>
+	</p>
+	<p class="text-muted text-center">
+	  Tagged with <%= raw tag_links(@company.all_tags)%>
     </p>
 
 
@@ -48,6 +54,15 @@ brief description, Founding Date, Categories, Website-->
       <a href="<%= @company.crunchbase_url %>"><%= @company.crunchbase_url %></a>
     </p>
 
+	<p>
+		<strong>Target market:</strong>
+		<%= TargetClient.find(@company.target_client).name %>
+	</p>
+	
+	<p>
+		<strong>Business model:</strong>
+		<%= BusinessModel.find(@company.business_model).name %>
+	</p>
 
 
 <%= link_to 'Edit', edit_company_path(@company) %> |
