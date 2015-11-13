@@ -18,16 +18,31 @@
             <%= submit_tag "Search", name: nil, class: "btn btn-warning btn-xs" %>
           </p>
         <% end %>
+		<br>
+		<h5> <%= link_to "Submit a New Company", new_company_path %> </h4>
         <br>
         <h5>Categories</h5>
-          <%= link_to "Case Management", companies_path(:category => "Case Management - Litigation") %> </br>
-          <%= link_to "Document Automation", companies_path(:category => "Document Automation") %></br>
-          <%= link_to "Estates and Wills", companies_path(:category => "Estates and Wills") %></br>
-          <%= link_to "Lawyer Marketplace", companies_path(:category => "Lawyer Marketplace") %>
-          </br>
-          <%= link_to "Lawyer Matching", companies_path(:category => "Lawyer Matching") %></br>
-          <%= link_to "Lawyer Referrals Network", companies_path(:category => "Lawyer Referrals Network") %></br>
-          
+			<% Category.all.each do |category| %>
+				<%= link_to category.name, companies_path(:category => category)%></br>
+			<%end%>
+	   	 <div class="tags-cloud glassy-bg">
+	   		 <h5> Tag Cloud </h5>
+	   		 <% tag_cloud Tag.counts, %w{css1 css2 css3 css4} do |tag, css_class| %>
+	   		 <%= link_to tag.name, tag_path(tag.name), class: css_class %>
+	   		 <%end%>
+	   	 </div>
+	   	 <div class="panel_body">
+	           <h5>Business Type</h5>
+	   			<% BusinessModel.all.each do |biz| %>
+	   				<%= link_to biz.name, companies_path(:business_model => biz)%></br>
+	   			<%end%>
+	   	 </div>
+	   	 <div class="panel_body">
+	           <h5>Target Audience</h5>
+	   			<% TargetClient.all.each do |targ| %>
+	   				<%= link_to targ.name, companies_path(:target_client => targ)%></br>
+	   			<%end%>
+	   	 </div>
         </div>
       </div>
     </div>
@@ -39,8 +54,15 @@
       <div class="panel-body">
       <% @companies.each do |company| %>
           
-          <div class="e">
-              <h5><a href="/companies/<%= company.id %>"><%= company.name %></a>&nbsp;<span class="label label-default"><%= company.category %></span></h5>
+          <!-- This was causing the whole class to go to the one link, defeating the linked tags. Something in the CSS?
+		  <div class="e"> -->
+		  <div class="bandaid">
+              <h5><a href="/companies/<%= company.id %>"><%= company.name %></a>&nbsp;<span class="label label-default"><%= Category.find(company.category).name %>
+				  <% if SubCategory.find(company.sub_category).name != "" %>
+				   - <%=SubCategory.find(company.sub_category).name %>
+				   <%end%>
+			  </span></h5>
+			  <p class="text-muted">Tagged <%= raw tag_links(company.all_tags)%> </p>
 
             <p><%= company.description %></p>
           </div>

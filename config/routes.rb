@@ -1,15 +1,25 @@
 Rails.application.routes.draw do
+
+  resources :contacts
   devise_for :admin_users, ActiveAdmin::Devise.config
   ActiveAdmin.routes(self)
   resources :companies
 
   root to: 'static_pages#home'
 
+  get 'tags/:tag' => 'companies#index', as: :tag
+  get 'categories/:category' => 'companies#index', as: :category
+  get 'business_models/:business_model' => 'companies#index', as: :business_model
+  get 'target_clients/:target_client' => 'companies#index', as: :target_client
+  
+ # get 'sub_category/:category' => 'sub_category#index', as: :category
+    
   get 'static_pages/home'
 
   get 'static_pages/about'
 
   get 'static_pages/casemanagement'
+  
 
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
