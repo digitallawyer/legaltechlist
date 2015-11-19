@@ -33,6 +33,7 @@ gem 'sdoc', '~> 0.4.0', group: :doc
 # adding pg_search gem here
 gem 'pg_search'
 
+
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 

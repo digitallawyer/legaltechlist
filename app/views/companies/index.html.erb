@@ -1,129 +1,87 @@
 <%= render '/static_pages/nav' %>
 
 <head>
-  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+  	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 </head>
 
+<div class="container-fluid">
+	<p id="notice"><%= notice %></p>
+	<div class="col-md-9">
+	  <div class="panel panel-default box-shadow__teasers" style="padding: 15px;">
+		  <div class="panel-body">
+		  <h4>Companies</h4>
+		  <hr>
+		  <% @companies.each do |company| %>
+			  
+			  <!-- This was causing the whole class to go to the one link, defeating the linked tags. Something in the CSS?
+			  <div class="e"> -->
+			  <div class="bandaid">
+				  <h4><a href="/companies/<%= company.id %>"><%= company.name %></a>&nbsp;</h4>
+				<p><%= company.description %></p>
 
-<div class="container">
-<p id="notice"><%= notice %></p>
-  <div class="col-md-3">
-    <div class="panel panel-default">
-      <div class="panel-body">
-        <%= form_tag companies_path, method: :get do %>
-          <h5>Search</h5>
-          <p>
-            <%= text_field_tag :query, params[:query] %>
-            <%= submit_tag "Search", name: nil, class: "btn btn-warning btn-xs" %>
-          </p>
-        <% end %>
-		<br>
-		<h5> <%= link_to "Submit a New Company", new_company_path %> </h4>
-        <br>
-        <h5>Categories</h5>
-			<% Category.all.each do |category| %>
-				<%= link_to category.name, companies_path(:category => category)%></br>
-			<%end%>
-	   	 <div class="tags-cloud glassy-bg">
-	   		 <h5> Tag Cloud </h5>
-	   		 <% tag_cloud Tag.counts, %w{css1 css2 css3 css4} do |tag, css_class| %>
-	   		 <%= link_to tag.name, tag_path(tag.name), class: css_class %>
-	   		 <%end%>
-	   	 </div>
-	   	 <div class="panel_body">
-	           <h5>Business Type</h5>
-	   			<% BusinessModel.all.each do |biz| %>
-	   				<%= link_to biz.name, companies_path(:business_model => biz)%></br>
-	   			<%end%>
-	   	 </div>
-	   	 <div class="panel_body">
-	           <h5>Target Audience</h5>
-	   			<% TargetClient.all.each do |targ| %>
-	   				<%= link_to targ.name, companies_path(:target_client => targ)%></br>
-	   			<%end%>
-	   	 </div>
-        </div>
-      </div>
-    </div>
+				  <span>
+				  	<%= Category.find(company.category).name %>
+					  <% if SubCategory.find(company.sub_category).name != "" %>
+					   - <%=SubCategory.find(company.sub_category).name %>
+					<%end%>
+				  </span>
+				  <span class="text-muted"> &#8226; Tagged <%= raw tag_links(company.all_tags)%> </span>
 
 
+				<hr>
+			  </div>
 
-<div class="col-md-9">
-  <div class="panel panel-default">
-      <div class="panel-body">
-      <% @companies.each do |company| %>
-          
-          <!-- This was causing the whole class to go to the one link, defeating the linked tags. Something in the CSS?
-		  <div class="e"> -->
-		  <div class="bandaid">
-              <h5><a href="/companies/<%= company.id %>"><%= company.name %></a>&nbsp;<span class="label label-default"><%= Category.find(company.category).name %>
-				  <% if SubCategory.find(company.sub_category).name != "" %>
-				   - <%=SubCategory.find(company.sub_category).name %>
-				   <%end%>
-			  </span></h5>
-			  <p class="text-muted">Tagged <%= raw tag_links(company.all_tags)%> </p>
-
-            <p><%= company.description %></p>
-          </div>
-
-      <!-- Makes entire e class a clickable link to the company page  -->
-      <script type="text/javascript">
-          $(".e").click(function() {
-            window.location = $(this).find("a").attr("href"); 
-            return false;
-          });
-      </script>
-      
-      <% end %>
-      </div>
-  </div>
-</div>
-
-<!-- <table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Location</th>
-      <th>Founded date</th>
-      <th>Category</th>
-      <th>Description</th>
-      <th>Main url</th>
-      <th>Twitter url</th>
-      <th>Angellist url</th>
-      <th>Crunchbase url</th>
-      <th>Employee count</th>
-      <th colspan="3"></th>
-    </tr>
-  </thead>
-
-  <tbody>
-    <% @companies.each do |company| %>
-      <tr>
-        <td><%= company.name %></td>
-        <td><%= company.location %></td>
-        <td><%= company.founded_date %></td>
-        <td><%= company.category %></td>
-        <td><%= company.description %></td>
-        <td><%= company.main_url %></td>
-        <td><%= company.twitter_url %></td>
-        <td><%= company.angellist_url %></td>
-        <td><%= company.crunchbase_url %></td>
-        <td><%= company.employee_count %></td>
-        <td><%= link_to 'Show', company %></td>
-        <td><%= link_to 'Edit', edit_company_path(company) %></td>
-        <td><%= link_to 'Destroy', company, method: :delete, data: { confirm: 'Are you sure?' } %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
-
-<br> 
-<%= link_to 'New Company', new_company_path %>
-
-
--->
-
+		  <!-- Makes entire e class a clickable link to the company page  -->
+		  <script type="text/javascript">
+			  $(".e").click(function() {
+				window.location = $(this).find("a").attr("href"); 
+				return false;
+			  });
+		  </script>
+		  
+		  <% end %>
+		  </div>
+	  </div>
+	</div>
+  	<div class="col-md-3">
+		<div class="panel panel-default">
+	  		<div class="panel-body">
+				<%= form_tag companies_path, method: :get do %>
+		  		<h5>Search</h5>
+		 		 <p>
+					<%= text_field_tag :query, params[:query] %>
+					<%= submit_tag "Search", name: nil, class: "btn btn-warning btn-xs" %>
+				</p>
+				<% end %>
+				<br>
+				<h5> <%= link_to "Submit a New Company", new_company_path %> </h4>
+				<br>
+				<h5>Categories</h5>
+					<% Category.all.each do |category| %>
+						<%= link_to category.name, companies_path(:category => category)%></br>
+					<%end%>
+				 <div class="tags-cloud glassy-bg">
+					 <h5> Tag Cloud </h5>
+					 <% tag_cloud Tag.counts, %w{css1 css2 css3 css4} do |tag, css_class| %>
+					 <%= link_to tag.name, tag_path(tag.name), class: css_class %>
+					 <%end%>
+				 </div>
+				 <div class="panel_body">
+					   <h5>Business Type</h5>
+						<% BusinessModel.all.each do |biz| %>
+							<%= link_to biz.name, companies_path(:business_model => biz)%></br>
+						<%end%>
+				</div>
+				<div class="panel_body">
+					   <h5>Target Audience</h5>
+						<% TargetClient.all.each do |targ| %>
+							<%= link_to targ.name, companies_path(:target_client => targ)%></br>
+						<%end%>
+		 		</div>
+			</div>
+	  	</div>
+	</div>
 
 </div>
 
