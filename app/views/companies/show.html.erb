@@ -82,9 +82,33 @@ brief description, Founding Date, Categories, Website-->
         <div class="panel-body">
          <div class="tags-cloud glassy-bg">
            <h4> Related companies </h4>
-           <% tag_cloud Tag.counts, %w{css1 css2 css3 css4} do |tag, css_class| %>
-           <%= link_to tag.name, tag_path(tag.name), class: css_class %>
-           <%end%>
+		   <% related_company_list @company do |related_companies| %>
+		   	<% related_companies.each do |related| %>
+  			  <div>
+  				  <h4><a href="/companies/<%= related.id %>"><%= related.name %></a>&nbsp;</h4>
+  				<p><%= related.description %></p>
+
+  				  <span>
+  				  	<%= Category.find(related.category).name %>
+  					  <% if SubCategory.find(related.sub_category).name != "" %>
+  					   - <%=SubCategory.find(related.sub_category).name %>
+  					<%end%>
+  				  </span>
+  				  <span class="text-muted"> &#8226; Tagged <%= raw tag_links(related.all_tags)%> </span>
+
+
+  				<hr>
+  			  </div>
+
+  		  <!-- Makes entire e class a clickable link to the company page  -->
+  		  <script type="text/javascript">
+  			  $(".e").click(function() {
+  				window.location = $(this).find("a").attr("href"); 
+  				return false;
+  			  });
+  		  </script>
+		  <% end %>
+  		  <% end %>
          </div>
          </div>
          </div>

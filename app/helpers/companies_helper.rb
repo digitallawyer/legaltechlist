@@ -10,4 +10,24 @@ module CompaniesHelper
       yield(tag, classes[index.round])
     end
   end
+  
+  def related_company_list(company)
+    @tags = company.all_tags.split(",")
+    
+    # find all the companies that are tagged
+    @companies ||= Array.new
+    
+    @tags.each do |tag|
+      puts "Find tag: #{tag}"
+      @found = Company.tagged_with(tag.strip)
+      @found.each do |f|
+        if f.id != company.id
+          @companies.push f
+        end
+      end
+    end
+    
+    yield(@companies.sort_by(&:name))
+  end
+  
 end
