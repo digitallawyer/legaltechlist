@@ -13,31 +13,39 @@
 
 <%= render 'nav' %>
 
-<div class="jumbotron" style="background:url(/images/bg.jpg); background-size: cover;">
-  <h1 class="text-center" style="color:white; margin-top:40px; ">Legal Tech List</h1>
-  <h2 class="text-info text-center" style="color:white; margin-bottom:40px;">A list of legal technology companies.</h2>
+<div class="jumbotron" style="background-image: url('images/bg.png'); background-size:cover;">
+<div class="container-fluid">
+  <div class="col-md-12">
+  <h1 class="" style="color:white; text-align:center;">Legal Technology List</h1>
+  <h3 class="" style="color:white;text-align:center;">A list of <span style="color:orange">652</span> legal technology companies, curated by the Stanford Center for Legal Informatics.</h3>
+<div class="col-md-3"></div>
+  <div class="col-md-6">
+<%= form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:20px;", method: :get do %>
+          <p>
+            <%= text_field_tag :query, params[:query], class: "form-control input-lg ", placeholder: "Search for legal technology companies" %>
+          <%= submit_tag "Search", name: nil, class: "btn btn-warning btn-lg" %>
+          </p>
+</div></div>
+</div>
 
-<!--Search box in jumbotron-->
-
-  <%= form_tag companies_path, :class => 'form-inline', method: :get do %>
-  	<p class="text-center">
-    	<%= text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for legal technology companies" %>
-		<%= submit_tag "Search", name: nil, class: "btn btn-warning btn-lg" %>
-  	</p>
-	<% end %>
+        
+      	<% end %>
 
 </div>
 
-<!-- <div class="container">
-	<div class="col-md-4">
-		<a href="#"><img src="images/E-Discovery_final.png"></a>
+<div class="container-fluid">
+	<div class="col-md-6">
+    <div class=" box-shadow__teasers" style="background-color:white; padding: 15px; margin-top: 6px;">
+		<h4>About</h4>
+    <p>#LegalTechList is a list of legal technology companies, curated by the Stanford Center for Legal Informatics. Legal ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+    <img src="images/codex-logo.jpg" style="max-width:100%">
+    </div>
 	</div>
-	<div class="col-md-4">
-		<a href="#"><img src="images/case_management.png"></a>
-	</div>
-	<div class="col-md-4">
-		<a href="#"><img src="images/legal_research.png"></a>
-	</div>
-</div> -->
+  <div class="col-md-6">
+    <div class="box-shadow__teasers" style="background-color:white; padding: 15px; margin-top: 6px;">
+    <p>#LegalTechList is a list of legal technology companies, curated by the Stanford Center for Legal Informatics. Legal ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+    </div>
+  </div>
+</div>
 
 </body>

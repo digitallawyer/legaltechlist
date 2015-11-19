@@ -1,0 +1,19 @@
+---
+development:
+  cloud_name: deczc4byd
+  api_key: '537597697918916'
+  api_secret: PuHOeFznPIg0B4uEgooL4RSgEJU
+  enhance_image_tag: true
+  static_image_support: false
+production:
+  cloud_name: deczc4byd
+  api_key: '537597697918916'
+  api_secret: PuHOeFznPIg0B4uEgooL4RSgEJU
+  enhance_image_tag: true
+  static_image_support: true
+test:
+  cloud_name: deczc4byd
+  api_key: '537597697918916'
+  api_secret: PuHOeFznPIg0B4uEgooL4RSgEJU
+  enhance_image_tag: true
+  static_image_support: false

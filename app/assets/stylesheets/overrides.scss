@@ -1,3 +1,14 @@
+body {
+	background-color: lightgray !important;
+	padding-top: 50px; /* 60px to make the container go all the way to the bottom of the topbar */
+}
+
+h1, h2, h3 {
+	font-weight: 300 !important; 
+}
+.navbar {
+	margin-bottom: 0px !important;
+}
 .navbar-default {
 	background-color: #1a1a1a !important;
 }
@@ -10,11 +21,21 @@
 	color: white !important;
 }
 
-.jumbotron {
-	margin-top: -10px;
-	min-height:600px;
-}
-
 .input-lg {
 	min-width:480px;
+}
+
+.box-shadow__teasers {
+	box-shadow: 1px 1px 2px 1px #888888;
+	-webkit-box-shadow: 1px 1px 2px 1px #888888;
+	-moz-box-shadow: 1px 1px 2px 1px #888888;
+	-o-box-shadow: 1px 1px 2px 1px #888888;
+}
+
+.panel {
+	border-radius: 0px !important;
+	box-shadow: 1px 1px 2px 1px #888888 !important;
+	-webkit-box-shadow: 1px 1px 2px 1px #888888 !important;
+	-moz-box-shadow: 1px 1px 2px 1px #888888 !important;
+	-o-box-shadow: 1px 1px 2px 1px #888888 !important;
 }
