@@ -9,12 +9,12 @@ brief description, Founding Date, Categories, Website-->
   
   <div class="row">
     <div class="col-md-9">
-    <div class="panel panel-default box-shadow__teasers"  style="padding: 0px 0px 0px 15px;">
+    <div class="panel panel-default lg-panel">
     <div class="panel-body">
     <h1><%= @company.name %></h1>
     <p><%= @company.description %></p>
     <p class="text-muted">
-      <%= @company.location %>
+      <span><i class="fa fa-heart"></i></span><%= @company.location %>
       &bull;
       <%= Category.find(@company.category).name %>
     <% if SubCategory.find(@company.sub_category).name != "" %>
@@ -78,7 +78,7 @@ brief description, Founding Date, Categories, Website-->
   </div>
 
     <div class="col-md-3">
-    <div class="panel panel-default">
+    <div class="panel panel-default lg-panel">
         <div class="panel-body">
          <div class="tags-cloud glassy-bg">
            <h4> Related companies </h4>
