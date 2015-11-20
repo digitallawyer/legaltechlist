@@ -1,5 +1,5 @@
 body {
-	background-color: lightgray !important;
+	background-color: #f7f7f7 !important;
 	padding-top: 50px; /* 60px to make the container go all the way to the bottom of the topbar */
 }
 
@@ -25,17 +25,19 @@ h1, h2, h3 {
 	min-width:480px;
 }
 
-.box-shadow__teasers {
-	box-shadow: 1px 1px 2px 1px #888888;
-	-webkit-box-shadow: 1px 1px 2px 1px #888888;
-	-moz-box-shadow: 1px 1px 2px 1px #888888;
-	-o-box-shadow: 1px 1px 2px 1px #888888;
+.lg-box-shadow__teasers {
+	box-shadow: 0px 0px 12px -5px;
+	-webkit-box-shadow: 0px 0px 12px -5px;
+	-moz-box-shadow: 0px 0px 12px -5px;
+	-o-box-shadow: 0px 0px 12px -5px;
 }
 
-.panel {
-	border-radius: 0px !important;
-	box-shadow: 1px 1px 2px 1px #888888 !important;
-	-webkit-box-shadow: 1px 1px 2px 1px #888888 !important;
-	-moz-box-shadow: 1px 1px 2px 1px #888888 !important;
-	-o-box-shadow: 1px 1px 2px 1px #888888 !important;
+.panel.panel-default.lg-panel {
+	border-radius: 0px;
+	border: none;
+	margin-bottom: 6px;
+	box-shadow: 0px 0px 12px -5px;
+	-webkit-box-shadow: 0px 0px 12px -5px;
+	-moz-box-shadow: 0px 0px 12px -5px;
+	-o-box-shadow: 0px 0px 12px -5px;
 }
