@@ -3,8 +3,12 @@
 
 	<%= semantic_fields_for @contact do |c|%>
 		<%= c.inputs "Contact Info" do %>
+			<div class="form-group">
 			<%= c.input :name, :placeholder => "Your Name" %>
+			</div>
+			<div class="form-group">
 			<%= c.input :email, :placeholder => "you@youremail.com" %>
+			</div>
 		<%end%>
 	<%end%>
 
