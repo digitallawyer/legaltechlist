@@ -41,3 +41,7 @@ h1, h2, h3 {
 	-moz-box-shadow: 0px 0px 12px -5px;
 	-o-box-shadow: 0px 0px 12px -5px;
 }
+
+table.borderless tbody tr td {
+	border: none;
+}
