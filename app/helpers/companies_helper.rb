@@ -27,7 +27,7 @@ module CompaniesHelper
       end
     end
     
-    yield(@companies.sort_by(&:name))
+    yield(@companies.sort_by(&:name).sample(5))
   end
   
 end
