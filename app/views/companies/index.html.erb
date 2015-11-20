@@ -1,16 +1,13 @@
 <%= render '/static_pages/nav' %>
 
-<head>
-  	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
-  	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-</head>
 
 <div class="container-fluid">
 	<p id="notice"><%= notice %></p>
 	<div class="col-md-9">
-	  <div class="panel panel-default box-shadow__teasers" style="padding: 15px;">
+	  <div class="panel panel-default lg-panel">
 		  <div class="panel-body">
 		  <h4>Companies</h4>
+ 		 
 		  <hr>
 		  <% @companies.each do |company| %>
 			  
@@ -45,7 +42,7 @@
 	  </div>
 	</div>
   	<div class="col-md-3">
-		<div class="panel panel-default">
+		<div class="panel panel-default lg-panel">
 	  		<div class="panel-body">
 				<%= form_tag companies_path, method: :get do %>
 		  		<h5>Search</h5>
