@@ -45,6 +45,23 @@ form do |f|
   end
 end
 
+csv do
+  column :name, :column_name => "name"
+  column :location
+  column :founded_date
+  column (:category)        { |company| company.category.name }
+  column (:sub_category)    { |company| company.sub_category.name }
+  column (:target_client)   { |company| company.target_client.name }
+  column (:business_model)  { |company| company.business_model.name }
+  column :description
+  column :main_url
+  column :twitter_url
+  column :angellist_url
+  column :crunchbase_url
+  column :employee_count
+  column :all_tags
+end
+
 # or
 
 # permit_params do
