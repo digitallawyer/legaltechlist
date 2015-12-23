@@ -9,6 +9,8 @@ class ImportCSVtoCompany
 
         row.to_hash
         
+        row["name"] = row["name"].strip
+        
         if row["name"]!=""
           # clean up data to ensure validation on import
           count = row["employee_count"]
@@ -51,7 +53,7 @@ class ImportCSVtoCompany
           print "Add #{row["name"]}\n"
           print "*************************************************\n"
           # add the entry to the database
-          c = Company.where(:name => row["Name"]).first_or_create!(
+          c = Company.where(:name => row["name"]).first_or_create!(
             :name => row["name"],
             :location => row["location"],
             :founded_date => row["founded_date"],

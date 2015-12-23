@@ -16,14 +16,10 @@ ActiveAdmin.register_page "Dashboard" do
        column do
          panel "Export Database" do
            ul do
-             link_to("Export Companies", "admin/companies.csv")
-             print "***********************************************\n"
-             print " encoding: 'ISO-8859-1:UTF-8', \n"
-             print "#{ActiveAdmin.application.csv_options.except :encoding_options}\n"
-             print "***********************************************\n"
-             #Post.recent(5).map do |post|
-            #   li link_to(post.title, admin_post_path(post))
-            # end
+             link_to("Export Companies", "admin/companies/export_csv")
+           end
+           ul do
+             link_to("Import Companies", "admin/companies/upload_csv")
            end
          end
        end
