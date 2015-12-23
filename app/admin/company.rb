@@ -1,3 +1,5 @@
+load 'import_csv_to_company.rb'
+
 ActiveAdmin.register Company do
 
 # See permitted parameters documentation:
@@ -6,6 +8,35 @@ ActiveAdmin.register Company do
 permit_params :name, :location, :founded_date, :category, :business_model, :target_client, :description, :main_url, 
   :twitter_url, :angellist_url, :crunchbase_url, :employee_count, :all_tags, 
   :category_id, :business_model_id, :target_client_id
+
+  action_item :only => :index do
+    link_to 'Upload CSV', :action => 'upload_csv'
+  end
+  
+  action_item :only => :index do
+    link_to 'Download CSV', :action => 'export_csv'
+  end
+  
+  collection_action :upload_csv do
+    render "admin/csv/upload_csv"
+  end
+  
+  collection_action :import_csv, :method => :post do
+    ImportCSVtoCompany.import(params[:dump][:file])
+    redirect_to :action => :index, :notice => "CSV imported successfully."
+  end
+  
+  collection_action :export_csv, :method => :get do
+    encoding = Encoding::ISO_8859_1.name
+    csv = CSV.generate( encoding: encoding) do |csv|
+      
+      ImportCSVtoCompany.export(csv)
+    end
+
+    send_data csv, 
+      type: "text/csv; charset=#{encoding}; header=present",
+      disposition: "attachment; filename=companies.csv"
+  end
 
 index do
 	column :name
@@ -30,7 +61,7 @@ form do |f|
     f.input :sub_category,  as: :select, collection: option_groups_from_collection_for_select(Category.all.order(:name), :sub_categories, :name, :id, :name), :required => true, :include_blank => false
     
     f.input :target_client, as: :select, collection: TargetClient.all, :required => true, :include_blank => false
-    f.input :business_model,as: :select,collection: BusinessModel.all, :required => true, :include_blank => false
+    f.input :business_model,as: :select, collection: BusinessModel.all, :required => true, :include_blank => false
     f.input :description,   :placeholder => "Makes great legal tech",  :required => true
     f.input :main_url,      :placeholder => "www.legaltech.com"
     f.input :twitter_url,   :placeholder => "@LegalTechInc"
@@ -43,23 +74,6 @@ form do |f|
     f.action :submit
     f.action :cancel
   end
-end
-
-csv do
-  column :name, :column_name => "name"
-  column :location
-  column :founded_date
-  column (:category)        { |company| company.category.name }
-  column (:sub_category)    { |company| company.sub_category.name }
-  column (:target_client)   { |company| company.target_client.name }
-  column (:business_model)  { |company| company.business_model.name }
-  column :description
-  column :main_url
-  column :twitter_url
-  column :angellist_url
-  column :crunchbase_url
-  column :employee_count
-  column :all_tags
 end
 
 # or

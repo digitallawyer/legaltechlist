@@ -16,7 +16,11 @@ ActiveAdmin.register_page "Dashboard" do
        column do
          panel "Export Database" do
            ul do
-             link_to("Export Companies", "companies.csv")
+             link_to("Export Companies", "admin/companies.csv")
+             print "***********************************************\n"
+             print " encoding: 'ISO-8859-1:UTF-8', \n"
+             print "#{ActiveAdmin.application.csv_options.except :encoding_options}\n"
+             print "***********************************************\n"
              #Post.recent(5).map do |post|
             #   li link_to(post.title, admin_post_path(post))
             # end
@@ -26,7 +30,7 @@ ActiveAdmin.register_page "Dashboard" do
 
        column do
          panel "Info" do
-           para "Welcome to ActiveAdmin."
+           para "Welcome to the administrator interface for the legal tech list database."
          end
        end
      end

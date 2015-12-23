@@ -3,6 +3,7 @@
 desc 'Import LTCs'
 
 require 'csv'
+
 namespace :csv do
 
 	task :import => :environment do
