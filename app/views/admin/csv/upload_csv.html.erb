@@ -1,0 +1,7 @@
+<%= form_for :dump, url: {action: "import_csv"}, html: { multipart: true } do |f| %>
+	Select a CSV File:
+		<%= f.file_field :file %>
+		
+		<%= f.submit "Upload" %>
+
+<%end%>
