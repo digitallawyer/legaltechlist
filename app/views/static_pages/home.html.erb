@@ -13,41 +13,51 @@
 
 <%= render 'nav' %>
 
-<div class="jumbotron" style="background-image: url('https://dl.dropboxusercontent.com/u/925640/bg.jpg'); background-size:cover;">
+<div class="jumbotron" style="background-color: #3B7AA3; background-size:cover;">
 <div class="container-fluid">
 	<div class="col-md-12">
 	<h1 class="" style="color:white; text-align:center;">Legal Technology List</h1>
-	<h3 class="" style="color:white;text-align:center;">A list of <span style="color:orange"><%= Company.count %></span> legal technology companies, curated by the Stanford Center for Legal Informatics.</h3>
+	<h3 class="" style="color:white;text-align:center;">A list of <%= Company.count %> legal technology companies, curated by the Stanford Center for Legal Informatics.</h3>
 <div class="col-md-3"></div>
 	<div class="col-md-6">
-<%= form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:20px;", method: :get do %>
-					<p>
-						<%= text_field_tag :query, params[:query], class: "form-control input-lg ", placeholder: "Search for legal technology companies" %>
-					<%= submit_tag "Search", name: nil, class: "btn btn-warning btn-lg" %>
-					</p>
-</div></div>
+		<%= form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:20px;", method: :get do %>
+			<p class="flex">
+				<%= text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for a company" %>
+				<%= submit_tag "Search", name: nil, class: "btn btn-warning btn-lg" %>
+			</p>
+		<% end %>
+		</div>
+	</div>
 </div>
 
 				
-				<% end %>
+		
 
 </div>
 
 <div class="container-fluid">
-	<div class="col-md-6">
-		<div class="panel panel-default lg-panel">
-		<div class="panel-body">
-			<h4>About</h4>
-			<p>#LegalTechList is a list of legal technology companies, curated by the Stanford Center for Legal Informatics.</p>
-			
-		</div>
-		</div>
-	</div>
-	<div class="col-md-6">
-		<div class="panel panel-default lg-panel">
-			<div class="panel-body">
-				<img src="images/codex-logo.jpg" style="max-width:100%">
+	<div class="flex">
+
+			<div class="panel panel-default lg-panel flex-panel">
+				<div class="panel-body">
+					<h5>Categories</h5>
+					<% Category.all.each do |category| %>
+						<%= link_to category.name, companies_path(:category => category)%></br>
+					<%end%>
+				</div>
 			</div>
-		</div>
+
+
+			<div class="panel panel-default lg-panel flex-panel">
+				<div class="panel-body">
+					<div class="tags-cloud glassy-bg">
+					 	<h5> Tag Cloud </h5>
+						<% tag_cloud Tag.counts, %w{css1 css2 css3 css4} do |tag, css_class| %>
+							<%= link_to tag.name, tag_path(tag.name), class: css_class %>
+						<%end%>
+					</div>
+				</div>
+			</div>
+
 	</div>
 </div>
