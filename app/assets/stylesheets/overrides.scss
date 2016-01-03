@@ -53,7 +53,10 @@ h1, h2, h3 {
 	margin: 0px 10px;
 }
 
-
+.nopadding {
+   padding: 0 !important;
+   margin: 0 !important;
+}
 
 .flex {
 	display: flex;
@@ -63,4 +66,38 @@ h1, h2, h3 {
 
 table.borderless tbody tr td {
 	border: none;
+}
+
+iframe {
+  width: 100%;
+}
+
+.aspect-ratio {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 51%;
+}
+
+.aspect-ratio iframe {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0; top: 0;
+}
+
+.formtastic .stringish input {
+  width:100% !important;
+}
+
+.formtastic .text textarea {
+  width:100% !important;
+}
+
+.formtastic select {
+  width:100% !important;
+}
+
+.formtastic legend {
+  font-size: initial !important;
 }
