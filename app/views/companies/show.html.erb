@@ -6,11 +6,12 @@
 
 <!-- Middle Container that has Picture, Funding Info, Basic Company Info, including location, 
 brief description, Founding Date, Categories, Website-->
-  <div class="col-md-12 nopadding">
+  <div class="col-md-9 nopadding">
     <span>
       <p>
         <a href="/companies">Companies</a>
         <span> › <%= @company.name %></span>
+        <%= link_to 'Suggest Update', edit_company_path(@company), {:style=>"float:right;"} %>
       </p>
       
   </div>
@@ -20,13 +21,13 @@ brief description, Founding Date, Categories, Website-->
     <div class="panel panel-default lg-panel">
     <div class="panel-body">
     <h1><%= @company.name %></h1>
-
     <p><%= @company.description %></p>
     <span class="text-muted">
       <span><i class="fa fa-globe" style="margin-right:6px;"></i><a href="<%=@company.main_url%>" style="margin-right:16px;"><%=@company.main_url %></a></span>
     
       <span><i class="fa fa-map-marker" style="margin-right:6px;"></i><span style="margin-right:16px;"><%=@company.location %></span></span>
       <span><i class="fa fa-tags" style="margin-right:6px;"></i><%= raw tag_links(@company.all_tags)%></span>
+
     </span>
 
     <hr>
@@ -71,6 +72,9 @@ brief description, Founding Date, Categories, Website-->
           <td>Crunchbase</td>
           <td><a href="<%= @company.crunchbase_url %>"><%= @company.crunchbase_url %></a></td>
         </tr>
+
+
+              
       </tbody>
     </table>
     <hr>

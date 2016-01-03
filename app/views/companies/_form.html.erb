@@ -3,17 +3,19 @@
 
 	<%= semantic_fields_for @contact do |c|%>
 		<%= c.inputs "Contact Info" do %>
+			<br>
 			<div class="form-group">
-			<%= c.input :name, :placeholder => "Your Name" %>
+			<%= c.input :name, :placeholder => "Your Name", :label => "Your Name" %>
 			</div>
 			<div class="form-group">
-			<%= c.input :email, :placeholder => "you@youremail.com" %>
+			<%= c.input :email, :placeholder => "you@youremail.com", :label => "Your Email Address" %>
 			</div>
 		<%end%>
 	<%end%>
 
 	<%= f.inputs "Company Info" do %>
-		<%= f.input :name, :placeholder => "LegalTech, Inc.",  :required => true%>
+		<br>
+		<%= f.input :name, :placeholder => "LegalTech, Inc.", :label => "Name",  :required => true%>
 		<%= f.input :location,      :placeholder => "Palo Alto, CA",           :required => true %>
 		<%= f.input :founded_date,  :placeholder => "2015",                    :required => true%>
 		<%= f.input :category, as: :select,  collection: Category.all.order(:name), :required => true, :include_blank => false %>
@@ -30,7 +32,7 @@
 	<%end%>
 	
 	<%= f.actions do %>
-		<%= f.action :submit %>
-		<%= f.action :cancel %>
+		<%= f.action :submit, :label => "Update", :button_html => { :class => "btn btn-success-outline" } %>
+		<%= f.action :cancel, :label => "Cancel", :button_html => { :class => "btn btn-info-outline" } %>
 	<%end%>
 <%end%>
