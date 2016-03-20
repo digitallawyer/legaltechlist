@@ -14,13 +14,17 @@
     <!-- Collect the nav links, forms, and other content for toggling -->
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav navbar-nav">
-        <%= form_tag companies_path, :class => "navbar-form navbar-left", :role => "search", method: :get do %>
-          <div class="form-group">
-            <%= text_field_tag :query, params[:query], :class => "form-control" %>
-            <%= submit_tag "Search", name: nil, class: "btn btn-success-outline" %>
-          </div>
+        <% if controller.controller_name != "static_pages" -%>
+          <%= form_tag companies_path, :class => "navbar-form navbar-left", :role => "search", method: :get do %>
+            <div class="form-group">
+              <%= text_field_tag :query, params[:query], :class => "form-control" %>
+              <%= submit_tag "Search", name: nil, class: "btn btn-warning" %>
+            </div>
+          <% end %>
         <% end %>
-        <li><a href="/companies">Companies</a></li>
+        <li><a href="/companies">List</a></li>
+        <li><a href="/Map">Map</a></li>
+        <li><a href="/About">About</a></li>
     <!-- <form class="navbar-form navbar-left" role="search">
         <div class="form-group">
           <input type="text" class="form-control" placeholder="Search">

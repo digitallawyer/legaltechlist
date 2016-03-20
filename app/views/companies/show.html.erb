@@ -6,7 +6,7 @@
 
 <!-- Middle Container that has Picture, Funding Info, Basic Company Info, including location, 
 brief description, Founding Date, Categories, Website-->
-  <div class="col-md-9 nopadding">
+  <div class="col-md-9 breadcrumb">
     <span>
       <p>
         <a href="/companies">Companies</a>
@@ -56,11 +56,6 @@ brief description, Founding Date, Categories, Website-->
           <td><%= @company.founded_date %></td>
         </tr>
         <tr>
-          <td>Number of Employees</td>
-          <td><%= @company.employee_count %></td>
-        </tr>
-
-        <tr>
           <td>Twitter</td>
           <td><a href="<%= @company.twitter_url %>"><%= @company.twitter_url %></a></td>
         </tr>
@@ -81,6 +76,8 @@ brief description, Founding Date, Categories, Website-->
     <div class="aspect-ratio">
       <iframe src="<%= @company.main_url %>"></iframe>
     </div>
+    <!-- Another approach to display the page is to use a screenshot tool like pagepeeker -->
+    <!-- <img src="http://free.pagepeeker.com/v2/thumbs.php?size=x&url=<%=@company.main_url %>" style="width:500px;"></a> -->
 
 
 
