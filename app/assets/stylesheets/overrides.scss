@@ -10,27 +10,14 @@ body {
 h1, h2, h3 {
 	font-weight: 300 !important; 
 }
+.navbar-default {
+    background-color: white !important;
+    border-color: #E7E7E7;
+}
 
 // Typography
 
-.navbar {
-	margin-bottom: 0px !important;
-}
-.navbar-default {
-	background-color: #1a1a1a !important;
-}
 
-.navbar-brand {
-	color: white !important;
-}
-
-.navbar-nav > li > a {
-	color: white !important;
-}
-
-.jumbotron {
-	padding: 100px 0px  !important;
-}
 
 // Card Component
 
@@ -57,8 +44,8 @@ h1, h2, h3 {
 	margin: 0px 10px;
 }
 
-.nopadding {
-   padding: 0 !important;
+.breadcrumb {
+   padding: 10px 0px !important;
    margin: 0 !important;
 }
 
