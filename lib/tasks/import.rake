@@ -7,24 +7,49 @@ require 'csv'
 namespace :csv do
 
 	task :import => :environment do
-		CSV.foreach("#{Rails.root}/lib/ltc.csv", :headers => true, :encoding => 'ISO-8859-1:UTF-8') do |row|
+		CSV.foreach("#{Rails.root}/lib/ltcv6.csv", :headers => true, :encoding => 'ISO-8859-1:UTF-8') do |row|
       row.to_hash
       #row["category"] = Category.where(:name => row["category"]).first_or_create!
       #Company.create(row)
 
       # clean up data to ensure validation on import
-      count = row["employee_count"]
-      if count.nil?
-        count = 1
-      elsif count < 1
-        count = 1
+      # Removing employee count for now
+      # count = row["employee_count"].to_i
+      # if count.nil?
+      #   count = 1
+      # elsif count < 1
+      #   count = 1
+      # end
+      
+      # Add placeholder when no location is present
+      if row["location"].nil? || row["location"] == ""
+        row["location"] = "No location yet"
       end
       
+      # Add placeholder when no category is present
+      if row["category"].nil? || row["category"] == ""
+        row["category"] = "Unknown"
+      end
+
+      # Add placeholder when no founded_date is present
+      if row["founded_date"].nil? || row["founded_date"] == ""
+        row["founded_date"] = "0000"
+      end
+
+      if row["description"].nil? || row["description"] == ""
+        row["description"] = "No description yet"
+      end
+
+
+      if row["business_model"].nil? || row["business_model"] == ""
+        row["business_model"] = "Unknown"
+      end
+
       if row["business_model"].nil? || row["business_model"] == ""
         row["business_model"] = "Unknown"
       end
       
-      if row["all_tags"].nil?
+      if row["all_tags"].nil? || row["all_tags"] == ""
         row["all_tags"] = ""
       end
 
@@ -61,7 +86,6 @@ namespace :csv do
         :twitter_url => row["twitter_url"],
         :angellist_url => row["angellist_url"],
         :crunchbase_url => row["crunchbase_url"],
-        :employee_count => count,
         :business_model => biz,
         :target_client => trg,
         :all_tags => row["all_tags"]
