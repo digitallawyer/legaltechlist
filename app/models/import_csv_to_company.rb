@@ -13,20 +13,12 @@ class ImportCSVtoCompany
         
         if row["name"]!=""
           # clean up data to ensure validation on import
-          count = row["employee_count"]
-          if count.nil?
-            count = 1
-          elsif count.to_i < 1
-            count = 1
-          end
+
       
           if row["business_model"].nil? || row["business_model"] == ""
             row["business_model"] = "Unknown"
           end
-      
-          if row["all_tags"].nil?
-            row["all_tags"] = ""
-          end
+
 
           if row["target_client"].nil? || row["target_client"] == ""
             row["target_client"] = "Unknown"
@@ -64,7 +56,6 @@ class ImportCSVtoCompany
             :twitter_url => row["twitter_url"],
             :angellist_url => row["angellist_url"],
             :crunchbase_url => row["crunchbase_url"],
-            :employee_count => count,
             :business_model => biz,
             :target_client => trg,
             :all_tags => row["all_tags"]
@@ -86,7 +77,6 @@ class ImportCSVtoCompany
         "twitter_url",
         "angellist_url",
         "crunchbase_url",
-        "employee_count",
         "business_model",
         "target_client",
         "all_tags"
@@ -111,7 +101,6 @@ class ImportCSVtoCompany
           company.twitter_url, 
           company.angellist_url, 
           company.crunchbase_url, 
-          company.employee_count,
           company.business_model.name,
           company.target_client.name,
           company.all_tags
