@@ -6,7 +6,7 @@ ActiveAdmin.register Company do
 # https://github.com/activeadmin/activeadmin/blob/master/docs/2-resource-customization.md#setting-up-strong-parameters
 
 permit_params :name, :location, :founded_date, :category, :business_model, :target_client, :description, :main_url, 
-  :twitter_url, :angellist_url, :crunchbase_url, :employee_count, :all_tags, 
+  :twitter_url, :angellist_url, :crunchbase_url, :all_tags, 
   :category_id, :business_model_id, :target_client_id
 
   action_item :only => :index do
@@ -67,7 +67,6 @@ form do |f|
     f.input :twitter_url,   :placeholder => "@LegalTechInc"
     f.input :angellist_url, :placeholder => "www.angellist.com/legaltech"
     f.input :crunchbase_url,:placeholder => "www.crunchbase.com/legaltech"
-    f.input :employee_count,:placeholder => "1"
     f.input :all_tags,      :placeholder => "All relevant tags separated by commas"
   end
   f.actions do
