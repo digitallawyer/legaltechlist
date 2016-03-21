@@ -7,7 +7,7 @@ ActiveAdmin.register Company do
 
 permit_params :name, :location, :founded_date, :category, :business_model, :target_client, :description, :main_url, 
   :twitter_url, :angellist_url, :crunchbase_url, :all_tags, 
-  :category_id, :business_model_id, :target_client_id
+  :category_id, :business_model_id, :target_client_id, :latitute, :longitude
 
   action_item :only => :index do
     link_to 'Upload CSV', :action => 'upload_csv'
