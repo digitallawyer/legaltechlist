@@ -24,7 +24,7 @@ class CompaniesController < ApplicationController
   end
 
   def map
-    @companies = Company.text_search(params[:query]) 
+    @companies = Company.all
     @hash = Gmaps4rails.build_markers(@companies) do |company, marker|
       marker.lat company.latitude
       marker.lng company.longitude
