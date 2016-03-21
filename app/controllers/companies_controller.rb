@@ -19,6 +19,18 @@ class CompaniesController < ApplicationController
     else
       @companies = Company.text_search(params[:query]) 
     end
+
+
+  end
+
+  def map
+    @companies = Company.text_search(params[:query]) 
+    @hash = Gmaps4rails.build_markers(@companies) do |company, marker|
+      marker.lat company.latitude
+      marker.lng company.longitude
+      marker.infowindow company.description
+      marker.json({ title: company.name })
+    end
   end
   
   # GET /companies/1

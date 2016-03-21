@@ -22,6 +22,11 @@ class Company < ActiveRecord::Base
   validates :business_model, presence: true
   validates :target_client, presence: true
   validates :description, presence: true, length: {minimum: 5}
+
+  #geocoding
+
+  geocoded_by :location
+  after_validation :geocode, :if => :location_changed?
   
 	include PgSearch
 	pg_search_scope :search,
