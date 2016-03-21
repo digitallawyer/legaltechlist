@@ -6,7 +6,39 @@
 <div class="container-fluid">
 	<p id="notice"><%= notice %></p>
  	
-	<div class="col-md-9 nopadding">
+	
+	<div class="col-md-3">
+			<div class="panel panel-default lg-panel">
+		  		<div class="panel-body">
+
+					<h5> <%= link_to "Submit a New Company", new_company_path %> </h4>
+					<br>
+					<h5>Categories</h5>
+							<% Category.all.each do |category| %>
+								<%= link_to category.name, companies_path(:category => category)%></br>
+							<%end%>
+					 <div class="tags-cloud glassy-bg">
+						 <h5> Tag Cloud </h5>
+						 <% tag_cloud Tag.counts, %w{css1} do |tag, css_class| %>
+						 <%= link_to tag.name, tag_path(tag.name), class: css_class %></br>
+						 <%end%>
+					 </div>
+					 <div class="panel_body">
+						   <h5>Business Type</h5>
+							<% BusinessModel.all.each do |biz| %>
+								<%= link_to biz.name, companies_path(:business_model => biz)%></br>
+							<%end%>
+					</div>
+					<div class="panel_body">
+						   <h5>Target Audience</h5>
+							<% TargetClient.all.each do |targ| %>
+								<%= link_to targ.name, companies_path(:target_client => targ)%></br>
+							<%end%>
+			 		</div>
+				</div>
+		  	</div>
+		</div>
+<div class="col-md-9 nopadding">
 	  <div class="panel panel-default lg-panel">
 		<div class="panel-body">
 			<h4>Companies</h4> 
@@ -37,37 +69,6 @@
 		  </div>
 	  </div>
 	</div>
-	<div class="col-md-3">
-			<div class="panel panel-default lg-panel">
-		  		<div class="panel-body">
-
-					<h5> <%= link_to "Submit a New Company", new_company_path %> </h4>
-					<br>
-					<h5>Categories</h5>
-							<% Category.all.each do |category| %>
-								<%= link_to category.name, companies_path(:category => category)%></br>
-							<%end%>
-					 <div class="tags-cloud glassy-bg">
-						 <h5> Tag Cloud </h5>
-						 <% tag_cloud Tag.counts, %w{css1 css2 css3 css4} do |tag, css_class| %>
-						 <%= link_to tag.name, tag_path(tag.name), class: css_class %>
-						 <%end%>
-					 </div>
-					 <div class="panel_body">
-						   <h5>Business Type</h5>
-							<% BusinessModel.all.each do |biz| %>
-								<%= link_to biz.name, companies_path(:business_model => biz)%></br>
-							<%end%>
-					</div>
-					<div class="panel_body">
-						   <h5>Target Audience</h5>
-							<% TargetClient.all.each do |targ| %>
-								<%= link_to targ.name, companies_path(:target_client => targ)%></br>
-							<%end%>
-			 		</div>
-				</div>
-		  	</div>
-		</div>
 </div>
 
 <script type="text/javascript">

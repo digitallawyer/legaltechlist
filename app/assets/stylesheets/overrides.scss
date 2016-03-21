@@ -42,6 +42,9 @@ h1, h2, h3 {
 .panel.panel-default.lg-panel.flex-panel {
 	flex: 1;
 	margin: 0px 10px;
+	margin:5px 10px 5px 0px;	
+	min-width: 22.5%;
+	padding: 20px;
 }
 
 .breadcrumb {
@@ -51,6 +54,7 @@ h1, h2, h3 {
 
 .flex {
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: space-between;
 
 }

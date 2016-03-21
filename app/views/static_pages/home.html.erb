@@ -36,22 +36,23 @@
 </div>
 
 <div class="container-fluid">
-	<div class="flex">
-
-			<div class="panel panel-default lg-panel flex-panel">
-				<div class="panel-body">
-					<h5>Categories</h5>
+	<div>
+		<p> By Category</p>
+			<div class=" flex">
 					<% Category.all.each do |category| %>
+					<div class="panel lg-panel panel-default panel-body flex-panel">
+
 						<%= link_to category.name, companies_path(:category => category)%></br>
+
+					</div>
+
 					<%end%>
-				</div>
 			</div>
-
-
+<br>
+<p> By Tag</p>
 			<div class="panel panel-default lg-panel flex-panel">
 				<div class="panel-body">
 					<div class="tags-cloud glassy-bg">
-					 	<h5> Tag Cloud </h5>
 						<% tag_cloud Tag.counts, %w{css1 css2 css3 css4} do |tag, css_class| %>
 							<%= link_to tag.name, tag_path(tag.name), class: css_class %>
 						<%end%>
