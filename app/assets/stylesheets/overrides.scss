@@ -28,23 +28,27 @@ h1, h2, h3 {
 	-o-box-shadow: 0px 0px 12px -5px;
 }
 
-.panel.panel-default.lg-panel {
-	border-radius: 0px;
-	border: none;
+.category-card {
+	flex: 1;
+	margin: 0px 10px;
+	margin:5px 10px 5px 0px;	
+	min-width: 32.5%;
+	min-height: 200px;
 	margin-bottom: 6px;
 	box-shadow: 0px 0px 12px -5px;
 	-webkit-box-shadow: 0px 0px 12px -5px;
 	-moz-box-shadow: 0px 0px 12px -5px;
 	-o-box-shadow: 0px 0px 12px -5px;
-
 }
 
-.panel.panel-default.lg-panel.flex-panel {
-	flex: 1;
-	margin: 0px 10px;
-	margin:5px 10px 5px 0px;	
-	min-width: 22.5%;
+.category-title {
+	background-color: white;
 	padding: 20px;
+	margin-top: 140px;
+	a {
+		color: black;
+		font-size: 15px;
+	}
 }
 
 .breadcrumb {
@@ -127,4 +131,30 @@ iframe {
   width: 100%;
   height: 100%;
   left: 0; top: 0;
+}
+.algolia-autocomplete {
+  width: 100%;
+}
+.algolia-autocomplete .aa-input, .algolia-autocomplete .aa-hint {
+  width: 100%;
+}
+.algolia-autocomplete .aa-hint {
+  color: #999;
+}
+.algolia-autocomplete .aa-dropdown-menu {
+  width: 100%;
+  background-color: #fff;
+  border: 1px solid #999;
+  border-top: none;
+}
+.algolia-autocomplete .aa-dropdown-menu .aa-suggestion {
+  cursor: pointer;
+  padding: 5px 4px;
+}
+.algolia-autocomplete .aa-dropdown-menu .aa-suggestion.aa-cursor {
+  background-color: #B2D7FF;
+}
+.algolia-autocomplete .aa-dropdown-menu .aa-suggestion em {
+  font-weight: bold;
+  font-style: normal;
 }

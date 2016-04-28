@@ -8,48 +8,70 @@
 	<link href="http://fonts.googleapis.com/css?family=Ubuntu:bold" rel="stylesheet" type="text/css">
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 	<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+	<script src="//cdn.jsdelivr.net/algoliasearch/3/algoliasearch.min.js"></script>
+	<script src="//cdn.jsdelivr.net/autocomplete.js/0/autocomplete.min.js"></script>
+	<script>
+	  var client = algoliasearch("J68ON5MQ9M", "f9217ccdd8e1925a1823e00377e86235")
+	  var index = client.initIndex('test_LRSLIST');
+	  autocomplete('#search-input', {hint: false}, [
+	    {
+	      source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+	      displayKey: 'my_attribute',
+	      templates: {
+	        suggestion: function(suggestion) {
+	          return suggestion._highlightResult.my_attribute.value;
+	        }
+	      }
+	    }
+	  ]).on('autocomplete:selected', function(event, suggestion, dataset) {
+	    console.log(suggestion, dataset);
+	  });
+	</script>
 </head>
 
 
 <%= render 'nav' %>
 
-<div class="jumbotron" style="background-color: #3B7AA3; background-size:cover; background-image:url(/images/bg.jpg)">
+<div class="jumbotron" style="background-color: #3B7AA3; background-size:cover; background-image:url(/images/bg.jpg); min-height: 420px;">
 <div class="container-fluid">
 	<div class="col-md-12">
-	<h1 class="" style="color:white; text-align:center;">Discover Legal Technology</h1>
-	<h3 class="" style="color:white;text-align:center;">Browse and explore a list of <%= Company.count %> companies changing the way legal is done.</h3>
+	<h1 class="" style="color:white; text-align:center; padding-top: 20px;">Discover Legal Technology</h1>
+	<h3 class="" style="color:white;text-align:center;">Explore a curated list of <%= Company.count %> companies changing the way legal is done.</h3>
 <div class="col-md-3"></div>
 	<div class="col-md-6">
 		<%= form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:40px;", method: :get do %>
 			<p class="flex">
-				<%= text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for a company" %>
+				<%= text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for a company", id: "search-input" %>
 				<%= submit_tag "Search", name: nil, class: "btn btn-warning btn-lg" %>
 			</p>
 		<% end %>
 		</div>
 	</div>
 </div>
-
-				
-		
-
 </div>
 
 <div class="container-fluid">
 	<div>
-		<p> By Category</p>
-			<div class=" flex">
-					<% Category.all.each do |category| %>
-					<div class="panel lg-panel panel-default panel-body flex-panel">
-
-						<%= link_to category.name, companies_path(:category => category)%></br>
-
+		<h5> Browse by Category</h5>
+			<div class="flex">
+				<% Category.all.each do |category| %>
+					<div class="category-card" style="background-image:url(<%= '/images/category-'+ category.id.to_s + '.jpg' %>); background-size: cover;"> 
+						<div class="category-title" style="background-color: white;">
+							<%= link_to category.name, companies_path(:category => category)%>
+						</div>
+						  <script type="text/javascript">
+							  $(".category-card").click(function() {
+								window.location = $(this).find("a").attr("href"); 
+								return false;
+							  });
+						  </script>
 					</div>
+					</a>
 
-					<%end%>
+				<%end%>
 			</div>
 <br>
-<p> By Tag</p>
+<p> Browse by Tag</p>
 			<div class="panel panel-default lg-panel flex-panel">
 				<div class="panel-body">
 					<div class="tags-cloud glassy-bg">
