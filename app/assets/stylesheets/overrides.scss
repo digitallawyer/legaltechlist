@@ -1,8 +1,10 @@
 // Body
 
 body {
-	background-color: #f7f7f7 !important;
+	background-color: #f2efea !important;
 	padding-top: 50px; 
+	font-family: proxima-nova, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
 }
 
 // Navigation
@@ -10,14 +12,6 @@ body {
 h1, h2, h3 {
 	font-weight: 300 !important; 
 }
-.navbar-default {
-    background-color: white !important;
-    border-color: #E7E7E7;
-}
-
-// Typography
-
-
 
 // Card Component
 
@@ -32,8 +26,8 @@ h1, h2, h3 {
 	flex: 1;
 	margin: 0px 10px;
 	margin:5px 10px 5px 0px;	
-	min-width: 32.5%;
-	min-height: 200px;
+	min-width: 340px;
+	min-height: 180px;
 	margin-bottom: 6px;
 	box-shadow: 0px 0px 12px -5px;
 	-webkit-box-shadow: 0px 0px 12px -5px;
@@ -41,14 +35,15 @@ h1, h2, h3 {
 	-o-box-shadow: 0px 0px 12px -5px;
 }
 
-.category-title {
-	background-color: white;
-	padding: 20px;
-	margin-top: 140px;
-	a {
-		color: black;
-		font-size: 15px;
-	}
+p.category-title {
+	
+		color: white;
+		text-align: center;
+		font-size: 22px;
+		font-weight: 600;
+		height: 180px;
+		line-height: 180px;
+	
 }
 
 .breadcrumb {
@@ -157,4 +152,36 @@ iframe {
 .algolia-autocomplete .aa-dropdown-menu .aa-suggestion em {
   font-weight: bold;
   font-style: normal;
+}
+
+.category-background-1 {
+	background-color: #16a0d6;
+}
+
+.category-background-2 {
+	background-color: #b30000;
+}
+
+.category-background-3 {
+	background-color: #e89c2e;
+}
+
+.category-background-4 {
+	background-color: #82A27E;
+}
+
+.category-background-5 {
+	background-color: #8bb314;
+}
+
+.category-background-6 {
+	background-color: #e8be2e;
+}
+
+.category-background-7 {
+	background-color: #16a0d6;
+}
+
+.category-background-8 {
+	background-color: #b30000;
 }
