@@ -32,11 +32,11 @@
 
 <%= render 'nav' %>
 
-<div class="jumbotron" style="background-color: #3B7AA3; background-size:cover; background-image:url(/images/bg.jpg); min-height: 420px;">
+<div class="jumbotron" style="background-color: #3B7AA3; background-size:cover; background-image:url(/images/bg.jpg); min-height: 460px;">
 <div class="container-fluid">
 	<div class="col-md-12">
-	<h1 class="" style="color:white; text-align:center; padding-top: 20px;">Discover Legal Technology</h1>
-	<h3 class="" style="color:white;text-align:center;">Explore a curated list of <%= Company.count %> companies changing the way legal is done.</h3>
+	<h1 class="" style="color:white; text-align:center; padding-top: 40px; font-weight: 500 !important">Discover Legal Technology</h1>
+	<h3 class="" style="color:white;text-align:center; font-size: 25px;">Explore a curated list of <%= Company.count %> companies changing the way legal is done.</h3>
 <div class="col-md-3"></div>
 	<div class="col-md-6">
 		<%= form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:40px;", method: :get do %>
@@ -52,26 +52,20 @@
 
 <div class="container-fluid">
 	<div>
-		<h5> Browse by Category</h5>
+		<h4> Browse by Category</h4>
 			<div class="flex">
 				<% Category.all.each do |category| %>
-					<div class="category-card" style="background-image:url(<%= '/images/category-'+ category.id.to_s + '.jpg' %>); background-size: cover;"> 
-						<div class="category-title" style="background-color: white;">
-							<%= link_to category.name, companies_path(:category => category)%>
-						</div>
-						  <script type="text/javascript">
-							  $(".category-card").click(function() {
-								window.location = $(this).find("a").attr("href"); 
-								return false;
-							  });
-						  </script>
-					</div>
+					<a class="category-card <%= 'category-background-'+ category.id.to_s %>" href="/companies?category=<%= category.id %>" > 
+						<p class="category-title" style="">
+							<%= category.name %>
+						</p>
+
 					</a>
 
 				<%end%>
 			</div>
 <br>
-<p> Browse by Tag</p>
+	<h4> Browse by Tag</h4>
 			<div class="panel panel-default lg-panel flex-panel">
 				<div class="panel-body">
 					<div class="tags-cloud glassy-bg">
