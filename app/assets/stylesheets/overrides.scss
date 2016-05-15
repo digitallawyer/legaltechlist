@@ -13,6 +13,24 @@ h1, h2, h3 {
 	font-weight: 300 !important; 
 }
 
+// Formtastic overrides
+
+.formtastic .stringish input {
+  width:100% !important;
+}
+
+.formtastic .text textarea {
+  width:100% !important;
+}
+
+.formtastic select {
+  width:100% !important;
+}
+
+.formtastic legend {
+  font-size: initial !important;
+}
+
 // Card Component
 
 .lg-box-shadow__teasers {
@@ -65,41 +83,11 @@ p.category-title {
 	margin-right: 2px;
 }
 
-
-.formtastic .stringish input {
-  width:100% !important;
-}
-
-.formtastic .text textarea {
-  width:100% !important;
-}
-
-.formtastic select {
-  width:100% !important;
-}
-
-.formtastic legend {
-  font-size: initial !important;
-}
-
 .label {
 	color:#333 !important;
 	width: 100% !important;
 	padding-left: 0px !important;
 	text-align: left !important;
-}
-
-.formtastic .actions {
-	padding-left: 0px !important;
-}
-
-.formtastic .actions .btn {
-	padding: 6px !important;
-}
-
-
-.formtastic .inline-errors {
-	margin-left: 0px !important;
 }
 
 // Table
@@ -108,51 +96,7 @@ table.borderless tbody tr td {
 	border: none;
 }
 
-// Iframe
-
-iframe {
-  width: 100%;
-}
-
-.aspect-ratio {
-  position: relative;
-  width: 100%;
-  height: 0;
-  padding-bottom: 51%;
-}
-
-.aspect-ratio iframe {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  left: 0; top: 0;
-}
-.algolia-autocomplete {
-  width: 100%;
-}
-.algolia-autocomplete .aa-input, .algolia-autocomplete .aa-hint {
-  width: 100%;
-}
-.algolia-autocomplete .aa-hint {
-  color: #999;
-}
-.algolia-autocomplete .aa-dropdown-menu {
-  width: 100%;
-  background-color: #fff;
-  border: 1px solid #999;
-  border-top: none;
-}
-.algolia-autocomplete .aa-dropdown-menu .aa-suggestion {
-  cursor: pointer;
-  padding: 5px 4px;
-}
-.algolia-autocomplete .aa-dropdown-menu .aa-suggestion.aa-cursor {
-  background-color: #B2D7FF;
-}
-.algolia-autocomplete .aa-dropdown-menu .aa-suggestion em {
-  font-weight: bold;
-  font-style: normal;
-}
+// Category Backgrounds
 
 .category-background-1 {
 	background-color: #16a0d6;
