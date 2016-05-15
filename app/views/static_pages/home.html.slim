@@ -1,0 +1,28 @@
+= render 'nav'
+.jumbotron style=("background-color: #3B7AA3; background-size:cover; background-image:url(/images/bg.jpg); min-height: 460px;") 
+  .container-fluid
+    .col-md-12
+      h1 style=("color:white; text-align:center; padding-top: 40px; font-weight: 500 !important")  Discover Legal Technology
+      h3 style=("color:white;text-align:center; font-size: 25px;") 
+        | Explore a curated list of #{Company.count} companies changing the way legal is done.
+      .col-md-3
+      .col-md-6
+        = form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:40px;", method: :get do
+          p.flex
+            = text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for a company", id: "search-input"
+            = submit_tag "Search", name: nil, class: "btn btn-warning btn-lg"
+.container-fluid
+  div
+    h4 Browse by Category
+    .flex
+      - Category.all.each do |category|
+        a class=("category-card #{'category-background-'+ category.id.to_s}") href="/companies?category=#{category.id}" 
+          p.category-title style="" 
+            = category.name
+    br/
+    h4 Browse by Tag
+    .panel.panel-default.lg-panel.flex-panel
+      .panel-body
+        .tags-cloud.glassy-bg
+          - tag_cloud Tag.counts, %w{css1 css2 css3 css4} do |tag, css_class|
+            = link_to tag.name, tag_path(tag.name), class: css_class

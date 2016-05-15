@@ -1,0 +1,105 @@
+= render '/static_pages/nav'
+p#notice= notice
+.container-fluid
+  /!
+    | Middle Container that has Picture, Funding Info, Basic Company Info, including location,
+    | brief description, Founding Date, Categories, Website
+  .col-md-9.breadcrumb
+    span
+      p
+        a> href="/companies"  Companies
+        span
+          | › #{@company.name}
+        
+  .row
+    .col-md-9
+      .panel.panel-default.lg-panel
+        .panel-body
+          = link_to 'Suggest Update', edit_company_path(@company), class: "btn btn-default pull-right"
+          h1= @company.name
+          
+          p= @company.description
+          div class="btn-toolbar"
+
+
+            
+
+
+          hr/
+          p
+          table.table.borderless
+            tbody
+              col width="240"
+              col 
+              tr
+                td
+                  h4 Overview
+
+              tr
+                td.text-muted Category
+                td
+                  = Category.find(@company.category).name
+                  - if SubCategory.find(@company.sub_category).name != ""
+                    | \- #{SubCategory.find(@company.sub_category).name}
+              tr
+                td.text-muted Tags              
+                td
+                  span
+                    = raw tag_links(@company.all_tags)
+
+              tr
+                td.text-muted Headquarters
+                td
+                  = @company.location
+              tr
+                td.text-muted Target Market
+                td= TargetClient.find(@company.target_client).name
+              /tr
+                td.text-muted Business Model
+                td= BusinessModel.find(@company.business_model).name
+              tr
+                td.text-muted Founded
+                td= @company.founded_date
+              tr
+                td.text-muted Website
+                td
+                  a href="#{@company.main_url}" = @company.main_url
+              tr
+                td.text-muted Social
+                td
+                  div
+                    img style="margin-right:4px;" src="/images/twitter-logo.png" 
+                    a href="#{@company.twitter_url}" Twitter
+                  br
+                  div
+                    img  style="margin-right:4px;" src="/images/angellist-logo.png" 
+                    a href="#{@company.angellist_url}" Angellist
+                  br
+                  div
+                    img  style="margin-right:4px;" src="/images/crunchbase-logo.png" 
+                    a href="#{@company.crunchbase_url}" Crunchbase
+              
+          /! Another approach to display the page is to use a screenshot tool like pagepeeker
+          /! <img src="http://free.pagepeeker.com/v2/thumbs.php?size=x&url=<haml_loud>@company.main_url </haml_loud>" style="width:500px;"></a
+    .col-md-3
+      .panel.panel-default.lg-panel
+        .panel-body
+          .tags-cloud.glassy-bg
+            h4 Related companies
+            - related_company_list @company do |related_companies|
+              - related_companies.each do |related|
+                hr/
+                div
+                  h4
+                    a href="/companies/#{related.id}" = related.name
+                    |  
+                  p= related.description
+                  span.text-muted
+                    i.fa.fa-tags style="margin-right:6px;" 
+                    = raw tag_links(related.all_tags)
+                /! Makes entire e class a clickable link to the company page
+                javascript:
+                  | $(".e").click(function() {
+                            | window.location = $(this).find("a").attr("href");
+                            | return false;
+                            | });
