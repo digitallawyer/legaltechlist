@@ -9,15 +9,15 @@ class CompaniesController < ApplicationController
   def index
     # search by the appropriate method
     if params[:tag]
-      @companies = Company.tagged_with(params[:tag])
+      @companies = Company.tagged_with(params[:tag]).page(params[:page]).per(10)
     elsif params[:category]
-      @companies = Company.where(:category => params[:category])
+      @companies = Company.where(:category => params[:category]).page(params[:page]).per(10)
     elsif params[:business_model]
-      @companies = Company.where(:business_model => params[:business_model])
+      @companies = Company.where(:business_model => params[:business_model]).page(params[:page]).per(10)
     elsif params[:target_client]
-      @companies = Company.where(:target_client => params[:target_client])
+      @companies = Company.where(:target_client => params[:target_client]).page(params[:page]).per(10)
     else
-      @companies = Company.text_search(params[:query]) 
+      @companies = Company.text_search(params[:query]).page(params[:page]).per(10)
     end
 
 
