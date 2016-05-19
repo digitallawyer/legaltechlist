@@ -1,4 +1,5 @@
 = render '/static_pages/nav'
+
 .container-fluid
 	p#notice= notice
 	.col-md-3
@@ -9,9 +10,10 @@
 					= link_to category.name, companies_path(:category => category)
 					br
 				.tags-cloud.glassy-bg
-					h5 Tag Cloud
+					h5 Tags
 					- tag_cloud Tag.counts, %w{css1} do |tag, css_class|
 						= link_to tag.name, tag_path(tag.name), class: css_class
+						br
 						
 				.panel_body
 					h5 Business Type
@@ -35,12 +37,14 @@
 							a href="/companies/#{company.id}" = company.name
 							|  
 						p= company.description
-						span.text-muted
+						/span.text-muted
 							i.fa.fa-tags style="margin-right:6px;" 
 							= raw tag_links(company.all_tags)
 					/! Makes entire e class a clickable link to the company page
 					javascript:
 						| $(".e").click(function() {
-										| window.location = $(this).find("a").attr("href");
-										| return false;
-										| });
+							| window.location = $(this).find("a").attr("href");
+							| return false;
+							| });
+		div style="text-align:center;"
+			= paginate @companies
