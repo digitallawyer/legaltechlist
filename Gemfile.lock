@@ -235,6 +235,7 @@ DEPENDENCIES
   gmaps4rails
   jbuilder (~> 2.0)
   jquery-rails
+  kaminari
   pg
   pg_search
   rails (= 4.2.1)
