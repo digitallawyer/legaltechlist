@@ -43,6 +43,13 @@ gem 'pg_search'
 gem 'geocoder'
 gem 'gmaps4rails'
 
+#env variables
+gem "figaro"
+
+#mail
+gem 'sendgrid'
+
+
 
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
