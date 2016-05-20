@@ -14,13 +14,13 @@
 					= link_to category.name, companies_path(:category => category)
 					br
 
-				.panel_body
+				.panel_body.hidden-xs.hidden-sm	
 					h5 Target Audience
 					- TargetClient.all.each do |targ|
 						= link_to targ.name, companies_path(:target_client => targ)
 						br
 						
-				.tags-cloud
+				.tags-cloud.hidden-xs.hidden-sm	
 					h5 Tags
 					- tag_cloud Tag.counts.order("RANDOM()").limit(20), %w{css1} do |tag, css_class|
 						= link_to tag.name, tag_path(tag.name), class: css_class
@@ -30,7 +30,7 @@
 							|)
 						br
 
-				.panel_body
+				.panel_body.hidden-xs.hidden-sm	
 					h5 Business Type
 					- BusinessModel.all.each do |biz|
 						= link_to biz.name, companies_path(:business_model => biz)
