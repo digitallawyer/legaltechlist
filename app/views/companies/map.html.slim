@@ -1,0 +1,16 @@
+script src="//maps.google.com/maps/api/js?v=3.18&sensor=false&client=&key=&libraries=geometry&language=&hl=&region=" 
+script src="/javascript/googlemaps/js-marker-clusterer/markerclusterer_compiled.js" 
+script src="/javascript/googlemaps/infobox_packed.js" type="text/javascript" 
+/! only if you need custom infoboxes
+= render '/static_pages/nav'
+.container-fluid
+  .col-md-12.nopadding
+    div style=("width: 100%;") 
+      #map style=("width: 100%; height: 100vh;") 
+    javascript:
+      handler = Gmaps.build('Google');
+      handler.buildMap({ provider: {}, internal: {id: 'map'}}, function(){
+        markers = handler.addMarkers(#{raw @hash.to_json})
+        handler.bounds.extendWith(markers);
+        handler.fitMapToBounds();
+      });
