@@ -19,8 +19,8 @@ class Company < ActiveRecord::Base
   validates :location, presence: true, length: {minimum: 1}
   validates :founded_date, presence: true, format: {with: /\d\d\d\d/, message: "must be a 4-digit year."}
   validates :category, presence: true
-  validates :business_model, presence: true
-  validates :target_client, presence: true
+  # validates :business_model, presence: true
+  # validates :target_client, presence: true
   validates :description, presence: true, length: {minimum: 5}
 
   #geocoding
