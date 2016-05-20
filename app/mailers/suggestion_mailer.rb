@@ -1,5 +1,5 @@
 class SuggestionMailer < ApplicationMailer
-  default from: 'do_not_reply@legaltechlist'
+  default from: 'no-reply@codex.stanford.edu'
   
   #send a new company e-mail with the parameters passed in
   def newcompany_email(company, email, suggester_name)
