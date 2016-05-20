@@ -11,8 +11,8 @@
  * file per style scope.
  *
  *= require_self
- *= require overrides
  *= require bootstrap.min
+ *= require overrides
  *= require tags
  *= require formtastic
  */
