@@ -1,0 +1,44 @@
+= render '/static_pages/nav'
+
+.container style="margin-top: 20px;"
+
+  - if flash[:notice]
+    div class="alert alert-success"
+      = flash[:notice]
+
+  .col-md-12 
+    .panel.panel-default.lg-panel.box-shadow
+      .panel-body
+        h1 About tech.law.stanford.edu
+        p 
+          | tech.law.stanford.edu is a curated list of companies changing the way legal is done, hosted by CodeX, the Stanford Center for Legal Informatics. The database is intended as a resource for the legal technology community, and features data contributions from CodeX, Legal.io, Thomson Reuters and other stakeholders in the community.
+
+        p tech.law.stanford.edu was conceived in 2015 at Code = Law, a group created by CodeX Fellow Pieter Gunst. Between 2012 and 2015, Code = Law brought together Stanford Law students interested in the intersection of law and technology. In addition to increasing the familiarity of the participants with legal technology in general, the group also engaged in more hands-on exercises, including coding exercises covering html, css, javascript and modern web frameworks. One of these exercises was the design and development of the initial framework of tech.law.stanford.edu.
+
+        p 
+          | Interested in contributing?
+          =<> link_to 'Submit a legal technology company', new_company_path
+          | that is not included in the list, or have a look at the code on Github!
+
+        p
+          b Contributors
+        p
+          | Pieter Gunst - CodeX Fellow / Co-Founder of 
+          a< href="www.legal.io" Legal.io
+        p
+          |
+            Kevin Xu  - Code = Law Participant
+        p
+          | 
+            Sam Schroeder - Code = Law Participant
+        p
+          | 
+            Elizabeth Lowell - Code = Law Participant
+        p
+          | 
+            Mark Evans - CodeX Fellow 
+        p 
+          | David Curle - Thomson Reuters
+        p
+          |
+            Bob Ambrogi - Lawyer, media and technology professional
