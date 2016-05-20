@@ -69,8 +69,15 @@
 
 								tr
 									td.text-muted Website
-									td
-										a href="#{@company.main_url}" = @company.main_url
+									-if @company.main_url.present?
+										td
+											-if @company.main_url.include? "http"
+												a href="#{@company.main_url}" = @company.main_url
+											-else 
+												a href="http://#{@company.main_url}" = @company.main_url
+									-else
+										td 
+											.text-muted Unknown
 								tr
 									td.text-muted Social
 									td
