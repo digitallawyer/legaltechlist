@@ -28,10 +28,17 @@ a.navbar-brand {
 
 .formtastic .stringish input {
   width:100% !important;
+  padding: 10px;
 }
 
 .formtastic .text textarea {
   width:100% !important;
+  height: 120px;
+}
+
+.formtastic label {
+  width:0% !important;
+  color: black;
 }
 
 .formtastic select {
