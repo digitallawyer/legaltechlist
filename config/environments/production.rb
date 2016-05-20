@@ -31,8 +31,8 @@ Rails.application.configure do
   config.action_mailer.perform_deliveries = true
 
   ActionMailer::Base.smtp_settings = {
-  :user_name => ENV["SENDGRID_APP_ID"],
-  :password => ENV["SENDGRID_SECRET"],
+  :user_name => ENV["SENDGRID_APP_PROD"],
+  :password => ENV["SENDGRID_SECRET_PROD"],
   :domain => 'tech.law.stanford.edu',
   :address => 'smtp.sendgrid.net',
   :port => 587,
