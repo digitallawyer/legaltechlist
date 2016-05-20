@@ -56,7 +56,7 @@ form do |f|
     #f.input :sub_category,  as: :select,  :required => false
 
     f.input :category, as: :select,  collection: Category.all.order(:name), :required => true, :include_blank => false
-    f.input :sub_category,  as: :select, collection: option_groups_from_collection_for_select(Category.all.order(:name), :sub_categories, :name, :id, :name), :required => true, :include_blank => false
+    #f.input :sub_category,  as: :select, collection: option_groups_from_collection_for_select(Category.all.order(:name), :sub_categories, :name, :id, :name), :required => true, :include_blank => false
     
     f.input :target_client, as: :select, collection: TargetClient.all, :required => true, :include_blank => false
     f.input :business_model,as: :select, collection: BusinessModel.all, :required => true, :include_blank => false

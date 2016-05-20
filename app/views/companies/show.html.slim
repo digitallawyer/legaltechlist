@@ -56,7 +56,10 @@
 									td.text-muted Tags              
 									td
 										span
-											= raw tag_links(@company.all_tags)
+											- if @company.tags.count > 0
+												= raw tag_links(@company.all_tags)
+											- else 
+												.text-muted No tags yet
 								tr
 									td.text-muted Target Market
 									td= TargetClient.find(@company.target_client).name
@@ -92,25 +95,26 @@
 
 					/! Another approach to display the page is to use a screenshot tool like pagepeeker
 					/! <img src="http://free.pagepeeker.com/v2/thumbs.php?size=x&url=<haml_loud>@company.main_url </haml_loud>" style="width:500px;"></a
-		.col-md-12
-			.panel.panel-default.lg-panel.box-shadow
-				.panel-body
-					.tags-cloud.glassy-bg
-						h4 Related companies
-						- related_company_list @company do |related_companies|
-							- related_companies.each do |related|
-								hr/
-								div
-									h4
-										a href="/companies/#{related.id}" = related.name
-										|  
-									p= related.description
-									span.text-muted
-										i.fa.fa-tags style="margin-right:6px;" 
-										= raw tag_links(related.all_tags)
-								/! Makes entire e class a clickable link to the company page
-								javascript:
-									| $(".e").click(function() {
-														| window.location = $(this).find("a").attr("href");
-														| return false;
-														| });
+		- if @company.tags.count > 0
+			.col-md-12
+				.panel.panel-default.lg-panel.box-shadow
+					.panel-body
+						.tags-cloud.glassy-bg
+							h4 Related companies
+							- related_company_list @company do |related_companies|
+								- related_companies.each do |related|
+									hr/
+									div
+										h4
+											a href="/companies/#{related.id}" = related.name
+											|  
+										p= related.description
+										span.text-muted
+											i.fa.fa-tags style="margin-right:6px;" 
+											= raw tag_links(related.all_tags)
+									/! Makes entire e class a clickable link to the company page
+									javascript:
+										| $(".e").click(function() {
+															| window.location = $(this).find("a").attr("href");
+															| return false;
+															| });
