@@ -1,9 +1,13 @@
 = render '/static_pages/nav'
 
-.container-fluid
-	p#notice= notice
-	.col-md-3
-		.panel.panel-default.lg-panel
+.container-fluid style="margin-top: 20px;"
+
+	- if flash[:notice]
+	  div class="alert alert-success"
+		  = flash[:notice]
+
+	.col-md-3 
+		.panel.panel-default.lg-panel.box-shadow
 			.panel-body
 				h5 Categories
 				- Category.all.each do |category|
@@ -33,7 +37,7 @@
 
 
 	.col-md-9.nopadding
-		.panel.panel-default.lg-panel
+		.panel.panel-default.lg-panel.box-shadow
 			.panel-body
 				= link_to 'Submit a New Company', new_company_path, class: "btn btn-default pull-right"
 				h4 Companies
