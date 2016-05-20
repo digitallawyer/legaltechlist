@@ -5,9 +5,6 @@ Company Description: <%= @company.description %>
 Company Location: @company.location
     
 Category: <%= Category.find(@company.category).name %>
-<% if SubCategory.find(@company.sub_category).name != "" %>
-Sub Category: <%= SubCategory.find(@company.sub_category).name %>
-<%end%>
 Founded Date: <%= @company.founded_date %>
 Tags: <%= @company.all_tags%>
 
@@ -16,5 +13,3 @@ Employee count: <%= @company.employee_count %>
 Twitter url: <%= @company.twitter_url %>
 Angellist url: <%= @company.angellist_url %>
 Crunchbase url: <%= @company.crunchbase_url %>
-Target market: <%= TargetClient.find(@company.target_client).name %>
-Business model: <%= BusinessModel.find(@company.business_model).name %>
