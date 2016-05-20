@@ -1,11 +1,7 @@
-	
-<%= semantic_form_for @company do |f| %>
-
+	<%= semantic_form_for @company do |f| %>
 	<%= semantic_fields_for @contact do |c|%>
-
 		<%= c.inputs "Contact Info" do %>
 			<br>
-			
 			<div class="form-group">
 			<%= c.input :name, :placeholder => "Your Name", :label => "Your Name", class: "form-control" %>
 			</div>
