@@ -6,7 +6,7 @@ tech.law.stanford.edu was conceived in 2015 at Code = Law, a group created by Co
 
 Interested in contributing? Submit a legal technology company that is not included in the list, or have a look at the code on Github!
 
-Contributors
+*Contributors*
 
 Pieter Gunst - CodeX Fellow / Co-Founder of Legal.io
 
