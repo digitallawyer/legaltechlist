@@ -24,6 +24,22 @@ Rails.application.configure do
   # Apache or NGINX already handles this.
   config.serve_static_files = ENV['RAILS_SERVE_STATIC_FILES'].present?
 
+  # Default url options for ActiveAdmin
+  config.action_mailer.default_url_options = 'tech.law.stanford.edu'
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.perform_deliveries = true
+
+  ActionMailer::Base.smtp_settings = {
+  :user_name => ENV["SENDGRID_APP_ID"],
+  :password => ENV["SENDGRID_SECRET"],
+  :domain => 'tech.law.stanford.edu',
+  :address => 'smtp.sendgrid.net',
+  :port => 587,
+  :authentication => :plain,
+  :enable_starttls_auto => true
+  }
+
   # Compress JavaScripts and CSS.
   config.assets.js_compressor = :uglifier
   # config.assets.css_compressor = :sass
