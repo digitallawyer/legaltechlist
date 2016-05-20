@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   get 'target_clients/:target_client' => 'companies#index', as: :target_client
 
   get 'map', to: 'companies#map'
+  get 'about', to: 'static_pages#about'
   
  # get 'sub_category/:category' => 'sub_category#index', as: :category
     
