@@ -40,7 +40,7 @@
 									td.text-muted Category
 									td
 										=> Category.find(@company.category).name
-										- if SubCategory.find(@company.sub_category).name != ""
+										/- if SubCategory.find(@company.sub_category).name != ""
 											| - #{SubCategory.find(@company.sub_category).name}
 								
 								tr
