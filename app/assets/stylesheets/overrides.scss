@@ -13,6 +13,10 @@ h1, h2, h3 {
 	font-weight: 300 !important; 
 }
 
+a.navbar-brand {
+	color: white !important;
+}
+
 // Formtastic overrides
 
 .formtastic .stringish input {
@@ -33,6 +37,10 @@ h1, h2, h3 {
 
 // Card Component
 
+.panel-default {
+	border: 0px solid transparent;
+}
+
 .lg-box-shadow__teasers {
 	box-shadow: 0px 0px 12px -5px;
 	-webkit-box-shadow: 0px 0px 12px -5px;
@@ -51,6 +59,10 @@ h1, h2, h3 {
 	-webkit-box-shadow: 0px 0px 12px -5px;
 	-moz-box-shadow: 0px 0px 12px -5px;
 	-o-box-shadow: 0px 0px 12px -5px;
+}
+
+a.category-card {
+	text-decoration: none;
 }
 
 p.category-title {
