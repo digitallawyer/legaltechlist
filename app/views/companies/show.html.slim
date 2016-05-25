@@ -78,22 +78,26 @@
 									-else
 										td 
 											.text-muted Unknown
-								tr
-									td.text-muted Social
-									td
-										-if @company.twitter_url.present?
-											div
-												img style="margin-right:4px;" src="/images/twitter-logo.png" 
-												a href="#{@company.twitter_url}" Twitter
-											br
-										-if @company.angellist_url.present?
-											div
-												img  style="margin-right:4px;" src="/images/angellist-logo.png" 
-												a href="#{@company.angellist_url}" Angellist
-											br
-										-if @company.angellist_url.present?
-											img  style="margin-right:4px;" src="/images/crunchbase-logo.png" 
-											a href="#{@company.crunchbase_url}" Crunchbase
+								-if @company.twitter_url.present? || @company.angellist_url.present? || @company.crunchbase_url.present?
+									tr
+										td.text-muted Social
+										td
+											-if @company.twitter_url.present?
+												div
+													img style="margin-right:4px;" src="/images/twitter-logo.png" 
+													-if @company.twitter_url.include? "@"
+														a href="https://www.twitter.com/#{@company.twitter_url}.slice!(0)" Twitter
+													- else
+														a href="#{@company.twitter_url}" Twitter
+												br
+											-if @company.angellist_url.present?
+												div
+													img  style="margin-right:4px;" src="/images/angellist-logo.png" 
+													a href="#{@company.angellist_url}" Angellist
+												br
+											-if @company.crunchbase_url.present?
+												img  style="margin-right:4px;" src="/images/crunchbase-logo.png" 
+												a href="#{@company.crunchbase_url}" Crunchbase
 				.panel-footer
 					.text-center 
 						span.text-muted Help us maintain this page by 
