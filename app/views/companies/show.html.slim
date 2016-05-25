@@ -86,7 +86,7 @@
 												div
 													img style="margin-right:4px;" src="/images/twitter-logo.png" 
 													-if @company.twitter_url.include? "@"
-														a href="https://www.twitter.com/#{@company.twitter_url}.slice!(0)" Twitter
+														a href="https://www.twitter.com/#{@company.twitter_url.slice!(0)}" Twitter
 													- else
 														a href="#{@company.twitter_url}" Twitter
 												br
