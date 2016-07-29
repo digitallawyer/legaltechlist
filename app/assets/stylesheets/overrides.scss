@@ -1,7 +1,8 @@
-// Body
+@import 'variables';
 
+// Body
 body {
-	background-color: #F2EFEA !important;
+	background-color: $gray !important;
 	padding-top: 50px; 
 	font-family: proxima-nova, 'Helvetica Neue', Helvetica, Arial, sans-serif;
     color: #1a1a1a;
@@ -138,25 +139,25 @@ p.category-title {
 }
 // Category Backgrounds
 .category-background-1 {
-	background-color: #16a0d6;
+	background-color: $sls_blue;
 }
 .category-background-2 {
-	background-color: #b30000;
+	background-color: $sls_red;
 }
 .category-background-3 {
-	background-color: #e89c2e;
+	background-color: $sls_orange;
 }
 .category-background-4 {
-	background-color: #82A27E;
+	background-color: $moss_green;
 }
 .category-background-5 {
-	background-color: #8bb314;
+	background-color: $sls_green;
 }
 .category-background-6 {
-	background-color: #e8be2e;
+	background-color: $sls_yellow;
 }
 .category-background-7 {
-	background-color: #16a0d6;
+	background-color: $sls_blue;
 }
 .category-background-8 {
 	background-color: #b30000;
@@ -190,4 +191,4 @@ table.borderless tbody tr td {
 	background-image:url('/images/stock/about.jpg');
 	height: 500px;
 	background-size: cover;
-}
+	background-color: $sls_red;

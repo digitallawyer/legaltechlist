@@ -44,23 +44,21 @@
 		.panel.panel-default.lg-panel
 			.panel-body
 				= link_to 'Submit a New Company', new_company_path, class: "btn btn-default pull-right"
-				h4 Companies
-				
-				- @companies.each do |company|
-					hr
-					div
-						h4
-							a href="/companies/#{company.id}" = company.name
-							|  
-						p= company.description
-						/span.text-muted
-							i.fa.fa-tags style="margin-right:6px;" 
-							= raw tag_links(company.all_tags)
-					/! Makes entire e class a clickable link to the company page
-					javascript:
-						| $(".e").click(function() {
-							| window.location = $(this).find("a").attr("href");
-							| return false;
-							| });
+				h3 Companies
+				.company-list
+					- @companies.each do |company|
+						a href="/companies/#{company.id}" 
+							.e
+								h4= company.name
+								p= company.description
+							/span.text-muted
+								i.fa.fa-tags style="margin-right:6px;" 
+								= raw tag_links(company.all_tags)
+						/! Makes entire e class a clickable link to the company page
+						javascript:
+							| $(".e").click(function() {
+								| window.location = $(this).find("a").attr("href");
+								| return false;
+								| });
 		div style="text-align:center;"
 			= paginate @companies
