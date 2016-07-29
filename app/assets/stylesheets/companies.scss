@@ -1,6 +1,7 @@
 // Place all the styles related to the Companies controller here.
 // They will automatically be included in application.css.
 // You can use Sass (SCSS) here: http://sass-lang.com/
+@import 'variables';
 
 a {
 	display: inline;
@@ -40,5 +41,5 @@ h3{
 	margin-left: 15px;
 }
 h4{
-	color: #B30000;
+	color: $sls_red;
 }
