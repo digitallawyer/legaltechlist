@@ -50,7 +50,7 @@ a.navbar-brand {
 }
 
 .categories-container{
-	margin-top: -140px;
+	margin-top: -180px;
 	margin-bottom: 100px;
 }
 
@@ -75,7 +75,7 @@ a.navbar-brand {
     transition: box-shadow 0.2s;
 	margin:30px 35px 30px 0px;	
 	margin-bottom: 6px;
-	padding-bottom: 60px;
+	padding-bottom: 70px;
 	@media screen and (min-width: 480px) {
 		min-width: 340px;
 		min-height: 180px;
@@ -122,7 +122,7 @@ p.category-title {
 		text-align: center;
 		font-size: 22px;
 		font-weight: 600;
-		height: 180px;
+		height: 160px;
 		line-height: 180px;
 }
 .see-companies-button{
@@ -136,29 +136,7 @@ p.category-title {
 	background-color: none;
 	transition: background-color 0.4s;
 }
-
-/* --------------------------- */
-
-.breadcrumb {
-   padding: 10px 0px !important;
-   margin: 10px 0px !important;
-}
-.flex {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: space-between;
-}
-// Input form
-.input-lg {
-	flex-grow:1;
-	margin-right: 2px;
-}
-// Table
-table.borderless tbody tr td {
-	border: none;
-}
 // Category Backgrounds
-
 .category-background-1 {
 	background-color: #16a0d6;
 }
@@ -182,4 +160,34 @@ table.borderless tbody tr td {
 }
 .category-background-8 {
 	background-color: #b30000;
+}
+
+/* --------------------------- */
+
+.breadcrumb {
+   padding: 10px 0px !important;
+   margin: 10px 0px !important;
+}
+.flex {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+}
+// Input form
+.input-lg {
+	flex-grow:1;
+	margin-right: 2px;
+}
+// Table
+table.borderless tbody tr td {
+	border: none;
+}
+.tags-container{
+	margin-top: 110px;
+	padding-bottom: 40px;
+}
+.about-image{
+	background-image:url('/images/stock/about.jpg');
+	height: 500px;
+	background-size: cover;
 }
