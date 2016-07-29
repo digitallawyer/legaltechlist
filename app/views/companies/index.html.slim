@@ -7,7 +7,7 @@
 		  = flash[:notice]
 
 	.col-md-3 
-		.panel.panel-default.lg-panel.box-shadow
+		.panel.panel-default.lg-panel
 			.panel-body
 				h5 Categories
 				- Category.all.each do |category|
@@ -41,7 +41,7 @@
 
 
 	.col-md-9.nopadding
-		.panel.panel-default.lg-panel.box-shadow
+		.panel.panel-default.lg-panel
 			.panel-body
 				= link_to 'Submit a New Company', new_company_path, class: "btn btn-default pull-right"
 				h4 Companies
