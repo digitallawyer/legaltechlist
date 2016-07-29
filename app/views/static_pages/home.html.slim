@@ -17,19 +17,20 @@
       - Category.all.each do |category|
         a class=("category-link") href="/companies?category=#{category.id}"
           div class=("category-card #{'category-background-'+ category.id.to_s}") 
-            p.category-title style="" 
+            p.category-title 
               = category.name
-            a class=("see-companies-button #{'see-companies-button-'+ category.id.to_s}")
+            a class=("see-companies-button #{'see-companies-button-'+ category.id.to_s}") href="/companies?category=#{category.id}"
               |
                 SEE COMPANIES
 
 .jumbotron style=("background-color: #3B7AA3; background-size:cover; background-image:url(/images/backgrounds/codex.jpg); min-height: 660px;")
 
-.container
+.tags-container.container
   .row
-    h4 Browse by Tag
-    .panel.panel-default.lg-panel.flex-panel
-      .panel-body
-        .tags-cloud.glassy-bg
-          - tag_cloud Tag.counts, %w{css1 css2 css3 css4} do |tag, css_class|
-            =< link_to tag.name, tag_path(tag.name), class: css_class
+    .col-md-6
+      .panel.panel-default.lg-panel.flex-panel
+        .panel-body
+          .tags-cloud.glassy-bg
+            - tag_cloud @tags.counts, %w{css1 css2 css3 css4} do |tag, css_class|
+              =< link_to tag.name, tag_path(tag.name), class: css_class
+    .col-md-6.about-image
