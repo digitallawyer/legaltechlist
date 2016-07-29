@@ -1,8 +1,8 @@
 = render 'nav'
-.jumbotron style=("background-color: #3B7AA3; background-size:cover; background-image:url(/images/bg.jpg); min-height: 460px;") 
+.jumbotron style=("background-color: #3B7AA3; background-size:cover; background-image:url(/images/bg.jpg); min-height: 660px;") 
   .container-fluid
     .col-md-12
-      h1 style=("color:white; text-align:center; padding-top: 40px; font-weight: 500 !important")  Discover Legal Technology
+      h1 style=("color:white; text-align:center; padding-top: 100px; font-weight: 500 !important")  Discover Legal Technology
       h3 style=("color:white;text-align:center; font-size: 25px;") 
         | Explore a curated list of #{Company.count} companies changing the way legal is done.
       .col-md-3
@@ -11,14 +11,18 @@
           p.flex
             = text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for a company", id: "search-input"
             = submit_tag "Search", name: nil, class: "btn btn-primary btn-lg"
-.container-fluid
-  div
-    h4 Browse by Category
+.container
+  .row
     .flex
       - Category.all.each do |category|
-        a class=("category-card #{'category-background-'+ category.id.to_s}") href="/companies?category=#{category.id}" 
-          p.category-title style="" 
-            = category.name
+        a href="/companies?category=#{category.id}"
+          div class=("category-card #{'category-background-'+ category.id.to_s}") 
+            p.category-title style="" 
+              = category.name
+            a class=("btn btn-default")
+              |
+                See companies
+
     br/
     h4 Browse by Tag
     .panel.panel-default.lg-panel.flex-panel

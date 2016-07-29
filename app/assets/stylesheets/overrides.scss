@@ -56,14 +56,16 @@ a.navbar-brand {
 }
 
 .box-shadow {
-	box-shadow: 0px 0px 12px -5px;
-	-webkit-box-shadow: 0px 0px 12px -5px;
-	-moz-box-shadow: 0px 0px 12px -5px;
-	-o-box-shadow: 0px 0px 12px -5px;
+	box-shadow: 0px 0px 20px -4px;
+	-webkit-box-shadow: 0px 0px 20px -5px;
+	-moz-box-shadow: 0px 0px 20px -5px;
+	-o-box-shadow: 0px 0px 20px -5px;
 }
 
 .category-card {
 	flex: 1;
+	-webkit-flex: 1 1 auto;
+  	-ms-flex: 1 1 auto;
 	margin: 0px 10px;
 	margin:5px 10px 5px 0px;	
 	margin-bottom: 6px;
@@ -101,7 +103,6 @@ p.category-title {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: space-between;
-
 }
 
 // Input form
