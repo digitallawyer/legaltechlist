@@ -34,6 +34,10 @@
 					h5 Business Type
 					- BusinessModel.all.each do |biz|
 						= link_to biz.name, companies_path(:business_model => biz)
+				br
+					p 
+						|
+							The companies and services listed in this database are provided for informational purposes only and are not endorsed by CodeX, Stanford Law School, or Stanford University.
 
 
 	.col-md-9.nopadding
