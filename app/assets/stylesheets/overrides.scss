@@ -17,7 +17,7 @@ body {
 // Navigation
 
 h1, h2, h3 {
-	font-weight: 300 !important; 
+	font-weight: 200 !important; 
 }
 
 a.navbar-brand {
@@ -49,105 +49,136 @@ a.navbar-brand {
   font-size: initial !important;
 }
 
+.categories-container{
+	margin-top: -140px;
+	margin-bottom: 100px;
+}
+
 // Card Component
 
 .panel-default {
 	border: 0px solid transparent;
 }
-
 .box-shadow {
 	box-shadow: 0px 0px 20px -4px;
 	-webkit-box-shadow: 0px 0px 20px -5px;
 	-moz-box-shadow: 0px 0px 20px -5px;
 	-o-box-shadow: 0px 0px 20px -5px;
 }
-
 .category-card {
 	flex: 1;
 	-webkit-flex: 1 1 auto;
   	-ms-flex: 1 1 auto;
-	margin: 0px 10px;
-	margin:5px 10px 5px 0px;	
+  	text-align: center;
+  	box-shadow: none;
+    transition: box-shadow 0.2s;
+	margin:30px 35px 30px 0px;	
 	margin-bottom: 6px;
-	box-shadow: 0px 0px 12px -5px;
-	-webkit-box-shadow: 0px 0px 12px -5px;
-	-moz-box-shadow: 0px 0px 12px -5px;
-	-o-box-shadow: 0px 0px 12px -5px;
+	padding-bottom: 60px;
 	@media screen and (min-width: 480px) {
 		min-width: 340px;
 		min-height: 180px;
 	}
 }
-
-a.category-card {
-	text-decoration: none;
+.category-card:hover{
+	-webkit-box-shadow: 0px 0px 5px 2px rgba(128,128,128,1);
+	-moz-box-shadow: 0px 0px 5px 2px rgba(128,128,128,1);
+	box-shadow: 0px 0px 5px 2px rgba(128,128,128,1);
+	.see-companies-button{
+		background-color: white;
+		text-decoration: none;
+	}
+	.see-companies-button-1{
+		color: #16a0d6 !important;
+	}
+	.see-companies-button-2{
+		color: #b30000 !important;
+	}
+	.see-companies-button-3{
+		color: #e89c2e !important;
+	}
+	.see-companies-button-4{
+		color: #82A27E !important;
+	}
+	.see-companies-button-5{
+		color: #8bb314 !important;
+	}
+	.see-companies-button-6{
+		color: #e8be2e !important;
+	}
+	.see-companies-button-7{
+		color: #16a0d6 !important;
+	}
+	.see-companies-button-8{
+		color: #b30000 !important;
+	}
 }
-
+.category-link {
+	text-decoration: none !important;
+}
 p.category-title {
-	
 		color: white;
 		text-align: center;
 		font-size: 22px;
 		font-weight: 600;
 		height: 180px;
 		line-height: 180px;
-	
 }
+.see-companies-button{
+	width: 1320px;
+	height: 47px;
+	border: 1px solid white;
+	padding: 17px;
+	color: white !important;
+	cursor: pointer;
+	text-decoration: none;
+	background-color: none;
+	transition: background-color 0.4s;
+}
+
+/* --------------------------- */
 
 .breadcrumb {
    padding: 10px 0px !important;
    margin: 10px 0px !important;
 }
-
 .flex {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: space-between;
 }
-
 // Input form
-
 .input-lg {
 	flex-grow:1;
 	margin-right: 2px;
 }
-
 // Table
-
 table.borderless tbody tr td {
 	border: none;
 }
-
 // Category Backgrounds
 
 .category-background-1 {
 	background-color: #16a0d6;
 }
-
 .category-background-2 {
 	background-color: #b30000;
 }
-
 .category-background-3 {
 	background-color: #e89c2e;
 }
-
 .category-background-4 {
 	background-color: #82A27E;
 }
-
 .category-background-5 {
 	background-color: #8bb314;
 }
-
 .category-background-6 {
 	background-color: #e8be2e;
 }
-
 .category-background-7 {
 	background-color: #16a0d6;
 }
-
 .category-background-8 {
 	background-color: #b30000;
 }
