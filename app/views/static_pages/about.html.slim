@@ -1,5 +1,10 @@
 = render '/static_pages/nav'
-
+.jumbotron style=("background-color: #3B7AA3; background-size:cover; background-image:url(/images/backgrounds/bg.jpg); min-height: 460px;") 
+  .container-fluid
+    .col-md-12
+      h1 style=("color:white; text-align:center; padding-top: 80px; font-weight: 500 !important")  About tech.law.stanford.edu
+      h3 style=("color:white;text-align:center; font-size: 25px;") 
+        | Explore a curated list of #{Company.count} companies changing the way legal is done.
 .container style="margin-top: 20px;"
 
   - if flash[:notice]
@@ -9,7 +14,6 @@
   .col-md-12 
     .panel.panel-default.lg-panel
       .panel-body
-        h1 About tech.law.stanford.edu
         p 
           | tech.law.stanford.edu is a curated list of legal technology companies, hosted by CodeX, the Stanford Center for Legal Informatics. The database is intended as a resource for the legal technology community, and features data contributions from CodeX, Legal.io, Thomson Reuters and other stakeholders in the community.
 
@@ -21,39 +25,52 @@
           | that is not included in the list, or have a look at the code on 
           a href="https://github.com/digitallawyer/legaltechlist" Github!
 
-        p
-          b Contributors
-        p
-          | Pieter Gunst - CodeX Fellow / Co-Founder of 
-          a< href="https://www.legal.io" Legal.io
-        p
-          |
-            Kevin Xu  - Code = Law Participant
-        p
-          | 
-            Sam Schroeder - Code = Law Participant
-        p
-          | 
-            Elizabeth Lowell - Code = Law Participant
-        p
-          | 
-            Mark Evans - CodeX Fellow 
-        p 
-          | David Curle - Thomson Reuters
-        p
-          |
-            Bob Ambrogi - Lawyer, media and technology professional
-        p
-          |
-            Patrick Haede - Intern at CodeX
-        p 
-          |
-            Taylor Famighetti - Intern at CodeX
-
-        br
-
+  .col-md-12
+    .panel.panel-default.lg-panel
+      .panel-body
+        .row
+          .col-md-4
+            p
+              | Pieter Gunst - CodeX Fellow / Co-Founder of 
+              a< href="https://www.legal.io" Legal.io
+          .col-md-4
+            p
+              |
+                Kevin Xu  - Code = Law Participant
+          .col-md-4
+            p
+              | 
+                Sam Schroeder - Code = Law Participant
+        .row
+          .col-md-4
+              p
+                | 
+                  Elizabeth Lowell - Code = Law Participant
+          .col-md-4
+              p
+                | 
+                  Mark Evans - CodeX Fellow 
+          .col-md-4
+              p 
+                | David Curle - Thomson Reuters
+        .row
+          .col-md-4
+              p
+                |
+                  Bob Ambrogi - Lawyer, media and technology professional
+          .col-md-4
+              p
+                |
+                  Patrick Haede - Intern at CodeX
+          .col-md-4
+              p 
+                |
+                  Taylor Famighetti - Intern at CodeX
+  .col-md-12
+    .panel.panel-default.lg-panel
+      .panel-body
+        .row
         p
           b Disclaimer
-
         p
           b The companies and services listed in this database are provided for informational purposes only and are not endorsed by CodeX, Stanford Law School, or Stanford University.
