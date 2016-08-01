@@ -8,15 +8,16 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="/">tech.law.stanford.edu</a>
+      <a class="navbar-brand" href="/"><img style="width: 230px; margin-bottom: 10px;" src="/images/logo/logo-white.png"></a>
     </div>
 
     <!-- Collect the nav links, forms, and other content for toggling -->
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav navbar-nav">
-        <li><a href="/companies">List</a></li>
+        <li><a href="/companies">Companies</a></li>
         <!-- <li><a href="/map" data-no-turbolink>Map</a></li> -->
         <li><%= link_to 'About', controller: "static_pages", action: "about", 'data-no-turbolink' => true %></li>
+        <li><a href="/map">Legal Tech Worldmap</a></li>
         <% if controller.controller_name != "static_pages" -%>
           <%= form_tag companies_path, :class => "navbar-form navbar-left", :role => "search", method: :get do %>
             <div class="form-group">
