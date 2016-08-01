@@ -17,6 +17,7 @@
         <li><a href="/companies">Companies</a></li>
         <!-- <li><a href="/map" data-no-turbolink>Map</a></li> -->
         <li><%= link_to 'About', controller: "static_pages", action: "about", 'data-no-turbolink' => true %></li>
+        <li><a href="/map">Legal Tech Worldmap</a></li>
         <% if controller.controller_name != "static_pages" -%>
           <%= form_tag companies_path, :class => "navbar-form navbar-left", :role => "search", method: :get do %>
             <div class="form-group">
