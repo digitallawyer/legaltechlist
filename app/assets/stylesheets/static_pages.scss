@@ -10,8 +10,12 @@
 		font-size: 15px;
 		color: $black_text;
 	}
-	a{
-	}
+}
+.fa-linkedin-square{
+	color: $sls_blue !important;
+}
+.fa-linkedin-square:hover{
+	color: $black_text !important;
 }
 .contributors-panel{
 	text-align: center;
