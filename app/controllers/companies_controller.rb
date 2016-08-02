@@ -50,7 +50,7 @@ class CompaniesController < ApplicationController
   def feed
     @company = Company.all
     respond_to do |format|
-      format.rss = { render :layout => false}
+      format.rss { render :layout => false }
     end
   end
 
