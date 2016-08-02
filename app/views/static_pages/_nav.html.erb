@@ -8,7 +8,7 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="/"><img src="/images/logo/short.png"></a>
+      <a data-no-turbolink='true' class="navbar-brand" href="/"><img src="/images/logo/short.png"></a>
     </div>
 
     <!-- Collect the nav links, forms, and other content for toggling -->
@@ -30,9 +30,23 @@
             <span class="caret"></span>
           </a>
           <ul class="dropdown-menu">
-            <li><a data-no-turbolink='true' href="/companies">Companies</a></li>
-            <li><a data-no-turbolink='true' href="/map">Worldmap</a></li>
-            <li><a data-no-turbolink='true' href="/about">About</a></li>
+            <% if current_page?('/') == true && current_page?('/companies') == false %>
+              <li><a data-no-turbolink='true' href="/companies">Companies</a></li>
+              <li><a data-no-turbolink='true' href="/map">Worldmap</a></li>
+              <li><a data-no-turbolink='true' href="/about">About</a></li>
+            <% elsif current_page?('/about') == true && current_page?('/companies') == false %>
+              <li><a data-no-turbolink='true' href="/">Overview</a></li>
+              <li><a data-no-turbolink='true' href="/companies">Companies</a></li>
+              <li><a data-no-turbolink='true' href="/map">Worldmap</a></li>
+            <% elsif current_page?('/map') == true && current_page?('/companies') == false %>
+              <li><a data-no-turbolink='true' href="/">Overview</a></li>
+              <li><a data-no-turbolink='true' href="/companies">Companies</a></li>
+              <li><a data-no-turbolink='true' href="/about">About</a></li>
+            <% else %>
+              <li><a data-no-turbolink='true' href="/">Overview</a></li>
+              <li><a data-no-turbolink='true' href="/map">Worldmap</a></li>
+              <li><a data-no-turbolink='true' href="/about">About</a></li>
+            <% end %>
           </ul>
         </li>        
         <% if controller.controller_name != "static_pages" -%>

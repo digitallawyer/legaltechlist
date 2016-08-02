@@ -3,7 +3,6 @@
 <head>
   <title>Legaltechlist</title>
   <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
-  <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
   <%= analytics_init if GoogleAnalytics.valid_tracker? %>
@@ -16,7 +15,7 @@
 
 <%= yield %>
 
-<!-- Latest compiled and minified JavaScript -->
+  <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 </body>
 </html>
