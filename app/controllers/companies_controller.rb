@@ -47,6 +47,13 @@ class CompaniesController < ApplicationController
     end
   end
   
+  def feed
+    @company = Company.all
+    respond_to do |format|
+      format.rss = { render :layout => false}
+    end
+  end
+
   # GET /companies/1
   # GET /companies/1.json
   def show
