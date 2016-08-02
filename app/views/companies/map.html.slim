@@ -2,7 +2,6 @@ script src="//maps.google.com/maps/api/js?v=3.18&sensor=false&client=&key=&libra
 script src="/javascript/googlemaps/js-marker-clusterer/markerclusterer_compiled.js" 
 script src="/javascript/googlemaps/infobox_packed.js" type="text/javascript" 
 /! only if you need custom infoboxes
-= render '/layouts/nav'
 .container-fluid
   .col-md-12.nopadding
     div style=("width: 100%;") 
@@ -14,4 +13,3 @@ script src="/javascript/googlemaps/infobox_packed.js" type="text/javascript"
         handler.bounds.extendWith(markers);
         handler.fitMapToBounds();
       });
-= render '/layouts/footer'
