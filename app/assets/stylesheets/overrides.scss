@@ -1,5 +1,5 @@
 @import 'variables';
-@import 'partials/home_cards';
+@import 'partials/tags';
 
 // Body
 body {
@@ -22,64 +22,4 @@ a.navbar-brand {
 	color: white !important;
 }
 
-// Formtastic overrides
-.formtastic .stringish input {
-  width:100% !important;
-  padding: 10px;
-}
-.formtastic .text textarea {
-  width:100% !important;
-  height: 120px;
-}
-.formtastic label {
-  width:0% !important;
-  color: black;
-}
-.formtastic select {
-  width:100% !important;
-}
-.formtastic legend {
-  font-size: initial !important;
-}
-.categories-container{
-	margin-top: -180px;
-	margin-bottom: 100px;
-}
-
-/* --------------------------- 
-
-Homepage card styling will be imported from /partials/home_cards.scss
-
---------------------------- */
-
-// Input form
-.input-lg {
-	flex-grow:1;
-	margin-right: 2px;
-}
-// Table
-table.borderless tbody tr td {
-	border: none;
-}
-
-// About section on homepage styling
-.home-about-container{
-	a{
-		color: $sls_orange !important;
-	}
-}
-.about-image{
-	background-image:url('/images/stock/about.jpg');
-	height: 500px;
-	background-size: cover;
-}
-
-// Tags container on homepage styling
-.tags-container{
-	margin-top: 110px;
-	padding-bottom: 40px;
-}
-.tags-box{
-	height: 500px;
-	padding-top: 40px;
-}
+// STATIC Page design is located in static_pages.scss and imports from 'static' folder

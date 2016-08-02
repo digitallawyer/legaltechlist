@@ -13,7 +13,6 @@
  *= require_self
  *= require bootstrap.min
  *= require overrides
- *= require tags
  *= require formtastic
  *= require companies
  *= require static_pages
