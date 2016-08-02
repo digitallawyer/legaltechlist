@@ -4,7 +4,8 @@ d3.select(window).on("resize", throttle);
 var zoom = d3.zoom()
     .scaleExtent([1, 9])
     .on("zoom", function(){
-      svg.attr("transform", d3.event.transform)
+      var t = validateMove(d3.event.transform);
+      svg.attr("transform", t)
     });
 
 
@@ -16,6 +17,8 @@ var topo,projection,path,svg,g;
 var graticule = d3.geoGraticule();
 
 var tooltip = d3.select("#map").append("div").attr("class", "tooltip hidden");
+
+// upper = $('#outerG').
 
 setup(width,height);
 
@@ -31,7 +34,8 @@ function setup(width,height){
       .attr("height", height)
       .call(zoom)
       .on("click", click)
-      .append("g");
+      .append("g")
+      .attr("id","outerG");
 
   g = svg.append("g");
 
@@ -100,6 +104,20 @@ function draw(topo) {
 
 }
 
+function validateMove(obj) {
+  var h = height/4;
+  //obj.x = x pos, obj.y = y pos, obj.k = zoom value
+  obj.x = Math.min(
+    (width/height)  * (obj.k - 1), 
+    Math.max( width * (1 - obj.k), obj.x )
+  );
+
+  obj.y = Math.min(
+    h * (obj.k - 1) + h * obj.k, 
+    Math.max(height  * (1 - obj.k) - h * obj.k, obj.y)
+  );
+  return obj;
+}
 
 function redraw() {
   width = document.getElementById('map').offsetWidth;
@@ -108,36 +126,6 @@ function redraw() {
   setup(width,height);
   draw(topo);
 }
-
-
-function move() {
-
-  var t = d3.event.translate;
-  console.log(t)
-  var s = d3.event.scale; 
-  zscale = s;
-  var h = height/4;
-
-
-  t[0] = Math.min(
-    (width/height)  * (s - 1), 
-    Math.max( width * (1 - s), t[0] )
-  );
-
-  t[1] = Math.min(
-    h * (s - 1) + h * s, 
-    Math.max(height  * (1 - s) - h * s, t[1])
-  );
-
-  zoom.translate(t);
-  g.attr("transform", "translate(" + t + ")scale(" + s + ")");
-
-  //adjust the country hover stroke width based on zoom level
-  d3.selectAll(".country").style("stroke-width", 1.5 / s);
-
-}
-
-
 
 var throttleTimer;
 function throttle() {
