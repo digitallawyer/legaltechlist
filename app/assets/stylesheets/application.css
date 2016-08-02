@@ -15,5 +15,6 @@
  *= require overrides
  *= require formtastic
  *= require companies
+ *= require mobile_optimisation
  *= require static_pages
  */

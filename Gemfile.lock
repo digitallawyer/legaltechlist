@@ -64,6 +64,7 @@ GEM
     bourbon (4.2.7)
       sass (~> 3.4)
       thor (~> 0.19)
+    browser (2.0.3)
     builder (3.2.2)
     byebug (9.0.5)
     coffee-rails (4.1.1)
@@ -231,6 +232,7 @@ PLATFORMS
 
 DEPENDENCIES
   activeadmin!
+  browser (= 2.0.3)
   byebug
   coffee-rails (~> 4.1.0)
   devise

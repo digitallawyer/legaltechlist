@@ -1,5 +1,3 @@
-= render '/layouts/nav'
-
 .jumbotron.home-jumbotron
   .container-fluid
     .col-md-12
@@ -44,5 +42,3 @@
             - tag_cloud @tags.counts, %w{css1 css2 css3 css4} do |tag, css_class|
               =< link_to tag.name, tag_path(tag.name), class: css_class
     .col-md-6.about-image
-
-= render '/layouts/footer'
