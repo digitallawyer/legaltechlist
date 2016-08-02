@@ -3,16 +3,16 @@
 // You can use Sass (SCSS) here: http://sass-lang.com/
 @import 'variables';
 
-a {
-	display: inline;
-}
 .company-list-sidecontainer{
 	h3{
 		margin-left: 0px;
 	}
 }
 .company-list-container{
-		.list-item{
+	.btn-sls-orange{
+		margin-top: 15px;
+	}
+	.list-item{
 		//margin: 6px -15px;
 		padding: 20px 15px;
 		margin: 0 auto;
@@ -83,5 +83,24 @@ a {
 				text-decoration: underline;
 			}
 		}
+	}
+}
+.company-edit-container{
+	.thank-you-panel{
+		padding-left: 20px !important;
+		padding-top: 18px;
+		padding-bottom: 10px;
+		margin-top: 20px;
+		font-size: 15px;
+		background-color: $sls_orange;
+		border-radius: 0 !important;
+		color: white;
+		a{
+			color: white !important;
+			text-decoration: underline;
+		}
+	}
+	.panel-default{
+
 	}
 }

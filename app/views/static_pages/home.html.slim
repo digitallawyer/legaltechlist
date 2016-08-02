@@ -10,7 +10,7 @@
         = form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:40px;", method: :get do
           p.flex
             = text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for a company", id: "search-input"
-            = submit_tag "Search", name: nil, class: "btn btn-primary btn-lg"
+            = submit_tag "Search", name: nil, class: "btn btn-primary btn-sls-orange btn-lg"
 .div class=("categories-container container")
   .row
     .flex
