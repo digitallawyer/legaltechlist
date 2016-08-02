@@ -21,5 +21,39 @@ h1, h2, h3 {
 a.navbar-brand {
 	color: white !important;
 }
-
+.navbar-brand{
+	img{
+		width: 45px; 
+		margin-bottom: 10px;
+	}
+}
+.navbar-nav{
+	.custom-menu{
+		font-size: 21px;
+		color:#fbfbfb;
+		font-weight: 200;
+	}
+	.dropdown-toggle{
+		font-size: 18px;
+		color:$sls_orange !important;
+		font-weight: 400 !important;
+	}
+	.dropdown-menu{
+		height: 164px !important;
+		font-size: 18px;
+		line-height: 70px !important;
+		width: 150px !important;
+	}
+	.dropdown-menu > li > a:hover{
+		background-color: $sls_orange !important;
+		background-image: none;
+		color: white !important
+	}
+	.dropdown-menu > li > a{
+		color: grey !important;
+		font-weight: 400 !important;
+		line-height: 45px;
+		height: 50px;
+	}
+}
 // STATIC Page design is located in static_pages.scss and imports from 'static' folder
