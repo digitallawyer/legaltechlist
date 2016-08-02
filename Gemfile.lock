@@ -75,6 +75,8 @@ GEM
       execjs
     coffee-script-source (1.10.0)
     concurrent-ruby (1.0.2)
+    d3-rails (4.1.0)
+      railties (>= 3.1)
     debug_inspector (0.0.2)
     devise (4.2.0)
       bcrypt (~> 3.0)
@@ -235,6 +237,7 @@ DEPENDENCIES
   browser (= 2.0.3)
   byebug
   coffee-rails (~> 4.1.0)
+  d3-rails
   devise
   figaro
   geocoder
