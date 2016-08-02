@@ -6,18 +6,15 @@ body {
 	background-color: $gray !important;
 	padding-top: 50px; 
 	font-family: proxima-nova, 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    color: #1a1a1a;
+  color: #1a1a1a;
 }
 #notice {
 	padding: 14px;
-    background-color: #8bb314;
-    margin: 14px;
-    color: white;
+  background-color: #8bb314;
+  margin: 14px;
+  color: white;
 }
 // Navigation
-h1, h2, h3 {
-	font-weight: 200 !important; 
-}
 a.navbar-brand {
 	color: white !important;
 }

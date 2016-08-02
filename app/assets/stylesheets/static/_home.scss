@@ -56,7 +56,7 @@ table.borderless tbody tr td {
 .home-codex.jumbotron{
 	background-color: #3B7AA3; 
 	background-size:cover; 
-	background-image:url(/images/backgrounds/codex.jpg); 
+	background-image:url(/images/backgrounds/codex.jpg);
 	min-height: 660px;
 }
 .home-codex-container{
@@ -73,6 +73,9 @@ table.borderless tbody tr td {
 		color:white;
 		font-size: 25px;
 	}
+	.col-md-6{
+		padding-right: 90px;
+	}
 }
 .about-image{
 	background-image:url('/images/backgrounds/sls_1.jpg');
@@ -80,7 +83,7 @@ table.borderless tbody tr td {
 	background-size: cover;
 }
 // Tags container on homepage styling
-.tags-container{
+.home-tags-cloud-container{
 	margin-top: 110px;
 	padding-bottom: 40px;
 }

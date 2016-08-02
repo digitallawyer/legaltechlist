@@ -6,10 +6,10 @@
 	  div class="alert alert-success"
 		  = flash[:notice]
 
-	.col-md-3 
+	.col-md-3.company-list-sidecontainer
 		.panel.panel-default.lg-panel
 			.panel-body
-				h5 Categories
+				h3 Categories
 				- Category.all.each do |category|
 					= link_to category.name, companies_path(:category => category)
 					br
@@ -21,8 +21,8 @@
 						br
 						
 				.tags-cloud.hidden-xs.hidden-sm	
-					h5 Tags
-					- tag_cloud Tag.counts.order("RANDOM()").limit(20), %w{css1} do |tag, css_class|
+					h3 Tags
+					- tag_cloud Tag.counts.order("RANDOM()").limit(20), %w{} do |tag, css_class|
 						= link_to tag.name, tag_path(tag.name), class: css_class
 						span<
 							|(
@@ -40,7 +40,7 @@
 							The companies and services listed in this database are provided for informational purposes only and are not endorsed by CodeX, Stanford Law School, or Stanford University.
 
 
-	.col-md-9.nopadding
+	.col-md-9.nopadding.company-list-container
 		.panel.panel-default.lg-panel
 			.panel-body
 				= link_to 'Submit a New Company', new_company_path, class: "btn btn-default pull-right"
@@ -48,7 +48,7 @@
 				.company-list
 					- @companies.each do |company|
 						a href="/companies/#{company.id}" 
-							.e
+							.list-item
 								h4= company.name
 								p= company.description
 							/span.text-muted
