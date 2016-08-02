@@ -100,7 +100,20 @@
 			text-decoration: underline;
 		}
 	}
-	.panel-default{
-
+}
+.company-new-container{
+	.thank-you-panel{
+		padding-left: 20px !important;
+		padding-top: 18px;
+		padding-bottom: 10px;
+		margin-top: 20px;
+		font-size: 15px;
+		background-color: $sls_orange;
+		border-radius: 0 !important;
+		color: white;
+		a{
+			color: white !important;
+			text-decoration: underline;
+		}
 	}
 }
