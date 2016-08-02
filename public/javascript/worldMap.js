@@ -105,8 +105,9 @@ function draw(topo) {
 }
 
 function validateMove(obj) {
-  var h = height/4;
-  //obj.x = x pos, obj.y = y pos, obj.k = zoom value
+  var h = height/4,
+      navOffset = $(".navbar").height(); //Added additional height to account for fixed navbar
+  //obj.k is the scale factor
   obj.x = Math.min(
     (width/height)  * (obj.k - 1), 
     Math.max( width * (1 - obj.k), obj.x )
@@ -114,8 +115,9 @@ function validateMove(obj) {
 
   obj.y = Math.min(
     h * (obj.k - 1) + h * obj.k, 
-    Math.max(height  * (1 - obj.k) - h * obj.k, obj.y)
+    Math.max(height  * (1 - obj.k) - h * obj.k + navOffset, obj.y)
   );
+
   return obj;
 }
 
