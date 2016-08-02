@@ -1,16 +1,13 @@
-= render '/static_pages/nav'
-.jumbotron style=("background-color: #3B7AA3; background-size:cover; background-image:url(/images/backgrounds/bg.jpg); min-height: 460px;") 
+.jumbotron.about-jumbotron
   .container-fluid
     .col-md-12
-      h1 style=("color:white; text-align:center; padding-top: 80px; font-weight: 200 !important")  About tech.law.stanford.edu
-      h3 style=("color:white;text-align:center; font-size: 25px; font-weight: 100 !important") 
+      h1 About tech.law.stanford.edu
+      h3  
         | Explore a curated list of #{Company.count} companies changing the way legal is done.
-.container style="margin-top: 20px;"
-
+.container
   - if flash[:notice]
     div class="alert alert-success"
       = flash[:notice]
-
   .col-md-12 
     .panel.panel-default.lg-panel.about-info-panel
       .panel-body
@@ -96,11 +93,11 @@
                 Taylor Famighetti - Intern at CodeX
             a href="https://www.linkedin.com/in/taylor-famighetti-06456083/" target="_blank"
               i.fa.fa-linkedin-square.fa-2x
-  .col-md-12
-    .panel.panel-default.lg-panel
-      .panel-body
-        .row
-        p
-          b Disclaimer
-        p
-          b The companies and services listed in this database are provided for informational purposes only and are not endorsed by CodeX, Stanford Law School, or Stanford University.
+  / .col-md-12
+  /   .panel.panel-default.lg-panel
+  /     .panel-body
+  /       .row
+  /       p
+  /         b Disclaimer
+  /       p
+  /         b The companies and services listed in this database are provided for informational purposes only and are not endorsed by CodeX, Stanford Law School, or Stanford University.

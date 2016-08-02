@@ -5,6 +5,16 @@
 	border-radius: 0px;
 }
 
+.breadcrumb {
+   padding: 10px 0px !important;
+   margin: 10px 0px !important;
+}
+.flex {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+}
+
 .category-link {
 	text-decoration: none !important;
 }
@@ -109,13 +119,3 @@ p.category-title {
 }
 
 /* --------------------------- */
-
-.breadcrumb {
-   padding: 10px 0px !important;
-   margin: 10px 0px !important;
-}
-.flex {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: space-between;
-}

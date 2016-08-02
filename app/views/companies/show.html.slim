@@ -1,11 +1,11 @@
-= render '/static_pages/nav'
+= render '/layouts/nav'
 
 - if flash[:notice]
 	div class="alert alert-success"
 		= flash[:notice]
 
-.container
-	.col-md-12.breadcrumb 
+.container.company-show-container
+	.col-md-12.breadcrumb
 		span
 			a> href="/companies"  Companies
 			span
@@ -16,12 +16,10 @@
 		.col-md-12
 			.panel.panel-default.lg-panel
 				.panel-body
-					h1 style="margin-top:0px;"
+					h1
 						= @company.name
-					
 					p
 						= @company.description
-
 					hr/
 					.col-md-12
 						table.table.borderless
@@ -101,8 +99,7 @@
 				.panel-footer
 					.text-center 
 						span.text-muted Help us maintain this page by 
-						=< link_to 'suggesting an update', edit_company_path(@company)
-						|.
+						=< link_to 'suggesting an update.', edit_company_path(@company)
 
 					/! Another approach to display the page is to use a screenshot tool like pagepeeker
 					/! <img src="http://free.pagepeeker.com/v2/thumbs.php?size=x&url=<haml_loud>@company.main_url </haml_loud>" style="width:500px;"></a
@@ -129,3 +126,5 @@
 															| window.location = $(this).find("a").attr("href");
 															| return false;
 															| });
+
+= render '/layouts/footer'

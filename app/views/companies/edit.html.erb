@@ -1,9 +1,13 @@
-<%= render '/static_pages/nav' %>
+<%= render '/layouts/nav' %>
 
-<div class="container">
+<div class="container company-edit-container">
 	<div class="col-md-12">
-		<br>
-		<div class="panel panel-default lg-panel box-shadow">
+		<div class="panel panel-default lg-panel thank-you-panel">
+				<p>Thank you for suggesting an update!</p>
+		</div>
+	</div>
+	<div class="col-md-12">
+		<div class="panel panel-default lg-panel">
 	  		<div class="panel-body">
 				<h4>Suggest an update</h4>
 				<hr>
@@ -14,3 +18,5 @@
 		</div>
 	</div>
 </div>
+
+<%= render '/layouts/footer' %>

@@ -3,25 +3,5 @@
 // You can use Sass (SCSS) here: http://sass-lang.com/
 
 @import 'variables';
-
-/* About page styling */
-.about-info-panel{
-	p{
-		font-size: 15px;
-		color: $black_text;
-	}
-}
-.fa-linkedin-square{
-	color: $sls_blue !important;
-}
-.fa-linkedin-square:hover{
-	color: $black_text !important;
-}
-.contributors-panel{
-	text-align: center;
-}
-.contributor-image{
-	width: 170px;
-	margin-top: 30px;
-	margin-bottom: 20px;
-}
+@import 'static/about';
+@import 'static/home';

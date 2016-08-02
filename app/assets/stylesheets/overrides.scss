@@ -1,85 +1,73 @@
 @import 'variables';
-@import 'partials/home_cards';
+@import 'partials/tags';
+@import 'partials/buttons';
 
 // Body
 body {
 	background-color: $gray !important;
 	padding-top: 50px; 
 	font-family: proxima-nova, 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    color: #1a1a1a;
+  color: #1a1a1a;
 }
 #notice {
 	padding: 14px;
-    background-color: #8bb314;
-    margin: 14px;
-    color: white;
+  background-color: #8bb314;
+  margin: 14px;
+  color: white;
 }
 // Navigation
-h1, h2, h3 {
-	font-weight: 200 !important; 
-}
 a.navbar-brand {
 	color: white !important;
 }
-
-// Formtastic overrides
-.formtastic .stringish input {
-  width:100% !important;
-  padding: 10px;
-}
-.formtastic .text textarea {
-  width:100% !important;
-  height: 120px;
-}
-.formtastic label {
-  width:0% !important;
-  color: black;
-}
-.formtastic select {
-  width:100% !important;
-}
-.formtastic legend {
-  font-size: initial !important;
-}
-.categories-container{
-	margin-top: -180px;
-	margin-bottom: 100px;
-}
-
-/* --------------------------- 
-
-Homepage card styling will be imported from /partials/home_cards.scss
-
---------------------------- */
-
-// Input form
-.input-lg {
-	flex-grow:1;
-	margin-right: 2px;
-}
-// Table
-table.borderless tbody tr td {
-	border: none;
-}
-
-// About section on homepage styling
-.home-about-container{
-	a{
-		color: $sls_orange !important;
+.navbar-brand{
+	img{
+		width: 45px; 
+		margin-bottom: 10px;
 	}
 }
-.about-image{
-	background-image:url('/images/stock/about.jpg');
-	height: 500px;
-	background-size: cover;
+.navbar-nav{
+	.custom-menu{
+		font-size: 21px;
+		color:#fbfbfb;
+		font-weight: 200;
+	}
+	.dropdown-toggle{
+		font-size: 18px;
+		color:$sls_orange !important;
+		font-weight: 400 !important;
+	}
+	.dropdown-menu{
+		height: 164px !important;
+		font-size: 18px;
+		line-height: 70px !important;
+		width: 150px !important;
+	}
+	.dropdown-menu > li > a:hover{
+		background-color: $sls_orange !important;
+		background-image: none;
+		color: white !important
+	}
+	.dropdown-menu > li > a{
+		color: grey !important;
+		font-weight: 400 !important;
+		line-height: 45px;
+		height: 50px;
+	}
 }
-
-// Tags container on homepage styling
-.tags-container{
-	margin-top: 110px;
-	padding-bottom: 40px;
-}
-.tags-box{
-	height: 500px;
-	padding-top: 40px;
+// STATIC Page design is located in static_pages.scss and imports from 'static' folder
+.footer{
+	min-height: 100px !important;
+	background-color: #222 !important;
+	padding-bottom: 20px;
+	img{
+		float: left;
+		margin-right: 40px;
+		height: 20px;
+	}
+	.col-md-3{
+		padding-top: 40px;
+	}
+	.col-md-9{
+		padding-top: 30px;
+	}
 }
