@@ -1,4 +1,5 @@
-= render '/static_pages/nav'
+= render '/layouts/nav'
+
 .jumbotron.about-jumbotron
   .container-fluid
     .col-md-12
@@ -94,11 +95,13 @@
                 Taylor Famighetti - Intern at CodeX
             a href="https://www.linkedin.com/in/taylor-famighetti-06456083/" target="_blank"
               i.fa.fa-linkedin-square.fa-2x
-  .col-md-12
-    .panel.panel-default.lg-panel
-      .panel-body
-        .row
-        p
-          b Disclaimer
-        p
-          b The companies and services listed in this database are provided for informational purposes only and are not endorsed by CodeX, Stanford Law School, or Stanford University.
+  / .col-md-12
+  /   .panel.panel-default.lg-panel
+  /     .panel-body
+  /       .row
+  /       p
+  /         b Disclaimer
+  /       p
+  /         b The companies and services listed in this database are provided for informational purposes only and are not endorsed by CodeX, Stanford Law School, or Stanford University.
+
+= render '/layouts/footer'

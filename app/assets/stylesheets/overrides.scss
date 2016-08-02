@@ -55,3 +55,18 @@ a.navbar-brand {
 	}
 }
 // STATIC Page design is located in static_pages.scss and imports from 'static' folder
+.footer{
+	height: 100px !important;
+	background-color: #222 !important;
+	img{
+		float: left;
+		margin-right: 40px;
+		height: 20px;
+	}
+	.col-md-3{
+		padding-top: 40px;
+	}
+	.col-md-9{
+		padding-top: 30px;
+	}
+}
