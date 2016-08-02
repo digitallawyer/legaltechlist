@@ -16,4 +16,4 @@
 //= require gmaps/google
 //= require underscore
 //= require topojson.v1.min
-//= require d3
+//= require d3.min
