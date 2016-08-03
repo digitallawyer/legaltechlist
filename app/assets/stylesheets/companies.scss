@@ -117,3 +117,21 @@
 		}
 	}
 }
+
+.companies_map, .companies_map svg {
+  position: absolute;
+}
+
+.companies_map svg {
+  width: 60px;
+  height: 20px;
+  padding-right: 100px;
+  font: 10px sans-serif;
+}
+
+.companies_map circle {
+  fill: brown;
+  stroke: black;
+  stroke-width: 1.5px;
+}
+
