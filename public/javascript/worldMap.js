@@ -90,8 +90,118 @@ function draw(topo) {
       })
       .on("mouseout",  function(d,i) {
         tooltip.classed("hidden", true);
-      }); 
+      });   
 
+  var nestedData = d3.entries(data)
+
+  var pointsRaw = nestedData.map(function(d,i){
+    // var point = projection([d.value.lat,d.value.lng]);
+    var point = [d.value.lat, d.value.lng]
+    point.push(d.key)
+    return point;
+  });
+
+  // var marker = d3.select("#map").selectAll("svg")
+  //       .data(d3.entries(data))
+  //       .each(transform) // update existing markers
+  //     .enter().append("svg")
+  //       .each(transform)
+  //       .attr("class", "marker_map");
+
+  pointsRaw.forEach(function(i){
+      addpoint(i[1], i[0], i[2] );
+    });
+
+  //Add a circle.
+  // marker.append("circle")
+  //     .attr("r", 4.5)
+  //     .attr("cx", padding)
+  //     .attr("cy", padding);
+
+  // // Add a label.
+  // marker.append("text")
+  //     .attr("x", padding + 7)
+  //     .attr("y", padding)
+  //     .attr("dy", ".31em")
+  //     .text(function(d) { return d.key; });
+  //       console.log(d);
+
+  var width = parseInt(d3.select("#map").style("width"),10);
+  var height = parseInt(d3.select("#map").style("height"),10);
+
+  //  var grid = svg.append('g')
+  //  .attr('class', 'grid');
+   
+  //  for (var x = 0; x <= width; x += clusterRange) {
+  //    for (var y = 0; y <= height; y+= clusterRange) {
+  //      grid.append('rect')
+  //        .attr({
+  //          x: x,
+  //          y: y,
+  //          width: clusterRange,
+  //          height: clusterRange,
+  //          class: "grid"
+  //        });
+  //    }
+  //  }
+
+  // quadtree = d3.quadtree().addAll(pointsRaw);
+
+  // // Find the nodes within the specified rectangle.
+  // function search(quadtree, x0, y0, x3, y3) {
+  //   var validData = [];
+  //   quadtree.visit(function(node, x1, y1, x2, y2) {
+  //     var p = node.point;
+  //     if (p) {
+  //         p.selected = (p[0] >= x0) && (p[0] < x3) && (p[1] >= y0) && (p[1] < y3);
+  //         if (p.selected) {
+  //           validData.push(p);
+  //        }
+  //     }
+  //     return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
+  //   });
+  //   return validData;
+  // }
+
+  // var clusterPoints = [];
+  // var clusterRange = 20;
+
+  // for (var x = 0; x <= width; x += clusterRange) {
+  //   for (var y = 0; y <= height; y+= clusterRange) {
+  //     var searched = search(quadtree, x, y, x + clusterRange, y + clusterRange);
+
+  //     var centerPoint = searched.reduce(function(prev, current) {
+  //       return [prev[0] + current[0], prev[1] + current[1]];
+  //     }, [0, 0]);
+
+  //     centerPoint[0] = centerPoint[0] / searched.length;
+  //     centerPoint[1] = centerPoint[1] / searched.length;
+  //     centerPoint.push(searched);
+
+  //     if (centerPoint[0] && centerPoint[1]) {
+  //       clusterPoints.push(centerPoint);
+  //     }
+  //   }
+  // }
+
+  // var pointSizeScale = d3.scaleLinear()
+  //    .domain([
+  //       d3.min(clusterPoints, function(d) {return d[2].length;}),
+  //       d3.max(clusterPoints, function(d) {return d[2].length;})
+  //    ])
+  //    .rangeRound([3, 15]);
+
+  // g.selectAll(".centerPoint")
+  //   .data(clusterPoints)
+  //   .enter().append("circle")
+  //   .attr("class", function(d) {return "centerPoint"})
+  //   .attr("cx", function(d) {return d[0];})
+  //   .attr("cy", function(d) {return d[1];})
+  //   .attr("fill", '#FFA500')
+  //   .attr("r", 6)
+  //   .on("click", function(d, i) {
+  //     console.log(d);
+  //   })
 
   //EXAMPLE: adding some capitals from external CSV file
   // d3.csv("data/country-capitals.csv", function(err, capitals) {

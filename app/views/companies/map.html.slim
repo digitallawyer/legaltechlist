@@ -11,89 +11,11 @@ script src="//d3js.org/d3.v4.min.js"
   .col-md-12.nopadding
     div style=("width: 100%;") 
       #map style=("width: 100%; height: 100vh;") 
-        script src="/javascript/worldmap2.js"
         javascript:
-          // Create the Google Map…
-          var map = new google.maps.Map(d3.select("#map").node(), {
-            zoom: 2,
-            minZoom:2,
-            maxZoom:13,
-            center: new google.maps.LatLng(0,0),
-            // center: new google.maps.LatLng(37.76487, -122.41948),
-            mapTypeId: google.maps.MapTypeId.TERRAIN
-          });
-          // console.log(#{raw @hash.to_json})
+          var data = #{raw @hash.to_json} //Provide data for our script
 
-          var data = #{raw @hash.to_json}
-
-          var overlay = new google.maps.OverlayView();
-
-          // Add the container when the overlay is added to the map.
-          overlay.onAdd = function() {
-            var layer = d3.select(this.getPanes().overlayLayer).append("div")
-                .attr("class", "companies_map");
-
-            // Draw each marker as a separate SVG element.
-            // We could use a single SVG, but what size would it have?
-            overlay.draw = function() {
-              var projection = this.getProjection(),
-                  padding = 10;
-
-              var marker = layer.selectAll("svg")
-                  .data(d3.entries(data))
-                  .each(transform) // update existing markers
-                .enter().append("svg")
-                  .each(transform)
-                  .attr("class", "marker_map");
-
-              // Add a circle.
-              marker.append("circle")
-                  .attr("r", 4.5)
-                  .attr("cx", padding)
-                  .attr("cy", padding);
-
-              // Add a label.
-              marker.append("text")
-                  .attr("x", padding + 7)
-                  .attr("y", padding)
-                  .attr("dy", ".31em")
-                  .text(function(d) { return d.key; });
-                    //console.log(d);
-              function transform(d) {
-                d = new google.maps.LatLng(d.value.lat, d.value.lng);
-                d = projection.fromLatLngToDivPixel(d);
-
-                return d3.select(this)
-                  .style("left", (d.x - padding) + "px")
-                  .style("top", (d.y - padding) + "px");
-              }
-            };
-          };
-          var lastValidCenter = map.getCenter()
-          google.maps.event.addListener(map, 'drag', function(){
-
-            var proj =map.getProjection();
-            var bounds = map.getBounds();
-            var sLat =map.getBounds().getSouthWest().lat();
-            var nLat = map.getBounds().getNorthEast().lat();
-
-            // if (sLat <= -85){
-
-            // }
-            // if(nLat >= 85){
-
-            // }
-
-            if (sLat < -85 || nLat > 85) {
-              map.setCenter(lastValidCenter)
-             }else {
-                lastValidCenter = map.getCenter();
-             }
-          });
-          // Bind our overlay to the map…
-          overlay.setMap(map);
-         // });
-
+        script src="/javascript/worldMap.js"
+        / script src="/javascript/quadtree.js"
         / - content_for :scripts do
         /   javascript:
         /     handler = Gmaps.build('Google');
