@@ -53,11 +53,11 @@
 	.breadcrumb{
 		padding: 20px !important;
 		font-size: 15px;
-		background-color: $sls_orange;
+		background-color: white;
 		border-radius: 0 !important;
-		color: white;
+		color: black;
 		a{
-			color: white !important;
+			color: black !important;
 			text-decoration: underline;
 		}
 	}
@@ -74,12 +74,12 @@
 			font-weight: 300 !important;
 		}
 		.panel-footer{
-			background-color: $sls_orange;
+			background-color: $gray;
 			span{
-				color: white !important;
+				color: black !important;
 			}
 			a{
-				color: white !important;
+				color: black !important;
 				text-decoration: underline;
 			}
 		}
