@@ -1,8 +1,87 @@
-@media(max-width: 600px){
+@media(max-width: 330px){
 	.home-jumbotron{
-		text-align: center !important;
+		min-height: 500px !important;
+		h1{
+			padding-top: 0px !important; 
+			font-size: 30px !important;
+		}
+		h3{
+			font-size: 18px !important;
+		}
+		.form-inline{
+			margin-left: -50px !important;
+		}
+		.input-lg{
+			max-width: 125px !important;
+		}
 	}
-	.breadcrumb{
-		padding-left: 100px !important;
+}
+@media (min-width: 330px) and (max-width: 376px){
+	.home-jumbotron{
+		min-height: 500px !important;
+		h1{
+			padding-top: 10px !important; 
+		}
+		h3{
+			font-size: 20px !important;
+		}
+		.form-inline{
+			margin-left: -50px !important;
+		}
+		.input-lg{
+			max-width: 180px !important;
+		}
+	}
+}
+@media (min-width: 400px) and (max-width: 600px){
+	.home-jumbotron{
+		min-height: 550px !important;
+		h1{
+			padding-top: 20px !important; 
+		}
+		h3{
+			font-size: 20px !important;
+		}
+		.form-inline{
+			margin-left: -40px !important;
+		}
+		.input-lg{
+			max-width: 210px !important;
+		}
+	}
+}
+@media (max-width: 600px){
+	.flex{
+		padding-left: 30px !important;
+	}
+	.home-codex.jumbotron{
+		min-height: 400px !important;
+	}
+	.home-codex-container{
+		h1{
+			padding-top: 10px !important;
+		}
+		p{
+			font-size: 18px !important;
+		}
+		.col-md-6{
+			padding-right: 20px !important;
+		}
+	}
+	.home-tags-cloud-container{
+		padding-bottom: 0px !important;
+		margin-top: 20px !important;
+		.about-image{
+			display: none !important;
+		}
+		.tags-box{
+			height: 700px;
+			padding-top: 0px;
+		}
+	}
+	.company-list-container{
+		.btn-sls-orange{
+			display: none !important;
+		}
 	}
 }
