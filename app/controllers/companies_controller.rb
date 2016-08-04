@@ -20,7 +20,6 @@ class CompaniesController < ApplicationController
       @companies = Company.text_search(params[:query]).page(params[:page]).per(10)
     end
 
-
   end
 
   def map
@@ -48,7 +47,7 @@ class CompaniesController < ApplicationController
   end
   
   def feed
-    @company = Company.all
+    @companies = Company.all
     respond_to do |format|
       format.rss { render :layout => false }
     end
