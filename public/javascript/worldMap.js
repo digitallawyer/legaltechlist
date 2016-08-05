@@ -1,11 +1,19 @@
 //Create world map for data vis
 d3.select(window).on("resize", throttle);
-
+prevZoomLevel = 1;
+curZoomLevel = 1;
 var zoom = d3.zoom()
     .scaleExtent([1, 9])
     .on("zoom", function(){
       var t = validateMove(d3.event.transform);
       svg.attr("transform", t)
+      curZoomLevel = t.k;
+    })
+    .on("end", function(){
+      if(curZoomLevel != prevZoomLevel){
+        prevZoomLevel = curZoomLevel;
+        drawPoints();
+      }
     });
 
 
@@ -92,126 +100,100 @@ function draw(topo) {
         tooltip.classed("hidden", true);
       });   
 
-  var nestedData = d3.entries(data)
+  drawPoints();
+}
 
+// Find the nodes within the specified rectangle.
+function search(quadtree, x0, y0, x3, y3) {
+  validData = [];
+  quadtree.visit(function(node, x1, y1, x2, y2) {
+    if (!node.length){
+      var p = [node.data[0], node.data[1], node.data[2]];
+    // if (!node.length) do console.log(node.data); while (node = node.next)
+      if (p) {
+          p.selected = (p[0] >= x0) && (p[0] < x3) && (p[1] >= y0) && (p[1] < y3);
+          if (p.selected) {
+            validData.push(p);
+         }
+      }
+    }
+    return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
+  });
+  return validData;
+}
+
+function drawPoints(){
+  var nestedData = d3.entries(data)
   var pointsRaw = nestedData.map(function(d,i){
-    // var point = projection([d.value.lat,d.value.lng]);
-    var point = [d.value.lat, d.value.lng]
+    var point = projection([d.value.lng,d.value.lat]);
     point.push(d.key)
     return point;
   });
 
-  // var marker = d3.select("#map").selectAll("svg")
-  //       .data(d3.entries(data))
-  //       .each(transform) // update existing markers
-  //     .enter().append("svg")
-  //       .each(transform)
-  //       .attr("class", "marker_map");
-
-  pointsRaw.forEach(function(i){
-      addpoint(i[1], i[0], i[2] );
-    });
-
-  //Add a circle.
-  // marker.append("circle")
-  //     .attr("r", 4.5)
-  //     .attr("cx", padding)
-  //     .attr("cy", padding);
-
-  // // Add a label.
-  // marker.append("text")
-  //     .attr("x", padding + 7)
-  //     .attr("y", padding)
-  //     .attr("dy", ".31em")
-  //     .text(function(d) { return d.key; });
-  //       console.log(d);
-
   var width = parseInt(d3.select("#map").style("width"),10);
   var height = parseInt(d3.select("#map").style("height"),10);
 
-  //  var grid = svg.append('g')
-  //  .attr('class', 'grid');
-   
-  //  for (var x = 0; x <= width; x += clusterRange) {
-  //    for (var y = 0; y <= height; y+= clusterRange) {
-  //      grid.append('rect')
-  //        .attr({
-  //          x: x,
-  //          y: y,
-  //          width: clusterRange,
-  //          height: clusterRange,
-  //          class: "grid"
-  //        });
-  //    }
-  //  }
+  quadtree = d3.quadtree().addAll(pointsRaw);
 
-  // quadtree = d3.quadtree().addAll(pointsRaw);
+  var cPoints = quadtreeTraversal(quadtree);
 
-  // // Find the nodes within the specified rectangle.
-  // function search(quadtree, x0, y0, x3, y3) {
-  //   var validData = [];
-  //   quadtree.visit(function(node, x1, y1, x2, y2) {
-  //     var p = node.point;
-  //     if (p) {
-  //         p.selected = (p[0] >= x0) && (p[0] < x3) && (p[1] >= y0) && (p[1] < y3);
-  //         if (p.selected) {
-  //           validData.push(p);
-  //        }
-  //     }
-  //     return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
-  //   });
-  //   return validData;
-  // }
+  // console.log(clusterPoints.length)
 
-  // var clusterPoints = [];
-  // var clusterRange = 20;
+  var pointSizeScale = d3.scaleLinear()
+     .domain([
+        d3.min(cPoints, function(d) {return d[2].length;}),
+        d3.max(cPoints, function(d) {return d[2].length;})
+     ])
+     .rangeRound([3, 15]);
 
-  // for (var x = 0; x <= width; x += clusterRange) {
-  //   for (var y = 0; y <= height; y+= clusterRange) {
-  //     var searched = search(quadtree, x, y, x + clusterRange, y + clusterRange);
+  g.selectAll(".centerPoint").remove();
+  g.selectAll(".centerPoint")
+    .data(cPoints)
+    .enter().append("circle")
+    .attr("class", function(d) {return "centerPoint"})
+    .attr("cx", function(d) {return d[0];})
+    .attr("cy", function(d) {return d[1];})
+    .attr("fill", '#FFA500')
+    .attr("r", 6)
+    .on("click", function(d, i) {
+      console.log(d);
+    })
+  g.selectAll(".centerPointNum")
+    .data(cPoints)
+    .enter().append("text")
+    .attr("class","centerPointNum")
+    .attr("x", function(d){return d[0];})
+    .attr("y", function(d){return d[1];})
+    .attr("fill","black")
+    .attr("text-anchor","middle")
+    .attr("alignment-baseline","middle")
+    .text(function(d){return d[2].length})
 
-  //     var centerPoint = searched.reduce(function(prev, current) {
-  //       return [prev[0] + current[0], prev[1] + current[1]];
-  //     }, [0, 0]);
+}
 
-  //     centerPoint[0] = centerPoint[0] / searched.length;
-  //     centerPoint[1] = centerPoint[1] / searched.length;
-  //     centerPoint.push(searched);
+function quadtreeTraversal(quadtree){
+  var clusterPoints = [];
+  var clusterRange = 60;
 
-  //     if (centerPoint[0] && centerPoint[1]) {
-  //       clusterPoints.push(centerPoint);
-  //     }
-  //   }
-  // }
+  for (var x = 0; x <= width; x += clusterRange) {
+    for (var y = 0; y <= height; y+= clusterRange) {
+      var searched = search(quadtree, x, y, x + clusterRange, y + clusterRange);
+      // if(searched.length != 0){
+        var centerPoint = searched.reduce(function(prev, current) {
+          return [prev[0] + current[0], prev[1] + current[1]];
+        }, [0, 0]);
 
-  // var pointSizeScale = d3.scaleLinear()
-  //    .domain([
-  //       d3.min(clusterPoints, function(d) {return d[2].length;}),
-  //       d3.max(clusterPoints, function(d) {return d[2].length;})
-  //    ])
-  //    .rangeRound([3, 15]);
+        centerPoint[0] = centerPoint[0] / searched.length;
+        centerPoint[1] = centerPoint[1] / searched.length;
+        centerPoint.push(searched);
+        if (centerPoint[0] && centerPoint[1]) {
+          clusterPoints.push(centerPoint);
+        }
+      // }
+    }
+  }
 
-  // g.selectAll(".centerPoint")
-  //   .data(clusterPoints)
-  //   .enter().append("circle")
-  //   .attr("class", function(d) {return "centerPoint"})
-  //   .attr("cx", function(d) {return d[0];})
-  //   .attr("cy", function(d) {return d[1];})
-  //   .attr("fill", '#FFA500')
-  //   .attr("r", 6)
-  //   .on("click", function(d, i) {
-  //     console.log(d);
-  //   })
-
-  //EXAMPLE: adding some capitals from external CSV file
-  // d3.csv("data/country-capitals.csv", function(err, capitals) {
-
-  //   capitals.forEach(function(i){
-  //     addpoint(i.CapitalLongitude, i.CapitalLatitude, i.CapitalName );
-  //   });
-
-  // });
-
+  return clusterPoints;
 }
 
 function validateMove(obj) {
@@ -255,27 +237,27 @@ function click() {
 }
 
 
-//function to add points and text to the map (used in plotting capitals)
-function addpoint(lat,lon,text) {
+// //function to add points and text to the map (used in plotting capitals)
+// function addpoint(lat,lon,text) {
 
-  var gpoint = g.append("g").attr("class", "gpoint");
-  var x = projection([lat,lon])[0];
-  var y = projection([lat,lon])[1];
+//   var gpoint = g.append("g").attr("class", "gpoint");
+//   var x = projection([lat,lon])[0];
+//   var y = projection([lat,lon])[1];
 
-  gpoint.append("svg:circle")
-        .attr("cx", x)
-        .attr("cy", y)
-        .attr("class","point")
-        .attr("r", 1.5);
+//   gpoint.append("svg:circle")
+//         .attr("cx", x)
+//         .attr("cy", y)
+//         .attr("class","point")
+//         .attr("r", 1.5);
 
-  //conditional in case a point has no associated text
-  if(text.length>0){
+//   //conditional in case a point has no associated text
+//   if(text.length>0){
 
-    gpoint.append("text")
-          .attr("x", x+2)
-          .attr("y", y+2)
-          .attr("class","text")
-          .text(text);
-  }
+//     gpoint.append("text")
+//           .attr("x", x+2)
+//           .attr("y", y+2)
+//           .attr("class","text")
+//           .text(text);
+//   }
 
-}
+// }
