@@ -11,7 +11,7 @@ Homepage card styling will be imported from /partials/home_cards.scss
 	h1{
 		color:white; 
 		text-align:center; 
-		padding-top: 80px; 
+		padding-top: 80px;
 		font-weight: 200 !important;
 	}
 	h3{
@@ -20,24 +20,6 @@ Homepage card styling will be imported from /partials/home_cards.scss
 		font-size: 25px; 
 		font-weight: 100 !important
 	}
-}
-.formtastic .stringish input {
-  width:100% !important;
-  padding: 10px;
-}
-.formtastic .text textarea {
-  width:100% !important;
-  height: 120px;
-}
-.formtastic label {
-  width:0% !important;
-  color: black;
-}
-.formtastic select {
-  width:100% !important;
-}
-.formtastic legend {
-  font-size: initial !important;
 }
 .categories-container{
 	margin-top: -180px;
@@ -53,19 +35,19 @@ table.borderless tbody tr td {
 	border: none;
 }
 // About section on homepage styling
-.home-codex.jumbotron{
+.home-codex-jumbotron{
 	background-color: #3B7AA3; 
 	background-size:cover; 
 	background-image:url(/images/backgrounds/codex.jpg);
-	min-height: 660px;
+	height: 660px;
 }
 .home-codex-container{
 	a{
 		color: $sls_orange !important;
 	}
 	h1{
-		color:white; 
-		padding-top: 90px; 
+		color:white;  
+		padding-top: 90px;
 		padding-bottom: 20px; 
 		font-weight: 200 !important;
 	}
@@ -74,7 +56,7 @@ table.borderless tbody tr td {
 		font-size: 25px;
 	}
 	.col-md-6{
-		padding-right: 90px;
+		padding-left: 100px;
 	}
 }
 .about-image{
