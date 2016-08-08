@@ -25,7 +25,25 @@ class CompaniesController < ApplicationController
 
   def map
     @companies = Company.all
-
+    # @hash = Gmaps4rails.build_markers(@companies) do |company, marker|
+    #   marker.lat company.latitude
+    #   marker.lng company.longitude
+    #   contentString = '<div id="content">'+
+    #     '<h2 id="firstHeading" class="firstHeading">' +
+    #     company.name +
+    #     '</h2>'+
+    #     '<div id="bodyContent">'+
+    #     '<p>' +
+    #     company.description +
+    #     '</p>'+
+    #     '(last updated June 22, 2009).</p>'+
+    #     '<a href="/companies/' +
+    #     company.id.to_s +
+    #     '" class="btn btn-default">View Info</a>' +
+    #     '</div>'+
+    #     '</div>';
+    #   marker.infowindow contentString
+    #   marker.json({ title: company.name })
     @hash = createMarkers(@companies) do |company, marker|
       marker.lat company.latitude
       marker.lng company.longitude

@@ -6,7 +6,7 @@ var map = new google.maps.Map(d3.select("#map").node(), {
   maxZoom:13,
   center: new google.maps.LatLng(0,0),
   // center: new google.maps.LatLng(37.76487, -122.41948),
-  mapTypeId: google.maps.MapTypeId.TERRAIN
+  mapTypeId: google.maps.MapTypeId.TERRAIN 
 });
 
 var overlay = new google.maps.OverlayView();

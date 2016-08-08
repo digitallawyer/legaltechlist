@@ -17,7 +17,7 @@
 //= require underscore
 //= require gmaps/google
 //= require topojson.v1.min
-//= require d3.min
+//= require d3
 //= require_tree .
 
 
