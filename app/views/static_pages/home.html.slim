@@ -4,11 +4,19 @@
       h1 Discover Legal Technology
       h3
         | Explore a curated list of #{Company.count} companies changing the way legal is done.
-      .col-md-3
-      .col-md-6
-        = form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:40px;", method: :get do
-          p.flex
+      .row.desktop-row
+        .col-md-3
+        .col-md-6
+          = form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:40px;", method: :get do
+            p.flex
+              = text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for a company", id: "search-input"
+              = submit_tag "Search", name: nil, class: "btn btn-primary btn-sls-orange btn-lg"
+      .row.mobile-row
+        .col-md-12
+          = form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:40px;", method: :get do
+          p
             = text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for a company", id: "search-input"
+          .submit-button-mobile-row  
             = submit_tag "Search", name: nil, class: "btn btn-primary btn-sls-orange btn-lg"
 .div class=("categories-container container")
   .row
@@ -22,7 +30,7 @@
               |
                 SEE COMPANIES
 
-.jumbotron.home-codex.jumbotron
+.jumbotron.home-codex-jumbotron
   .container.home-codex-container
     .col-md-6
       h1 Stanford CodeX
