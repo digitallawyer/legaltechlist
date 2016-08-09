@@ -48,6 +48,7 @@ gem "figaro"
 
 #mail
 gem 'sendgrid'
+gem 'mail'
 
 #d3.js library
 gem "d3-rails"

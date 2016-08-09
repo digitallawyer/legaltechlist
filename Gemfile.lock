@@ -246,6 +246,7 @@ DEPENDENCIES
   jbuilder (~> 2.0)
   jquery-rails
   kaminari
+  mail
   pg
   pg_search
   rails (= 4.2.1)
