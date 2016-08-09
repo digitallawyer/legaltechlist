@@ -19,3 +19,5 @@ business_model = BusinessModel.create([
   {name:"Legal Tech", description:"Creates and Sells Technology Products."},
   {name:"Legal Service Using Tech", description:"Provides a legal service using legal tech."}
 ])
+
+AdminUser.create!(email: 'admin@example.com', password: 'password', password_confirmation: 'password')

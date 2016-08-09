@@ -17,8 +17,9 @@ Now you're ready to get start setting up the project.
 		bundle install
 		bundle update
 4. With all the proper gems installed you're almost there. Now we need to get the database.
-		rake db:create
+		rake db:scheme:load
 		rake db:migrate
+		rake db:seed
 5. Lastly, import the csv for testing
 		rake csv:import
 

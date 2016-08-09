@@ -86,11 +86,11 @@ class ImportCSVtoCompany
       
       Company.all.each do |company|
         category = company.category.name
-        business_model = company.business_model
+        
         if company.sub_category.name != "" 
           category = "#{company.category.name} - #{company.sub_category.name}" 
         end
-
+        
         row = [
           company.name,
           company.location,
@@ -101,8 +101,8 @@ class ImportCSVtoCompany
           company.twitter_url, 
           company.angellist_url, 
           company.crunchbase_url, 
-          business_model,
-          company.target_client,
+          company.business_model.name,
+          company.target_client.name,
           company.all_tags
          ]
         
