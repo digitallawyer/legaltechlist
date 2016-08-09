@@ -27,5 +27,6 @@
 <%= yield %>
 <%= render '/layouts/footer' %>
 <%= javascript_include_tag 'application', 'data-turbolinks-track' => false %>
+<%= yield :javascripts %>
 </body>
 </html>
