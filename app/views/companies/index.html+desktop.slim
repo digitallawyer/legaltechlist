@@ -54,9 +54,9 @@
 								= raw tag_links(company.all_tags)
 						/! Makes entire e class a clickable link to the company page
 						javascript:
-							| $(".e").click(function() {
-								| window.location = $(this).find("a").attr("href");
-								| return false;
-								| });
+								$(".e").click(function() {
+									window.location = $(this).find("a").attr("href");
+									return false;
+									});
 		div style="text-align:center;"
 			= paginate @companies
