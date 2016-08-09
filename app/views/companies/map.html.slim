@@ -11,8 +11,25 @@ script src="//d3js.org/d3.v4.min.js"
         - content_for :javascripts do
           javascript:
             handler = Gmaps.build('Google');
-            handler.buildMap({ provider: {}, internal: {id: 'map'}}, function(){
+            handler.buildMap({ provider: {maxZoom:17, minZoom:3}, internal: {id: 'map'}}, function(){
               markers = handler.addMarkers(#{raw @hash.to_json})
               handler.bounds.extendWith(markers);
               handler.fitMapToBounds();
+              handler.map.centerOn({lat: 0, lng:0});
+            });
+
+            var map = handler.getMap();
+            var lastValidCenter = map.getCenter()
+            google.maps.event.addListener(map, 'drag', function(){
+
+              var proj =map.getProjection();
+              var bounds = map.getBounds();
+              var sLat =map.getBounds().getSouthWest().lat();
+              var nLat = map.getBounds().getNorthEast().lat();
+
+              if (sLat < -85 || nLat > 85) {
+                map.setCenter(lastValidCenter)
+               }else {
+                  lastValidCenter = map.getCenter();
+               }
             });

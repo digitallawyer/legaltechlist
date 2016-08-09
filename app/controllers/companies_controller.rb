@@ -24,7 +24,7 @@ class CompaniesController < ApplicationController
 
   def map
     @companies = Company.all
-    @hash = createMarkers(@companies) do |company, marker|
+    @hash = Gmaps4rails.build_markers(@companies) do |company, marker|
       marker.lat company.latitude
       marker.lng company.longitude
       contentString = '<div id="content">'+
@@ -46,10 +46,6 @@ class CompaniesController < ApplicationController
     end
   end
 
-  def createMarkers(collection, &block)
-    Marker.new(collection).call(&block)
-  end
-  
   def feed
     @companies = Company.all
     respond_to do |format|
