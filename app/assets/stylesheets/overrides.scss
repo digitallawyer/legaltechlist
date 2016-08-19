@@ -1,193 +1,73 @@
-// Body
+@import 'variables';
+@import 'partials/tags';
+@import 'partials/buttons';
 
+// Body
 body {
-	background-color: #F2EFEA !important;
+	background-color: $gray !important;
 	padding-top: 50px; 
 	font-family: proxima-nova, 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    color: #1a1a1a;
+  color: #1a1a1a;
 }
-
 #notice {
 	padding: 14px;
-    background-color: #8bb314;
-    margin: 14px;
-    color: white;
+  background-color: #8bb314;
+  margin: 14px;
+  color: white;
 }
-
 // Navigation
-
-h1, h2, h3 {
-	font-weight: 200 !important; 
-}
-
 a.navbar-brand {
 	color: white !important;
 }
-
-// Formtastic overrides
-
-.formtastic .stringish input {
-  width:100% !important;
-  padding: 10px;
-}
-
-.formtastic .text textarea {
-  width:100% !important;
-  height: 120px;
-}
-
-.formtastic label {
-  width:0% !important;
-  color: black;
-}
-
-.formtastic select {
-  width:100% !important;
-}
-
-.formtastic legend {
-  font-size: initial !important;
-}
-
-.categories-container{
-	margin-top: -180px;
-	margin-bottom: 100px;
-}
-
-// Card Component
-
-.panel-default {
-	border: 0px solid transparent;
-	border-radius: 0px;
-}
-.box-shadow {
-	box-shadow: 0px 0px 20px -4px;
-	-webkit-box-shadow: 0px 0px 20px -5px;
-	-moz-box-shadow: 0px 0px 20px -5px;
-	-o-box-shadow: 0px 0px 20px -5px;
-}
-.category-card {
-	flex: 1;
-	-webkit-flex: 1 1 auto;
-  	-ms-flex: 1 1 auto;
-  	text-align: center;
-  	box-shadow: none;
-    transition: box-shadow 0.2s;
-	margin:30px 35px 30px 0px;	
-	margin-bottom: 6px;
-	padding-bottom: 70px;
-	@media screen and (min-width: 480px) {
-		min-width: 340px;
-		min-height: 180px;
+.navbar-brand{
+	img{
+		width: 45px; 
+		margin-bottom: 10px;
 	}
 }
-.category-card:hover{
-	-webkit-box-shadow: 0px 0px 5px 2px rgba(128,128,128,1);
-	-moz-box-shadow: 0px 0px 5px 2px rgba(128,128,128,1);
-	box-shadow: 0px 0px 5px 2px rgba(128,128,128,1);
-	.see-companies-button{
-		background-color: white;
-		text-decoration: none;
+.navbar-nav{
+	.custom-menu{
+		font-size: 21px;
+		color:#fbfbfb;
+		font-weight: 200;
 	}
-	.see-companies-button-1{
-		color: #16a0d6 !important;
+	.dropdown-toggle{
+		font-size: 18px;
+		color:$sls_orange !important;
+		font-weight: 400 !important;
 	}
-	.see-companies-button-2{
-		color: #b30000 !important;
+	.dropdown-menu{
+		height: 164px !important;
+		font-size: 18px;
+		line-height: 70px !important;
+		width: 150px !important;
 	}
-	.see-companies-button-3{
-		color: #e89c2e !important;
+	.dropdown-menu > li > a:hover{
+		background-color: $sls_orange !important;
+		background-image: none;
+		color: white !important
 	}
-	.see-companies-button-4{
-		color: #82A27E !important;
-	}
-	.see-companies-button-5{
-		color: #8bb314 !important;
-	}
-	.see-companies-button-6{
-		color: #e8be2e !important;
-	}
-	.see-companies-button-7{
-		color: #16a0d6 !important;
-	}
-	.see-companies-button-8{
-		color: #b30000 !important;
+	.dropdown-menu > li > a{
+		color: grey !important;
+		font-weight: 400 !important;
+		line-height: 45px;
+		height: 50px;
 	}
 }
-.category-link {
-	text-decoration: none !important;
-}
-p.category-title {
-		color: white;
-		text-align: center;
-		font-size: 22px;
-		font-weight: 600;
-		height: 160px;
-		line-height: 180px;
-}
-.see-companies-button{
-	width: 1320px;
-	height: 47px;
-	border: 1px solid white;
-	padding: 17px;
-	color: white !important;
-	cursor: pointer;
-	text-decoration: none;
-	background-color: none;
-	transition: background-color 0.4s;
-}
-// Category Backgrounds
-.category-background-1 {
-	background-color: #16a0d6;
-}
-.category-background-2 {
-	background-color: #b30000;
-}
-.category-background-3 {
-	background-color: #e89c2e;
-}
-.category-background-4 {
-	background-color: #82A27E;
-}
-.category-background-5 {
-	background-color: #8bb314;
-}
-.category-background-6 {
-	background-color: #e8be2e;
-}
-.category-background-7 {
-	background-color: #16a0d6;
-}
-.category-background-8 {
-	background-color: #b30000;
-}
-
-/* --------------------------- */
-
-.breadcrumb {
-   padding: 10px 0px !important;
-   margin: 10px 0px !important;
-}
-.flex {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: space-between;
-}
-// Input form
-.input-lg {
-	flex-grow:1;
-	margin-right: 2px;
-}
-// Table
-table.borderless tbody tr td {
-	border: none;
-}
-.tags-container{
-	margin-top: 110px;
-	padding-bottom: 40px;
-}
-.about-image{
-	background-image:url('/images/stock/about.jpg');
-	height: 500px;
-	background-size: cover;
+// STATIC Page design is located in static_pages.scss and imports from 'static' folder
+.footer{
+	min-height: 100px !important;
+	background-color: #222 !important;
+	padding-bottom: 20px;
+	img{
+		float: left;
+		margin-right: 40px;
+		height: 20px;
+	}
+	.col-md-3{
+		padding-top: 40px;
+	}
+	.col-md-9{
+		padding-top: 30px;
+	}
 }

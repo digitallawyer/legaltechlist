@@ -1,6 +1,6 @@
 class StaticPagesController < ApplicationController
   def home
-  	@tags = Tag.limit(60)
+  	@tags = Tag.limit(50)
   end
 
   def about

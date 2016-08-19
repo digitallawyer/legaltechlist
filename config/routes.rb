@@ -11,7 +11,7 @@ Rails.application.routes.draw do
   get 'categories/:category' => 'companies#index', as: :category
   get 'business_models/:business_model' => 'companies#index', as: :business_model
   get 'target_clients/:target_client' => 'companies#index', as: :target_client
-
+  get 'feed', to: 'companies#feed'
   get 'map', to: 'companies#map'
   get 'about', to: 'static_pages#about'
   

@@ -2,8 +2,19 @@
 <html>
 <head>
   <title>Legaltechlist</title>
+  <meta name="description" content="Legal Tech Business Database">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Legal Tech Base">
+  <meta property="og:url" content="http://tech.law.stanford.edu">
+  <meta name="language" content="us">
+  <meta name="audience" content="all">
+  <meta name="revisit-after" CONTENT="7 days">
+  <meta name="robots" content="index,follow">
+  <meta name="keywords" content="legal,tech,stanford,bay,area,database,search">
+
+  <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
+  <meta name="viewport" content="width=device-width" />
   <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
-  <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
   <%= analytics_init if GoogleAnalytics.valid_tracker? %>
@@ -12,9 +23,10 @@
   <%= csrf_meta_tags %>
 </head>
 <body>
-
-
+<%= render '/layouts/navmobile' %>
 <%= yield %>
-
+<%= render '/layouts/footer' %>
+<%= javascript_include_tag 'application', 'data-turbolinks-track' => false %>
+<%= yield :javascripts %>
 </body>
 </html>

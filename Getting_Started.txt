@@ -1,0 +1,28 @@
+Getting Set-Up
+
+This project is built on a Ruby on Rails framework and currently uses a Postgresql database. You'll need to make sure you have rails installed in order for the project to work locally. If you don't have it installed already here's a great tutorial for Mac users:
+	https://launchschool.com/blog/how-to-install-ruby-on-rails-development-environment-for-mac-os-x (follow steps 1-4 and then run gem install rails)
+Windows:
+	https://gorails.com/setup/windows/10
+
+
+Now you're ready to get start setting up the project.
+1. Move to the directory you'd like in your terminal window and clone the repo
+		git clone https://github.com/digitallawyer/legaltechlist.git
+   Alternatively, you may use github Desktop or manually download the repo into the directory you want.
+2. Start running postgresql as a daemon in the background
+		brew services start postgresql
+	NOTE: This you can stop this running with brew services stop postgresql
+3. Make sure you're now in the repo directory in terminal and run
+		bundle install
+		bundle update
+4. With all the proper gems installed you're almost there. Now we need to get the database.
+		rake db:scheme:load
+		rake db:migrate
+		rake db:seed
+5. Lastly, import the csv for testing
+		rake csv:import
+
+
+
+

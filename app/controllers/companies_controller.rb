@@ -20,7 +20,6 @@ class CompaniesController < ApplicationController
       @companies = Company.text_search(params[:query]).page(params[:page]).per(10)
     end
 
-
   end
 
   def map
@@ -46,7 +45,14 @@ class CompaniesController < ApplicationController
       marker.json({ title: company.name })
     end
   end
-  
+
+  def feed
+    @companies = Company.all
+    respond_to do |format|
+      format.rss { render :layout => false }
+    end
+  end
+
   # GET /companies/1
   # GET /companies/1.json
   def show
@@ -74,7 +80,7 @@ class CompaniesController < ApplicationController
     
     respond_to do |format|
       if @company.valid? && @contact.valid?
-       SuggestionMailer.newcompany_email(@company, @contact.email, @contact.name).deliver_now
+        SuggestionMailer.newcompany_email(@company, @contact.email, @contact.name).deliver_now
         
         format.html { redirect_to @company, notice: 'Company was successfully submitted.' }
         format.json { render :show, status: :created, location: @company }

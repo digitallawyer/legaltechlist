@@ -1,15 +1,13 @@
-= render '/static_pages/nav'
-
 .container-fluid style="margin-top: 20px;"
 
 	- if flash[:notice]
 	  div class="alert alert-success"
 		  = flash[:notice]
 
-	.col-md-3 
+	.col-md-3.company-list-sidecontainer
 		.panel.panel-default.lg-panel
 			.panel-body
-				h5 Categories
+				h3 Categories
 				- Category.all.each do |category|
 					= link_to category.name, companies_path(:category => category)
 					br
@@ -21,8 +19,8 @@
 						br
 						
 				.tags-cloud.hidden-xs.hidden-sm	
-					h5 Tags
-					- tag_cloud Tag.counts.order("RANDOM()").limit(20), %w{css1} do |tag, css_class|
+					h3 Tags
+					- tag_cloud Tag.counts.order("RANDOM()").limit(20), %w{} do |tag, css_class|
 						= link_to tag.name, tag_path(tag.name), class: css_class
 						span<
 							|(
@@ -34,33 +32,30 @@
 					h5 Business Type
 					- BusinessModel.all.each do |biz|
 						= link_to biz.name, companies_path(:business_model => biz)
-				br
-					p 
-						|
-							The companies and services listed in this database are provided for informational purposes only and are not endorsed by CodeX, Stanford Law School, or Stanford University.
+				/ br
+				/ 	p 
+				/ 		|
+				/ 			The companies and services listed in this database are provided for informational purposes only and are not endorsed by CodeX, Stanford Law School, or Stanford University.
 
-
-	.col-md-9.nopadding
+	.col-md-9.nopadding.company-list-container
 		.panel.panel-default.lg-panel
 			.panel-body
-				= link_to 'Submit a New Company', new_company_path, class: "btn btn-default pull-right"
-				h4 Companies
-				
-				- @companies.each do |company|
-					hr
-					div
-						h4
-							a href="/companies/#{company.id}" = company.name
-							|  
-						p= company.description
-						/span.text-muted
-							i.fa.fa-tags style="margin-right:6px;" 
-							= raw tag_links(company.all_tags)
-					/! Makes entire e class a clickable link to the company page
-					javascript:
-						| $(".e").click(function() {
-							| window.location = $(this).find("a").attr("href");
-							| return false;
-							| });
+				= link_to 'Submit a New Company', new_company_path, class: "btn btn-sls-orange pull-right"
+				h3 Companies
+				.company-list
+					- @companies.each do |company|
+						a href="/companies/#{company.id}" 
+							.list-item
+								h4= company.name
+								p= company.description
+							/span.text-muted
+								i.fa.fa-tags style="margin-right:6px;" 
+								= raw tag_links(company.all_tags)
+						/! Makes entire e class a clickable link to the company page
+						javascript:
+							 	$(".e").click(function() {
+									window.location = $(this).find("a").attr("href");
+									return false;
+									});
 		div style="text-align:center;"
 			= paginate @companies

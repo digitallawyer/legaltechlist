@@ -1,16 +1,23 @@
-= render 'nav'
-.jumbotron style=("background-color: #3B7AA3; background-size:cover; background-image:url(/images/backgrounds/bg.jpg); min-height: 760px;") 
+.jumbotron.home-jumbotron
   .container-fluid
     .col-md-12
-      h1 style=("color:white; text-align:center; padding-top: 150px; font-weight: 500 !important")  Discover Legal Technology
-      h3 style=("color:white;text-align:center; font-size: 25px;") 
+      h1 Discover Legal Technology
+      h3
         | Explore a curated list of #{Company.count} companies changing the way legal is done.
-      .col-md-3
-      .col-md-6
-        = form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:40px;", method: :get do
-          p.flex
+      .row.desktop-row
+        .col-md-3
+        .col-md-6
+          = form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:40px;", method: :get do
+            p.flex
+              = text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for a company", id: "search-input"
+              = submit_tag "Search", name: nil, class: "btn btn-primary btn-sls-orange btn-lg"
+      .row.mobile-row
+        .col-md-12
+          = form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:40px;", method: :get do
+          p
             = text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for a company", id: "search-input"
-            = submit_tag "Search", name: nil, class: "btn btn-primary btn-lg"
+          .submit-button-mobile-row  
+            = submit_tag "Search", name: nil, class: "btn btn-primary btn-sls-orange btn-lg"
 .div class=("categories-container container")
   .row
     .flex
@@ -23,11 +30,20 @@
               |
                 SEE COMPANIES
 
-.jumbotron style=("background-color: #3B7AA3; background-size:cover; background-image:url(/images/backgrounds/codex.jpg); min-height: 660px;")
-
-.tags-container.container
-  .row
+.jumbotron.home-codex-jumbotron
+  .container.home-codex-container
     .col-md-6
+      h1 Stanford CodeX
+      p 
+        | This database and tool was designed and created by the Stanford CodeX Center for Legal Informatics. For more information please see our 
+        a href="/about" About-page
+        |  and the CodeX Center for Legal Informatics' 
+        a href="https://law.stanford.edu/codex-the-stanford-center-for-legal-informatics/" target="_blank" website
+        | .
+
+.home-tags-cloud-container.container
+  .row
+    .col-md-6.tags-box
       .panel.panel-default.lg-panel.flex-panel
         .panel-body
           .tags-cloud.glassy-bg

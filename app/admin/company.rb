@@ -34,6 +34,7 @@ permit_params :name, :location, :founded_date, :category, :business_model, :targ
     send_data csv, 
       type: "text/csv; charset=#{encoding}; header=present",
       disposition: "attachment; filename=companies.csv"
+
   end
 
 index do
