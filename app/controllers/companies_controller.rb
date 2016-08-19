@@ -80,7 +80,7 @@ class CompaniesController < ApplicationController
     
     respond_to do |format|
       if @company.valid? && @contact.valid?
-        SuggestionMailer.newcompany_email(@company, @contact.email, @contact.name).deliver_now
+        # SuggestionMailer.newcompany_email(@company, @contact.email, @contact.name).deliver_now
         
         format.html { redirect_to @company, notice: 'Company was successfully submitted.' }
         format.json { render :show, status: :created, location: @company }
@@ -102,7 +102,7 @@ class CompaniesController < ApplicationController
     
     respond_to do |format|
       if @company.valid? && @contact.valid?
-        SuggestionMailer.editcompany_email(@company, @contact.email, @contact.name).deliver_now
+        # SuggestionMailer.editcompany_email(@company, @contact.email, @contact.name).deliver_now
         
         #redirect to the company we're editing, not the company changes we're submitting!
         format.html { redirect_to Company.find(params[:id]), notice: 'Company updates were successfully submitted.' }

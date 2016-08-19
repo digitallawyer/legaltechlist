@@ -6,9 +6,10 @@
         .col-md-6
           .form-group
             = c.input :name, :placeholder => "Your Name", :label => "Your Name", class: "form-control"
+            = c.input :email, :placeholder => "you@youremail.com", :label => "Your Email Address"
         .col-md-6
           .form-group
-            = c.input :email, :placeholder => "you@youremail.com", :label => "Your Email Address"
+            
     = f.inputs "Company Info" do
       br/
       .row
