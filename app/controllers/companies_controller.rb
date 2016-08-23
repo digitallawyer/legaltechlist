@@ -75,20 +75,20 @@ class CompaniesController < ApplicationController
   # the values from the new form, verify them, and then e-mail them to the 
   # administrator to be added later.
   def create    
-    @company = Company.new(company_params)
+    #@company = Company.new(company_params)
     @contact = Contact.new(contact_params)
-    
-    respond_to do |format|
-      if @company.valid? && @contact.valid?
-        # SuggestionMailer.newcompany_email(@company, @contact.email, @contact.name).deliver_now
+    redirect_to "/"
+    # respond_to do |format|
+    #   if @company.valid? && @contact.valid?
+    #     # SuggestionMailer.newcompany_email(@company, @contact.email, @contact.name).deliver_now
         
-        format.html { redirect_to @company, notice: 'Company was successfully submitted.' }
-        format.json { render :show, status: :created, location: @company }
-      else
-        format.html { render :new }
-        format.json { render json: @company.errors, status: :unprocessable_entity }
-      end
-    end
+    #     format.html { redirect_to @company, notice: 'Company was successfully submitted.' }
+    #     format.json { render :show, status: :created, location: @company }
+    #   else
+    #     format.html { render :new }
+    #     format.json { render json: @company.errors, status: :unprocessable_entity }
+    #   end
+    # end
   end
 
   # PATCH/PUT /companies/1
@@ -97,8 +97,8 @@ class CompaniesController < ApplicationController
   # values from the edit form, verify them, and then e-mail them to the
   # administrator to be added later.
   def update
-    @company = Company.new(company_params)
-    @contact = Contact.new(contact_params)
+    @company = Company.new(params[:company])
+    @contact = Contact.new(params[:contact])
     
     respond_to do |format|
       if @company.valid? && @contact.valid?
