@@ -7,23 +7,17 @@ class CompaniesController < ApplicationController
   # this search could easily be made much more complex and powerful
   # with ands and ors if necessary
   def index
-    # search by the appropriate method
-    #@companies = Company.where('visible is ? OR visible=?', nil, true).page(params[:page]).per(10)
-    # @companies = Company.where('visible' => true).page(params[:page]).per(10)
-    @companies = Company.where(:visible => [true, nil]).page(params[:page]).per(10)
-
-    # if params[:tag]
-    #   @companies = Company.tagged_with(params[:tag]).page(params[:page]).per(10)
-    # elsif params[:category]
-    #   @companies = Company.where(:category => params[:category]).page(params[:page]).per(10)
-    # elsif params[:business_model]
-    #   @companies = Company.where(:business_model => params[:business_model]).page(params[:page]).per(10)
-    # elsif params[:target_client]
-    #   @companies = Company.where(:target_client => params[:target_client]).page(params[:page]).per(10)
-    # else
-    #   @companies = Company.text_search(params[:query]).page(params[:page]).per(10)
-    # end
-
+    if params[:tag]
+      @companies = Company.where('visible' => true).tagged_with(params[:tag]).page(params[:page]).per(10)
+    elsif params[:category]
+      @companies = Company.where('visible' => true).where(:category => params[:category]).page(params[:page]).per(10)
+    elsif params[:business_model]
+      @companies = Company.where('visible' => true).where(:business_model => params[:business_model]).page(params[:page]).per(10)
+    elsif params[:target_client]
+      @companies = Company.where('visible' => true).where(:target_client => params[:target_client]).page(params[:page]).per(10)
+    else
+      @companies = Company.where('visible' => true).text_search(params[:query]).page(params[:page]).per(10)
+    end
   end
 
   def map
@@ -80,13 +74,16 @@ class CompaniesController < ApplicationController
   # administrator to be added later.
   def create
     @company = Company.new(company_params)
-    @contact = Contact.new(contact_params) 
+    #@contact = Contact.new(contact_params) 
 
     respond_to do |format|
-      if @company.valid? && @contact.valid?
+      #if @company.valid? && @contact.valid?
+      if @company.valid?
+        # set company to invisble
         @company.visible = false
+
         @company = @company.save
-        @contact = @contact.save
+        #@contact = @contact.save
         # SuggestionMailer.newcompany_email(@company, @contact.email, @contact.name).deliver_now
         format.html { redirect_to "/companies", notice: 'Company was successfully submitted. It will be reviewed in the next days.' }
         format.json { render :show, status: :created, location: @company }
