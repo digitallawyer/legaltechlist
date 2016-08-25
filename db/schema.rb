@@ -73,15 +73,15 @@ ActiveRecord::Schema.define(version: 20160824181505) do
     t.string   "angellist_url"
     t.string   "crunchbase_url"
     t.string   "employee_count"
-    t.datetime "created_at",        null: false
-    t.datetime "updated_at",        null: false
+    t.datetime "created_at",                       null: false
+    t.datetime "updated_at",                       null: false
     t.integer  "category_id"
     t.integer  "target_client_id"
     t.integer  "business_model_id"
     t.integer  "sub_category_id"
     t.float    "latitude"
     t.float    "longitude"
-    t.boolean  "visible"
+    t.boolean  "visible",           default: true
   end
 
   add_index "companies", ["business_model_id"], name: "index_companies_on_business_model_id", using: :btree

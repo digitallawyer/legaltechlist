@@ -1,6 +1,8 @@
 = bootstrap_form_for @company do |f|        
   br/
   .row
+    .col-md-12
+  .row
     .col-md-4
       = f.text_field :name, :placeholder => "LegalTech, Inc.", :label => "Company Name", :required => true
     .col-md-4
@@ -13,8 +15,8 @@
 	  .col-md-8
 	    = f.text_field :all_tags,:placeholder => "All relevant tags separated by commas"
       .col-md-4
-        / - options = options_from_collection_for_select(Category.all, 'name', 'id')
-        / = f.select :category, options, :required => true, :include_blank => false
+        - options = options_from_collection_for_select(Category.all, 'id', 'name')
+        = f.select :category, options, :required => true, :include_blank => false
 
   / = f.input :sub_category,  as: :select, collection: option_groups_from_collection_for_select(Category.all.order(:name), :sub_categories, :name, :id, :name), :required => false, :include_blank => false
   / = f.input :target_client, as: :select, collection: TargetClient.all, :required => false, :include_blank => false
