@@ -7,19 +7,17 @@ class CompaniesController < ApplicationController
   # this search could easily be made much more complex and powerful
   # with ands and ors if necessary
   def index
-    # search by the appropriate method
     if params[:tag]
-      @companies = Company.tagged_with(params[:tag]).page(params[:page]).per(10)
+      @companies = Company.where('visible' => true).tagged_with(params[:tag]).page(params[:page]).per(10)
     elsif params[:category]
-      @companies = Company.where(:category => params[:category]).page(params[:page]).per(10)
+      @companies = Company.where('visible' => true).where(:category => params[:category]).page(params[:page]).per(10)
     elsif params[:business_model]
-      @companies = Company.where(:business_model => params[:business_model]).page(params[:page]).per(10)
+      @companies = Company.where('visible' => true).where(:business_model => params[:business_model]).page(params[:page]).per(10)
     elsif params[:target_client]
-      @companies = Company.where(:target_client => params[:target_client]).page(params[:page]).per(10)
+      @companies = Company.where('visible' => true).where(:target_client => params[:target_client]).page(params[:page]).per(10)
     else
-      @companies = Company.text_search(params[:query]).page(params[:page]).per(10)
+      @companies = Company.where('visible' => true).text_search(params[:query]).page(params[:page]).per(10)
     end
-
   end
 
   def map
@@ -74,15 +72,20 @@ class CompaniesController < ApplicationController
   # Actual companies are created in the Admin module. This function will accept
   # the values from the new form, verify them, and then e-mail them to the 
   # administrator to be added later.
-  def create    
+  def create
     @company = Company.new(company_params)
-    @contact = Contact.new(contact_params)
-    
+    #@contact = Contact.new(contact_params) 
+
     respond_to do |format|
-      if @company.valid? && @contact.valid?
-        SuggestionMailer.newcompany_email(@company, @contact.email, @contact.name).deliver_now
-        
-        format.html { redirect_to @company, notice: 'Company was successfully submitted.' }
+      #if @company.valid? && @contact.valid?
+      if @company.valid?
+        # set company to invisble
+        @company.visible = false
+
+        @company = @company.save
+        #@contact = @contact.save
+        # SuggestionMailer.newcompany_email(@company, @contact.email, @contact.name).deliver_now
+        format.html { redirect_to "/companies", notice: 'Company was successfully submitted. It will be reviewed in the next days.' }
         format.json { render :show, status: :created, location: @company }
       else
         format.html { render :new }
@@ -97,12 +100,12 @@ class CompaniesController < ApplicationController
   # values from the edit form, verify them, and then e-mail them to the
   # administrator to be added later.
   def update
-    @company = Company.new(company_params)
-    @contact = Contact.new(contact_params)
+    @company = Company.new(params[:company])
+    @contact = Contact.new(params[:contact])
     
     respond_to do |format|
       if @company.valid? && @contact.valid?
-        SuggestionMailer.editcompany_email(@company, @contact.email, @contact.name).deliver_now
+        # SuggestionMailer.editcompany_email(@company, @contact.email, @contact.name).deliver_now
         
         #redirect to the company we're editing, not the company changes we're submitting!
         format.html { redirect_to Company.find(params[:id]), notice: 'Company updates were successfully submitted.' }
@@ -136,7 +139,7 @@ class CompaniesController < ApplicationController
                                       :business_model, :target_client, :description, :main_url, 
                                       :twitter_url, :angellist_url, :crunchbase_url, :employee_count, 
                                       :all_tags, :category_id, :sub_category_id, :target_client_id, 
-                                      :business_model_id)
+                                      :business_model_id, :visible)
     end
     
     def contact_params

@@ -42,6 +42,15 @@
               <li><a data-no-turbolink='true' href="/">Overview</a></li>
               <li><a data-no-turbolink='true' href="/companies">Companies</a></li>
               <li><a data-no-turbolink='true' href="/about">About</a></li>
+            <% elsif !current_page?('/companies') && (current_page?(controller: 'companies', action: 'new') || current_page?(controller: 'companies', action: 'edit'))%>
+              <li><a data-no-turbolink='true' href="/">Overview</a></li>
+              <li><a data-no-turbolink='true' href="/companies">Companies</a></li>
+              <li><a data-no-turbolink='true' href="/map">Worldmap</a></li>
+              <li><a data-no-turbolink='true' href="/about">About</a></li>
+              <!--Overwrite navabar height only in this one case-->
+              <%= javascript_tag do %>
+                $('.navbar .dropdown-menu').attr('style','height: 205px !important')
+              <% end %>
             <% else %>
               <li><a data-no-turbolink='true' href="/">Overview</a></li>
               <li><a data-no-turbolink='true' href="/map">Worldmap</a></li>
