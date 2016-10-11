@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160824181505) do
+ActiveRecord::Schema.define(version: 20161011220133) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -82,6 +82,8 @@ ActiveRecord::Schema.define(version: 20160824181505) do
     t.float    "latitude"
     t.float    "longitude"
     t.boolean  "visible",           default: true
+    t.string   "contact_email"
+    t.string   "contact_name"
   end
 
   add_index "companies", ["business_model_id"], name: "index_companies_on_business_model_id", using: :btree
