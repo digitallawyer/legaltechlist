@@ -10,10 +10,12 @@ class CompaniesController < ApplicationController
     if params[:tag]
       @companies = Company.where('visible' => true).tagged_with(params[:tag]).page(params[:page]).per(10)
     elsif params[:category]
+      @cat = Category.find(params[:category])
       @companies = Company.where('visible' => true).where(:category => params[:category]).page(params[:page]).per(10)
     elsif params[:business_model]
       @companies = Company.where('visible' => true).where(:business_model => params[:business_model]).page(params[:page]).per(10)
     elsif params[:target_client]
+      @target = TargetClient.find(params[:target_client])
       @companies = Company.where('visible' => true).where(:target_client => params[:target_client]).page(params[:page]).per(10)
     else
       @companies = Company.where('visible' => true).text_search(params[:query]).page(params[:page]).per(10)

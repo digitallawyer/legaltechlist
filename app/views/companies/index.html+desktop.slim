@@ -12,8 +12,8 @@
 					= link_to category.name, companies_path(:category => category)
 					br
 
-				/.panel_body.hidden-xs.hidden-sm	
-					h5 Target Audience
+				.panel_body.hidden-xs.hidden-sm	
+					h3 Target Audience
 					- TargetClient.all.each do |targ|
 						= link_to targ.name, companies_path(:target_client => targ)
 						br
@@ -42,21 +42,40 @@
 		.panel.panel-default.lg-panel
 			.panel-body
 				= link_to 'Submit a New Company', new_company_path, class: "btn btn-sls-orange pull-right"
-				h3 Companies
+				h3 
+					| Companies
+					- if params[:tag]
+						|  tagged with 
+						strong
+							= params[:tag]
+					- elsif params[:category]
+						|  in the 
+						strong
+							= @cat.name
+						| category
+					- elsif params[:target_client]
+						| with targeted clients of 
+						strong
+							= @target.name
+					endif
 				.company-list
-					- @companies.each do |company|
-						a href="/companies/#{company.id}" 
-							.list-item
-								h4= company.name
-								p= company.description
-							/span.text-muted
-								i.fa.fa-tags style="margin-right:6px;" 
-								= raw tag_links(company.all_tags)
-						/! Makes entire e class a clickable link to the company page
-						javascript:
-								$(".e").click(function() {
-									window.location = $(this).find("a").attr("href");
-									return false;
-									});
+					- if !@companies.empty?
+						- @companies.each do |company|
+							a href="/companies/#{company.id}" 
+								.list-item
+									h4= company.name
+									p= company.description
+								/span.text-muted
+									i.fa.fa-tags style="margin-right:6px;" 
+									= raw tag_links(company.all_tags)
+							/! Makes entire e class a clickable link to the company page
+							javascript:
+									$(".e").click(function() {
+										window.location = $(this).find("a").attr("href");
+										return false;
+										});
+					- else
+						h5 There are no companies listed for this search.
+					endif
 		div style="text-align:center;"
 			= paginate @companies
