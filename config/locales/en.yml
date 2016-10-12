@@ -21,3 +21,63 @@
 
 en:
   hello: "Hello world"
+  controllers:
+    company:
+      created_success: "Company was successfully submitted. It will be reviewed in the next days."
+      created_failure: "There was a problem with your submission, please review."
+      updated_success: "Company updates were successfully submitted."
+      updated_failure: "There was a problem with your submission, please review."
+      destroyed_success: "Company was successfully destroyed."
+      destroyed_failure: "There was a problem with your submission, please review."
+  formtastic:
+      titles:
+        company_details: "Company details"
+      labels:
+        company:
+          name: "Name"
+          location: "Location"
+          founded_date: "Founding Year"
+          category: "Category"
+          description: "Description"
+          main_url: "Website"
+          twitter_url: "Twitter"
+          angellist_url: "AngelList"
+          crunchbase_url: "CrunchBase"
+          employee_count: "Employees (#)"
+          edit:
+            title: "Edit Company"
+          contact_name: "Contact Name"
+          contact_email: "Contact Email"
+      hints:
+        company:
+          name: "The name of the company"
+          location: "Head-office location"
+          founded_date: "The year of founding"
+          category: "Legaltech category"
+          description: "A brief description of the business"
+          main_url: "The main company site"
+          twitter_url: "Twitter"
+          angellist_url: "AngelList"
+          crunchbase_url: "CrunchBase"
+          employee_count: "How many employees are currently employed?"
+          contact_name: "Public relations or marketing contact name"
+          contact_email: "Public relations or marketing email address"
+      placeholders:
+        company:
+          name: "LegalTech, Inc."
+          location: "Palo Alto, CA"
+          founded_date: "2016"
+          description: "Makes great legal tech"
+          main_url: "www.legaltech.com"
+          twitter_url: "@LegalTechInc"
+          angellist_url: "www.angellist.com/legaltech"
+          crunchbase_url: "www.crunchbase.com/legaltech"
+          employee_count: "1"
+          contact_name: "Contact Name"
+          contact_email: "contact@example.com"
+      actions:
+        create: "Create my %{model}"
+        update: "Save changes"
+        reset: "Reset form"
+        cancel: "Cancel and go back"
+        dummie: "Launch!"

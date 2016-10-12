@@ -18,8 +18,9 @@ gem 'sass-rails', '~> 5.0'
 # Use kaminari for pagination
 gem 'kaminari'
 
-# Slim support
-gem "slim-rails"
+# Slim support including i18n support using slim/translator
+gem 'slim-rails', require: ['slim-rails', 'slim/translator']
+
 # Use Uglifier as compressor for JavaScript assets
 gem 'uglifier', '>= 1.3.0'
 # Use CoffeeScript for .coffee assets and views
@@ -57,6 +58,9 @@ gem "d3-rails"
 gem 'bootstrap_form'
 
 gem 'google-analytics-rails', '1.1.0'
+
+# Use i18n for localization
+gem 'i18n'
 
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'

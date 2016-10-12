@@ -59,12 +59,11 @@ class CompaniesController < ApplicationController
   # GET /companies/new
   def new
     @company = Company.new
-    @contact = Contact.new
   end
 
   # GET /companies/1/edit
   def edit
-    @contact = Contact.new
+
   end
 
   # POST /companies
@@ -73,19 +72,16 @@ class CompaniesController < ApplicationController
   # the values from the new form, verify them, and then e-mail them to the 
   # administrator to be added later.
   def create
+  
     @company = Company.new(company_params)
-    #@contact = Contact.new(contact_params) 
-
     respond_to do |format|
-      #if @company.valid? && @contact.valid?
       if @company.valid?
-        # set company to invisble
+        # set company to invisible
         @company.visible = false
 
         @company = @company.save
-        #@contact = @contact.save
-        # SuggestionMailer.newcompany_email(@company, @contact.email, @contact.name).deliver_now
-        format.html { redirect_to "/companies", notice: 'Company was successfully submitted. It will be reviewed in the next days.' }
+
+        format.html { redirect_to "/companies", notice: t('controllers.company.created_success') }
         format.json { render :show, status: :created, location: @company }
       else
         format.html { render :new }
@@ -101,17 +97,16 @@ class CompaniesController < ApplicationController
   # administrator to be added later.
   def update
     @company = Company.new(params[:company])
-    @contact = Contact.new(params[:contact])
     
     respond_to do |format|
       if @company.valid? && @contact.valid?
-        # SuggestionMailer.editcompany_email(@company, @contact.email, @contact.name).deliver_now
         
         #redirect to the company we're editing, not the company changes we're submitting!
-        format.html { redirect_to Company.find(params[:id]), notice: 'Company updates were successfully submitted.' }
+        format.html { redirect_to Company.find(params[:id]), notice: t('controllers.company.updated_success') }
         format.json { render :show, status: :ok, location: @company }
       else
-        format.html { render :edit }
+        format.html { render :edit 
+        }
         format.json { render json: @company.errors, status: :unprocessable_entity }
       end
     end
@@ -122,7 +117,7 @@ class CompaniesController < ApplicationController
   def destroy
     @company.destroy
     respond_to do |format|
-      format.html { redirect_to companies_url, notice: 'Company was successfully destroyed.' }
+      format.html { redirect_to companies_url, notice: t('controllers.company.destroyed_success') }
       format.json { head :no_content }
     end
   end
@@ -139,10 +134,6 @@ class CompaniesController < ApplicationController
                                       :business_model, :target_client, :description, :main_url, 
                                       :twitter_url, :angellist_url, :crunchbase_url, :employee_count, 
                                       :all_tags, :category_id, :sub_category_id, :target_client_id, 
-                                      :business_model_id, :visible)
-    end
-    
-    def contact_params
-      params.require(:contact).permit(:name, :email)
+                                      :business_model_id, :visible, :contact_name, :contact_email)
     end
 end
