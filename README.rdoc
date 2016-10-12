@@ -16,7 +16,7 @@ Sam Schroeder - Code = Law Participant
 
 Elizabeth Lowell - Code = Law Participant
 
-Mark Evans - CodeX Fellow
+Mark Evans - Visiting Student Researcher
 
 David Curle - Thomson Reuters
 
@@ -25,6 +25,8 @@ Bob Ambrogi - Lawyer, media and technology professional
 Patrick Haede - Intern at CodeX
 
 Taylor Famighetti - Intern at CodeX
+
+Paul Blizzard - Visiting Student Researcher
 
 
 *Disclaimer*

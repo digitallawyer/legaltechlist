@@ -7,7 +7,7 @@ body {
 	background-color: $gray !important;
 	padding-top: 50px; 
 	font-family: proxima-nova, 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  color: #1a1a1a;
+	color: #1a1a1a;
 }
 #notice {
 	padding: 14px;
@@ -59,6 +59,13 @@ a.navbar-brand {
 		height: 50px;
 	}
 }
+
+.inputs{
+	.label{
+		color:#000;
+	}
+}
+
 // STATIC Page design is located in static_pages.scss and imports from 'static' folder
 .footer{
 	min-height: 100px !important;

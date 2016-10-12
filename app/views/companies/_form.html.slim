@@ -1,12 +1,51 @@
-= bootstrap_form_for @contact do |f|
-  br/
-  .row
-    .col-md-6
-      .form-group
-        = f.text_field :name, :placeholder => "LegalTech, Inc.", :label => "Company Name", :required => true, class: "form-control"
-
-        = fields_for @contact do |fa|
-          = fa.text_field :name, :placeholder => "Firstname"
-          = fa.email_field :email, :placeholder => "Email"
-
-        = f.submit "Save"
+= semantic_form_for @company do |f|
+  
+  = f.inputs "Contact Info" do
+    br/
+    .row
+      .col-md-6
+        = f.input :contact_name, class: "form-control"
+    .row
+      .col-md-6
+        = f.input :contact_email
+  = f.inputs "Company Info" do
+    br/
+    .row
+      .col-md-6
+        = f.input :name, class: "form-control"
+    .row
+      .col-md-6
+        = f.input :location
+    .row
+      .col-md-6
+        = f.input :founded_date
+    .row
+      .col-md-6
+        = f.input :employee_count
+    .row
+      .col-md-6
+        = f.input :all_tags
+    .row
+      .col-md-6
+        = f.input :category, as: :select,  collection: Category.all.order(:name), :required => true, :include_blank => false
+    .row
+      .col-md-6
+        = f.input :description
+    .row
+      .col-md-6
+        = f.input :main_url
+    .row
+      .col-md-6
+        = f.input :twitter_url
+    .row
+      .col-md-6
+        = f.input :angellist_url
+    .row
+      .col-md-6
+        = f.input :crunchbase_url
+    br/
+    .row
+      .col-md-10
+        = f.actions do
+          = f.action :submit, :label => "Update", :button_html => { :class => "btn btn-sls-orange-form" }
+          = f.action :cancel, :label => "Cancel", :button_html => { :class => "btn btn-sls-red-form" }
