@@ -40,14 +40,14 @@
 											| - #{SubCategory.find(@company.sub_category).name}
 								
 								tr
-									td.text-muted Headquarters
-									td
-										= @company.location
+									-if @company.location.present?
+										td.text-muted Headquarters
+										td= @company.location
 
 								tr
-									td.text-muted Founded
-									td= @company.founded_date
-
+									-if @company.founded_date.present?
+										td.text-muted Founded
+										td= @company.founded_date
 								tr
 									td.text-muted Tags              
 									td
@@ -57,12 +57,13 @@
 											- else 
 												.text-muted No tags yet
 								tr
-									td.text-muted Target Market
-									td= TargetClient.find(@company.target_client).name
-								/tr
-									td.text-muted Business Model
-									td= BusinessModel.find(@company.business_model).name
-
+									-if @company.target_client.present?
+										td.text-muted Target Market
+										td= TargetClient.find(@company.target_client).name
+								tr
+									-if @company.business_model.present?
+										td.text-muted Business Model
+										td= BusinessModel.find(@company.business_model).name
 								tr
 									td.text-muted Website
 									-if @company.main_url.present?
