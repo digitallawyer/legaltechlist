@@ -7,7 +7,9 @@ ActiveAdmin.register Company do
 
   scope("In Moderation") { |scope| scope.where(visible: false) }
 
-  permit_params :name, :location, :founded_date, :category, :business_model, :target_client, :description, :main_url, :twitter_url, :angellist_url, :crunchbase_url, :all_tags, :category_id, :business_model_id, :target_client_id, :latitute, :longitude, :contact_name, :contact_email, :visible
+  permit_params :name, :location, :founded_date, :category, :business_model, :target_client, :description, :main_url, :twitter_url, :angellist_url, :crunchbase_url, :all_tags, :category_id, :business_model_id, :target_client_id, :latitute, :longitude, :contact_name, :contact_email, :visible, :codex_presenter, :codex_presentation_date
+
+######
 
   action_item :only => :index do
     link_to 'Upload CSV', :action => 'upload_csv'
@@ -37,6 +39,8 @@ ActiveAdmin.register Company do
       disposition: "attachment; filename=companies.csv"
   end
 
+  ###### 
+
   index do
   	column :name
   	column :category
@@ -64,7 +68,9 @@ ActiveAdmin.register Company do
       f.input :twitter_url
       f.input :angellist_url
       f.input :crunchbase_url
-      f.input :all_tags      
+      f.input :all_tags  
+      f.input :codex_presenter
+      f.input :codex_presentation_date    
     end
     f.actions do
       f.action :submit

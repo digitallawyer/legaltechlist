@@ -136,6 +136,7 @@ class CompaniesController < ApplicationController
                                       :business_model, :target_client, :description, :main_url, 
                                       :twitter_url, :angellist_url, :crunchbase_url, :employee_count, 
                                       :all_tags, :category_id, :sub_category_id, :target_client_id, 
-                                      :business_model_id, :visible, :contact_name, :contact_email)
+                                      :business_model_id, :visible, :contact_name, :contact_email, 
+                                      :codex_presenter, :codex_presentation_date)
     end
 end

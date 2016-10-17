@@ -48,6 +48,8 @@ en:
             title: "Edit Company"
           contact_name: "Contact Name"
           contact_email: "Contact Email"
+          codex_presenter: "Presented at CodeX"
+          codex_presentation_date: "CodeX Presentation Date"
       hints:
         company:
           name: "The name of the company"
@@ -62,6 +64,8 @@ en:
           employee_count: "How many employees are currently employed?"
           contact_name: "Public relations or marketing contact name"
           contact_email: "Public relations or marketing email address"
+          codex_presenter: "Has this company presented at CodeX?"
+          codex_presentation_date: "The date of the presentation."
       placeholders:
         company:
           name: "LegalTech, Inc."
@@ -75,6 +79,8 @@ en:
           employee_count: "1"
           contact_name: "Contact Name"
           contact_email: "contact@example.com"
+          codex_presenter: ""
+          codex_presentation_date: ""
       actions:
         create: "Create my %{model}"
         update: "Save changes"

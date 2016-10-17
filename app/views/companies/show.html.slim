@@ -40,12 +40,12 @@
 											| - #{SubCategory.find(@company.sub_category).name}
 								
 								tr
-									-if @company.location.present?
+									-if @company.location.present? && @company.location != "Nowhere"
 										td.text-muted Headquarters
 										td= @company.location
 
 								tr
-									-if @company.founded_date.present?
+									-if @company.founded_date.present? && @company.founded_date != "0000"
 										td.text-muted Founded
 										td= @company.founded_date
 								tr

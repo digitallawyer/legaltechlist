@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20161011220133) do
+ActiveRecord::Schema.define(version: 20161017182627) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -73,17 +73,19 @@ ActiveRecord::Schema.define(version: 20161011220133) do
     t.string   "angellist_url"
     t.string   "crunchbase_url"
     t.string   "employee_count"
-    t.datetime "created_at",                       null: false
-    t.datetime "updated_at",                       null: false
+    t.datetime "created_at",                             null: false
+    t.datetime "updated_at",                             null: false
     t.integer  "category_id"
     t.integer  "target_client_id"
     t.integer  "business_model_id"
     t.integer  "sub_category_id"
     t.float    "latitude"
     t.float    "longitude"
-    t.boolean  "visible",           default: true
+    t.boolean  "visible",                 default: true
     t.string   "contact_email"
     t.string   "contact_name"
+    t.boolean  "codex_presenter"
+    t.date     "codex_presentation_date"
   end
 
   add_index "companies", ["business_model_id"], name: "index_companies_on_business_model_id", using: :btree
