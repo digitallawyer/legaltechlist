@@ -4,21 +4,22 @@ class SuggestionMailer < ApplicationMailer
   #send a new company e-mail with the parameters passed in
   def newcompany_email(company)
     @company = company
-    @message = "New Legal Tech Company Suggested"
+    @message = t('mailers.company.created')
     
-    AdminUser.all.each do |admin|
-      mail(to: admin.email, subject: 'LegalTechList: New Company Suggestion')
-    end
+    emails = AdminUser.all.collect(&:email).join(",")
+
+    mail(:to => emails, :subject => "#{t('site_title')}: #{@message}")
+    
   end
   
   # send an edit company e-mail with the paramaters passed in
   def editcompany_email(company)
     @company = company
-    @message = "Correction submitted for Legal Tech Company."
+    @message = t('mailers.company.updated')
     
-    AdminUser.all.each do |admin|
-      mail(to: admin.email, subject: 'LegalTechList: Company Correction')
-    end
+    emails = AdminUser.all.collect(&:email).join(",")
+
+    mail(:to => emails, :subject => "#{t('site_title')}: #{@message}")
   end
 
 end

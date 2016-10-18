@@ -20,7 +20,15 @@
 # available at http://guides.rubyonrails.org/i18n.html.
 
 en:
-  hello: "Hello world"
+  site_title: "LegalTechList"
+  mailers:
+    company:
+      created: "New Legal Tech Company Suggested"
+      updated: "Correction submitted for Legal Tech Company."
+      create_admin_link: "http://techindex.law.stanford.edu/admin/companies?scope=in_moderation"
+      create_admin_link_text: "Admin Moderation Interface"
+      update_admin_link: "http://techindex.law.stanford.edu/admin/companies"
+      update_admin_link_test: "Admin Interface"
   controllers:
     company:
       created_success: "Company was successfully submitted and will be reviewed by an administrator shortly."

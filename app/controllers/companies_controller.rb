@@ -82,7 +82,7 @@ class CompaniesController < ApplicationController
         @company.visible = false
         @company.save
 
-        SuggestionMailer.newcompany_email(@company).deliver
+        SuggestionMailer.newcompany_email(@company).deliver_now
 
         format.html { redirect_to "/companies", notice: t('controllers.company.created_success') }
         format.json { render :show, status: :created, location: @company }
@@ -104,7 +104,7 @@ class CompaniesController < ApplicationController
     respond_to do |format|
       if @company.valid?
         
-        SuggestionMailer.editcompany_email(@company).deliver
+        SuggestionMailer.editcompany_email(@company).deliver_now
 
         #redirect to the company we're editing, not the company changes we're submitting!
         format.html { redirect_to Company.find(params[:id]), notice: t('controllers.company.updated_success') }
