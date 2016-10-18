@@ -1,15 +1,17 @@
-<%=@suggester%> contributed the below company information. S/he can be reached at <%=@email%>.
+<%= t("formtastic.labels.company.contact_name") %>: <%= @company.contact_name %>
+<%= t("formtastic.labels.company.contact_email") %>: <%= @company.contact_email %>
 
-Company Name: <%= @company.name %>
-Company Description: <%= @company.description %>
-Company Location: @company.location
-    
-Category: <%= Category.find(@company.category).name %>
-Founded Date: <%= @company.founded_date %>
-Tags: <%= @company.all_tags%>
+<%= t("formtastic.labels.company.name") %>: <%= @company.name %>
+<%= t("formtastic.labels.company.location") %>: <%= @company.location %>
+<%= t("formtastic.labels.company.founded_date") %>: <%= @company.founded_date %>
+<%= t("formtastic.labels.company.employee_count") %>: <%= @company.employee_count %>
+<%= t("formtastic.labels.company.all_tags") %>: <%= @company.all_tags%>
+<%= t("formtastic.labels.company.category") %>: <%= Category.find(@company.category).name %>
 
-Main url: <%= @company.main_url %>
-Employee count: <%= @company.employee_count %>
-Twitter url: <%= @company.twitter_url %>
-Angellist url: <%= @company.angellist_url %>
-Crunchbase url: <%= @company.crunchbase_url %>
+<%= t("formtastic.labels.company.description") %>: <%= @company.description %>
+
+<%= t("formtastic.labels.company.main_url") %>: <%= @company.main_url %>
+
+<%= t("formtastic.labels.company.twitter_url") %>: <%= @company.twitter_url %>
+<%= t("formtastic.labels.company.angellist_url") %>: <%= @company.angellist_url %>
+<%= t("formtastic.labels.company.crunchbase_url") %>: <%= @company.crunchbase_url %>

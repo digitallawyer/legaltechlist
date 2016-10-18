@@ -1,44 +1,59 @@
 	
     <div class="col-md-12" style="background-color:white;">
-		<p>
-			<%=@suggester%> contributed the below company information. S/he can be reached at <%=@email%>.
-		</p>
-    <h1 class="text-center"><%= @company.name %></h1>
+		<h1 class="text-center"><%= t("formtastic.labels.company.name") %>: <%= @company.name %></h1>
 
-    <p class="text-center">
-      <strong><%= @company.description %></strong>
+    <p>
+      <strong><%= t("formtastic.labels.company.contact_name") %>:</strong>
+      <%= @company.contact_name %>
     </p>
-    <p class="text-muted text-center">
+
+    <p>
+      <strong><%= t("formtastic.labels.company.contact_email") %>:</strong>
+      <%= @company.contact_email %>
+    </p>
+
+    <p>
+      <strong><%= t("formtastic.labels.company.location") %>:</strong>
       <%= @company.location %>
-      &bull;
-      Founded in <%= @company.founded_date %>
-	</p>
-	<p class="text-muted text-center">
-	  Tagged with <%= @company.all_tags%>
-    </p>
-
-
-    <p>
-      <strong>Main url:</strong>
-      <a href="<%= @company.main_url %>"><%= @company.main_url %></a>
     </p>
 
     <p>
-      <strong>Employee count:</strong>
+      <strong><%= t("formtastic.labels.company.founded_date") %>:</strong>
+      <%= @company.founded_date %>
+    </p>
+
+    <p>
+      <strong><%= t("formtastic.labels.company.employee_count") %>:</strong>
       <%= @company.employee_count %>
     </p>
 
     <p>
-      <strong>Twitter url:</strong>
-      <a href="<%= @company.twitter_url %>"><%= @company.twitter_url %></a>
+      <strong><%= t("formtastic.labels.company.all_tags") %>:</strong>
+      <%= @company.all_tags %>
     </p>
 
     <p>
-      <strong>Angellist url:</strong>
-      <a href="<%= @company.angellist_url %>"><%= @company.angellist_url %></a>
+      <strong><%= t("formtastic.labels.company.category") %>:</strong>
+      <%= Category.find(@company.category).name %>
     </p>
 
     <p>
-      <strong>Crunchbase url:</strong>
-      <a href="<%= @company.crunchbase_url %>"><%= @company.crunchbase_url %></a>
+      <strong><%= t("formtastic.labels.company.description") %>:</strong>
+      <%= @company.description %>
+    </p>
+    <p>
+      <strong><%= t("formtastic.labels.company.main_url") %>:</strong>
+      <%= @company.main_url %>
+    </p>
+    <p>
+      <strong><%= t("formtastic.labels.company.twitter_url") %>:</strong>
+      <%= @company.twitter_url %>
+    </p>
+    <p>
+      <strong><%= t("formtastic.labels.company.angellist_url") %>:</strong>
+      <%= @company.angellist_url %>
+    </p>  
+    <p>
+      <strong><%= t("formtastic.labels.company.crunchbase_url") %>:</strong>
+      <%= @company.crunchbase_url %>
     </p>

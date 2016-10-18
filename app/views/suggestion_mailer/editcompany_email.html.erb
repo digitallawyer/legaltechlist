@@ -7,6 +7,8 @@
   <body>
 	<h1> <%= @message %> </h1>
 	
+	<p><%= link_to(t('mailers.company.update_admin_link_text'), "#{t('mailers.company.update_admin_link')}") %></p>
+
 	<%= render 'company_details' %>
 	
   </body>

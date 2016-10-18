@@ -74,14 +74,15 @@ class CompaniesController < ApplicationController
   # the values from the new form, verify them, and then e-mail them to the 
   # administrator to be added later.
   def create
-  
     @company = Company.new(company_params)
+
     respond_to do |format|
       if @company.valid?
         # set company to invisible
         @company.visible = false
+        @company.save
 
-        @company = @company.save
+        SuggestionMailer.newcompany_email(@company).deliver_now
 
         format.html { redirect_to "/companies", notice: t('controllers.company.created_success') }
         format.json { render :show, status: :created, location: @company }
@@ -98,17 +99,18 @@ class CompaniesController < ApplicationController
   # values from the edit form, verify them, and then e-mail them to the
   # administrator to be added later.
   def update
-    @company = Company.new(params[:company])
+    @company = Company.new(company_params)
     
     respond_to do |format|
-      if @company.valid? && @contact.valid?
+      if @company.valid?
         
+        SuggestionMailer.editcompany_email(@company).deliver_now
+
         #redirect to the company we're editing, not the company changes we're submitting!
         format.html { redirect_to Company.find(params[:id]), notice: t('controllers.company.updated_success') }
         format.json { render :show, status: :ok, location: @company }
       else
-        format.html { render :edit 
-        }
+        format.html { render :edit }
         format.json { render json: @company.errors, status: :unprocessable_entity }
       end
     end
