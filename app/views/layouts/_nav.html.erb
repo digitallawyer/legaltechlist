@@ -24,6 +24,8 @@
               About
             <% elsif current_page?('/map') == true && current_page?('/companies') == false %>
               Worldmap
+            <% elsif current_page?('/statistics') == true && current_page?('/companies') == false %>
+              Statistics
             <% else %>
               Companies
             <% end %>
@@ -32,15 +34,23 @@
           <ul class="dropdown-menu">
             <% if current_page?('/') == true && current_page?('/companies') == false %>
               <li><a data-no-turbolink='true' href="/companies">Companies</a></li>
+              <li><a data-no-turbolink='true' href="/statistics">Statistics</a></li>
               <li><a data-no-turbolink='true' href="/map">Worldmap</a></li>
               <li><a data-no-turbolink='true' href="/about">About</a></li>
             <% elsif current_page?('/about') == true && current_page?('/companies') == false %>
               <li><a data-no-turbolink='true' href="/">Overview</a></li>
               <li><a data-no-turbolink='true' href="/companies">Companies</a></li>
+              <li><a data-no-turbolink='true' href="/statistics">Statistics</a></li>
               <li><a data-no-turbolink='true' href="/map">Worldmap</a></li>
             <% elsif current_page?('/map') == true && current_page?('/companies') == false %>
               <li><a data-no-turbolink='true' href="/">Overview</a></li>
               <li><a data-no-turbolink='true' href="/companies">Companies</a></li>
+              <li><a data-no-turbolink='true' href="/statistics">Statistics</a></li>
+              <li><a data-no-turbolink='true' href="/about">About</a></li>
+            <% elsif current_page?('/statistics') == true && current_page?('/companies') == false %>
+              <li><a data-no-turbolink='true' href="/">Overview</a></li>
+              <li><a data-no-turbolink='true' href="/companies">Companies</a></li>
+              <li><a data-no-turbolink='true' href="/map">Worldmap</a></li>
               <li><a data-no-turbolink='true' href="/about">About</a></li>
             <% elsif !current_page?('/companies') && (current_page?(controller: 'companies', action: 'new') || current_page?(controller: 'companies', action: 'new'))%>
               <li><a data-no-turbolink='true' href="/">Overview</a></li>
@@ -53,6 +63,7 @@
               <% end %>
             <% else %>
               <li><a data-no-turbolink='true' href="/">Overview</a></li>
+              <li><a data-no-turbolink='true' href="/statistics">Statistics</a></li>
               <li><a data-no-turbolink='true' href="/map">Worldmap</a></li>
               <li><a data-no-turbolink='true' href="/about">About</a></li>
             <% end %>

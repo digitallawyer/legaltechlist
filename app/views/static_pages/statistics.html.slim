@@ -1,0 +1,42 @@
+.jumbotron.statistics-jumbotron
+  .container-fluid
+    .col-md-12
+      h1 Statistics
+      h3  
+        | Chosen numbers about our database.
+.container.statistics-container
+  .row
+    .col-md-4.statbox
+      h3 Total number of companies
+      p.large-number.blue #{Company.count}
+    .col-md-4.statbox
+      h3 Companies presented at CodeX
+      p.large-number.red ???
+    .col-md-4.statbox
+      h3 Inactive companies
+      p.large-number.red ???
+  .row
+    .col-md-4.statbox
+      h3 Marketplace companies
+      p.large-number.orange #{Company.where(:category => '1').count}
+    .col-md-4.statbox
+      h3 Document automation companies
+      p.large-number.orange #{Company.where(:category => '2').count}
+    .col-md-4.statbox
+      h3 Practice management companies
+      p.large-number.orange #{Company.where(:category => '3').count}
+    .col-md-4.statbox
+      h3 Legal research companies
+      p.large-number.orange #{Company.where(:category => '4').count}
+    .col-md-4.statbox
+      h3 Legal education companies
+      p.large-number.orange #{Company.where(:category => '5').count}
+    .col-md-4.statbox
+      h3 ODR companies
+      p.large-number.orange #{Company.where(:category => '6').count}
+    .col-md-4.statbox
+      h3 Analytics companies
+      p.large-number.orange #{Company.where(:category => '7').count}
+
+
+
