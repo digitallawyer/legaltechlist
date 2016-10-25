@@ -37,6 +37,17 @@
     .col-md-4.statbox
       h3 Analytics companies
       p.large-number.orange #{Company.where(:category => '7').count}
+  .row
+    .col-md-4.statbox
+      h3 Total number of tags
+      p.large-number.green #{Tag.count}
+    .col-md-4.statbox
+      h3 Total number of categories
+      p.large-number.green #{Category.count}
+    .col-md-4.statbox
+      h3 Total number of sub-categories
+      p.large-number.green #{SubCategory.count}
+
 
 
 
