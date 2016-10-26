@@ -28,6 +28,10 @@ Rails.application.configure do
     :authentication => :plain,
     :enable_starttls_auto => true
   }
+
+  #should we publish to twitter
+  config.twitter_publish = false
+
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 
