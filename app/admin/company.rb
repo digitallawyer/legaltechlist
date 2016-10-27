@@ -29,7 +29,7 @@ ActiveAdmin.register Company do
   end
   
   collection_action :export_csv, :method => :get do
-    encoding = Encoding::ISO_8859_1.name
+    encoding = Encoding::UTF_8.name
     csv = CSV.generate( encoding: encoding) do |csv|
       ImportCSVtoCompany.export(csv)
     end
