@@ -2,27 +2,24 @@ class SuggestionMailer < ApplicationMailer
   default from: 'no-reply@codex.stanford.edu'
   
   #send a new company e-mail with the parameters passed in
-  def newcompany_email(company, email, suggester_name)
+  def newcompany_email(company)
     @company = company
-    @message = "New legal Tech Company Suggested"
-    @email = email
-    @suggester = suggester_name
+    @message = t('mailers.company.created')
     
-    AdminUser.all.each do |admin|
-      mail(to: admin.email, subject: 'LegalTechList: New Company Suggestion')
-    end
+    emails = AdminUser.all.collect(&:email).join(",")
+
+    mail(:to => emails, :subject => "#{t('site_title')}: #{@message}")
+    
   end
   
   # send an edit company e-mail with the paramaters passed in
-  def editcompany_email(company, email, suggester_name)
+  def editcompany_email(company)
     @company = company
-    @message = "Correction submitted for Legal Tech Company."
-    @email = email
-    @suggester = suggester_name
+    @message = t('mailers.company.updated')
     
-    AdminUser.all.each do |admin|
-      mail(to: admin.email, subject: 'LegalTechList: Company Correction')
-    end
+    emails = AdminUser.all.collect(&:email).join(",")
+
+    mail(:to => emails, :subject => "#{t('site_title')}: #{@message}")
   end
 
 end

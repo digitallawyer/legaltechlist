@@ -22,13 +22,14 @@
   .row
     .flex
       - Category.all.each do |category|
-        a class=("category-link") href="/companies?category=#{category.id}"
-          div class=("category-card #{'category-background-'+ category.id.to_s}") 
-            p.category-title 
-              = category.name
-            a class=("see-companies-button #{'see-companies-button-'+ category.id.to_s}") href="/companies?category=#{category.id}"
-              |
-                SEE COMPANIES
+        - unless category.name == "Unknown"
+          a class=("category-link") href="/companies?category=#{category.id}"
+            div class=("category-card #{'category-background-'+ category.id.to_s}") 
+              p.category-title 
+                = category.name
+              a class=("see-companies-button #{'see-companies-button-'+ category.id.to_s}") href="/companies?category=#{category.id}"
+                |
+                  SEE COMPANIES
 
 .jumbotron.home-codex-jumbotron
   .container.home-codex-container
