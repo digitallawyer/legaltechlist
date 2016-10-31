@@ -67,12 +67,16 @@ class Company < ActiveRecord::Base
     if self.twitter_url.present?
       if self.twitter_url.include? "twitter.com"
         if self.twitter_url.split('/').last.include? "@"
-          self.twitter_url.split('/').last
+          self.twitter_url.split('/').split('@').last
         else
-          "@"+self.twitter_url.split('/').last
+          self.twitter_url.split('/').last
         end
       else 
-        self.twitter_url
+        if self.twitter_url.include? "@"
+          self.twitter_url.split('@').last
+        else
+          self.twitter_url
+        end
       end
     else
       nil
@@ -90,7 +94,7 @@ class Company < ActiveRecord::Base
       end
 
       #publish a tweet
-      twitter_client.update(I18n.t("twitter.publish") + " " + self.twitter_name + " " + self.main_url)
+      twitter_client.update(I18n.t("twitter.publish") + " @" + self.twitter_name + " " + self.main_url)
     end
   end
   
@@ -106,7 +110,12 @@ class Company < ActiveRecord::Base
 
       #add users to the list
       if (self.twitter_name.present?)
-        twitter_client.add_list_member(I18n.t("twitter.list"), self.twitter_name)
+        begin
+          twitter_client.add_list_member(I18n.t("twitter.user"),I18n.t("twitter.list"), self.twitter_name)
+        rescue Twitter::Error::Forbidden
+          puts self.twitter_name + " is not a valid twitter id"
+        end
+
       end
     end
   end
