@@ -84,7 +84,7 @@ class Company < ActiveRecord::Base
   end
 
   def publish_tweet
-    if (self.visible? && Rails.configuration.twitter_publish)
+    if (self.visible? && Rails.configuration.twitter.publish)
       #initialize twitter_client to access their API
       twitter_client = Twitter::REST::Client.new do |config|
           config.consumer_key        = ENV["TWITTER_CONSUMER_KEY"]
@@ -99,7 +99,7 @@ class Company < ActiveRecord::Base
   end
   
   def publish_to_list
-    if (self.visible? && Rails.configuration.twitter_publish)
+    if (self.visible? && Rails.configuration.twitter.publish)
       #initialize twitter_client to access their API
       twitter_client = Twitter::REST::Client.new do |config|
           config.consumer_key        = ENV["TWITTER_CONSUMER_KEY"]
@@ -111,11 +111,10 @@ class Company < ActiveRecord::Base
       #add users to the list
       if (self.twitter_name.present?)
         begin
-          twitter_client.add_list_member(I18n.t("twitter.user"),I18n.t("twitter.list"), self.twitter_name)
+          twitter_client.add_list_member(Rails.configuration.twitter.user,Rails.configuration.twitter.list, self.twitter_name)
         rescue Twitter::Error::Forbidden
-          puts self.twitter_name + " is not a valid twitter id"
+          logger.errror "#{self.twitter_name} is not a valid twitter id"
         end
-
       end
     end
   end
