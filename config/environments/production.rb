@@ -40,7 +40,9 @@ Rails.application.configure do
     :enable_starttls_auto => true
   }
 
-  config.twitter_publish = true
+  config.twitter_publish = false
+  config.twitter_user = 'codexstanford'
+  config.twitter_list = 'CodeX-LTI'
 
   # Compress JavaScripts and CSS.
   config.assets.js_compressor = :uglifier
