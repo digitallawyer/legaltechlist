@@ -18,7 +18,8 @@ xml.rss :version => "2.0" do
         end
         xml.author "Legal Tech List"
         xml.pubDate company.created_at.to_s(:rfc822)
-        xml.link "https://localhost:3000/companies/" + company.id.to_s # + "-" + company.name
+
+        xml.link "#{request.protocol}#{request.host}:#{request.port}/companies/" + company.id.to_s # + "-" + company.name
         xml.guid company.id
         xml.category company.category
 
