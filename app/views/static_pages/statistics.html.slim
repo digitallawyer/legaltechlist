@@ -9,18 +9,18 @@
     .col-md-2
       - if !params[:founded_date]
         a class="blue" href="/statistics"
-          h1 All
+          h2 All
       - else
         a class="gray" href="/statistics"
-          h1 All
+          h2 All
       end
       - @years.each do |year|
         - if year == params[:founded_date]
           a class="blue" href="/statistics?founded_date=#{year}"
-            h1 #{year}
+            p #{year}
         - else
           a class="gray" href="/statistics?founded_date=#{year}"
-            h1 #{year}
+            p #{year}
         end
       end
     .col-md-10

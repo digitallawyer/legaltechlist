@@ -12,7 +12,9 @@ class StaticPagesController < ApplicationController
   	else
   		@companies = Company.all
   	end
-  	@years = ['2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016']
+    @years_all = Company.order(founded_date: :asc).all
+    @years = @years_all.uniq.pluck(:founded_date)
+    #@years = ['2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016']
   end
 
 end
