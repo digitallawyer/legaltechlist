@@ -11,10 +11,7 @@
       p.large-number.blue #{Company.count}
     .col-md-4.statbox
       h3 Companies presented at CodeX
-      p.large-number.red ???
-    .col-md-4.statbox
-      h3 Inactive companies
-      p.large-number.red ???
+      p.large-number.red #{Company.where('codex_presenter' => true).count}
   .row
     .col-md-4.statbox
       h3 Marketplace companies
