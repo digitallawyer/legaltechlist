@@ -40,10 +40,6 @@ Rails.application.configure do
     :enable_starttls_auto => true
   }
 
-  config.twitter_publish = false
-  config.twitter_user = 'codexstanford'
-  config.twitter_list = 'CodeX-LTI'
-
   # Compress JavaScripts and CSS.
   config.assets.js_compressor = :uglifier
   # config.assets.css_compressor = :sass
@@ -99,4 +95,9 @@ Rails.application.configure do
 
   # Analytics
   GA.tracker = "UA-78086015-1"
+
+  config.twitter_publish = false
+  config.twitter_user = 'paulblizzard'
+  config.twitter_list = 'test'
+  config.twitter_list_url = 'https://twitter.com/paulblizzard/lists/codex-lti1'
 end
