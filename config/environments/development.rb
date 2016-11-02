@@ -49,9 +49,9 @@ Rails.application.configure do
   # Raises helpful error messages.
   config.assets.raise_runtime_errors = true
 
-  config.twitter.publish = false
-  config.twitter.user = 'paulblizzard'
-  config.twitter.list = 'test'
+  config.twitter_publish = false
+  config.twitter_user = 'paulblizzard'
+  config.twitter_list = 'test'
 
   # Raises error for missing translations
   # config.action_view.raise_on_missing_translations = true
