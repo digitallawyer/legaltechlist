@@ -52,6 +52,7 @@ Rails.application.configure do
   config.twitter_publish = false
   config.twitter_user = 'paulblizzard'
   config.twitter_list = 'test'
+  config.twitter_list_url = 'https://twitter.com/paulblizzard/lists/codex-lti1'
 
   # Raises error for missing translations
   # config.action_view.raise_on_missing_translations = true
