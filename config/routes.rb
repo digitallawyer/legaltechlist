@@ -13,14 +13,11 @@ Rails.application.routes.draw do
   get 'feed', to: 'companies#feed'
   get 'map', to: 'companies#map'
   get 'about', to: 'static_pages#about'
+  get 'statistics', to: 'static_pages#statistics'
   
  # get 'sub_category/:category' => 'sub_category#index', as: :category
     
   get 'static_pages/home'
-
-  get 'static_pages/about'
-
-  get 'static_pages/casemanagement'
   
 
   # The priority is based upon order of creation: first created -> highest priority.

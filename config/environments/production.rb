@@ -27,17 +27,17 @@ Rails.application.configure do
   # Default url options for ActiveAdmin
   config.action_mailer.default_url_options = { host: 'tech.law.stanford.edu' }
   config.action_mailer.delivery_method = :smtp
-  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.raise_delivery_errors = false
   config.action_mailer.perform_deliveries = true
 
   ActionMailer::Base.smtp_settings = {
-  :user_name => ENV["SENDGRID_USERNAME"],
-  :password => ENV["SENDGRID_PASSWORD"],
-  :domain => 'tech.law.stanford.edu',
-  :address => 'smtp.sendgrid.net',
-  :port => 587,
-  :authentication => :plain,
-  :enable_starttls_auto => true
+    :user_name => ENV["SENDGRID_USERNAME"],
+    :password => ENV["SENDGRID_PASSWORD"],
+    :domain => 'tech.law.stanford.edu',
+    :address => 'smtp.sendgrid.net',
+    :port => 587,
+    :authentication => :plain,
+    :enable_starttls_auto => true
   }
 
   # Compress JavaScripts and CSS.
@@ -95,4 +95,9 @@ Rails.application.configure do
 
   # Analytics
   GA.tracker = "UA-78086015-1"
+
+  config.twitter_publish = false
+  config.twitter_user = 'paulblizzard'
+  config.twitter_list = 'test'
+  config.twitter_list_url = 'https://twitter.com/paulblizzard/lists/codex-lti1'
 end

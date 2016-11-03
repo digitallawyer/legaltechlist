@@ -7,5 +7,4 @@ class Category < ActiveRecord::Base
   def sub_category
     SubCategory.where(:category => id)
   end
-  
 end

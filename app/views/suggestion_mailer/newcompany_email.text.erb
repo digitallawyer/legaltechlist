@@ -1,6 +1,6 @@
 <%= @message %>
-
-Make a new company called <%= @company.name %>
 	
+<%= link_to(t('mailers.company.create_admin_link_text'), "#{t('mailers.company.create_admin_link')}") %>
+
 <%= render 'company_details' %>
 	

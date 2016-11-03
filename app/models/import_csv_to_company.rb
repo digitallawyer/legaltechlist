@@ -14,6 +14,9 @@ class ImportCSVtoCompany
         if row["name"]!=""
           # clean up data to ensure validation on import
 
+          if row["contact_name"].nil? || row["contact_name"] == ""
+            row["contact_name"] = "Unknown"
+          end
       
           if row["business_model"].nil? || row["business_model"] == ""
             row["business_model"] = "Unknown"
@@ -46,19 +49,23 @@ class ImportCSVtoCompany
           print "*************************************************\n"
           # add the entry to the database
           c = Company.where(:name => row["name"]).first_or_create!(
+            :contact_name => row["contact_name"],
+            :contact_email => row["contact_email"],
             :name => row["name"],
             :location => row["location"],
             :founded_date => row["founded_date"],
+            :visible => row["visible"],
             :category => cat,
             :sub_category => sub,
+            :target_client => trg,
+            :business_model => biz,
             :description => row["description"],
             :main_url => row["main_url"],
             :twitter_url => row["twitter_url"],
             :angellist_url => row["angellist_url"],
             :crunchbase_url => row["crunchbase_url"],
-            :business_model => biz,
-            :target_client => trg,
-            :all_tags => row["all_tags"]
+            :codex_presenter => row["codex_presenter"],
+            :codex_presentation_date => row["codex_presentation_date"]
           )
         end
       end
@@ -68,18 +75,23 @@ class ImportCSVtoCompany
       
       # NOTE! The order of this list must match the order of the rows (below)
       header =  [
+        "contact_name", 
+        "contact_email", 
         "name", 
         "location",
         "founded_date",
+        "visible", 
         "category",
+        "target_client",
+        "business_model",
         "description",
         "main_url",
         "twitter_url",
         "angellist_url",
         "crunchbase_url",
-        "business_model",
-        "target_client",
-        "all_tags"
+        "all_tags",
+        "codex_presenter",
+        "codex_presentation_date"
       ]
       
       csv << header
@@ -87,23 +99,36 @@ class ImportCSVtoCompany
       Company.all.each do |company|
         category = company.category.name
         
-        if company.sub_category.name != "" 
+        if company.sub_category.present? 
           category = "#{company.category.name} - #{company.sub_category.name}" 
+        end
+
+        if company.target_client.present? 
+          trg = company.target_client.name
+        end
+        
+        if company.business_model.present? 
+          biz = company.business_model.name
         end
         
         row = [
+          company.contact_name,
+          company.contact_email,
           company.name,
           company.location,
           company.founded_date,
+          company.visible,
           category,
+          trg,
+          biz,
           company.description,
           company.main_url,
           company.twitter_url, 
           company.angellist_url, 
           company.crunchbase_url, 
-          company.business_model.name,
-          company.target_client.name,
-          company.all_tags
+          company.all_tags,
+          company.codex_presenter,
+          company.codex_presentation_date
          ]
         
         csv << row

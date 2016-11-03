@@ -16,18 +16,19 @@ Rails.application.configure do
   # Default url options for ActiveAdmin
   config.action_mailer.default_url_options = { :host => 'localhost', port: 3000 }
   config.action_mailer.delivery_method = :smtp
-  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.raise_delivery_errors = false
   config.action_mailer.perform_deliveries = true
 
   ActionMailer::Base.smtp_settings = {
-  :user_name => ENV["SENDGRID_USERNAME"],
-  :password => ENV["SENDGRID_PASSWORD"],
-  :domain => 'localhost',
-  :address => 'smtp.sendgrid.net',
-  :port => 587,
-  :authentication => :plain,
-  :enable_starttls_auto => true
+    :user_name => ENV["SENDGRID_USERNAME"],
+    :password => ENV["SENDGRID_PASSWORD"],
+    :domain => 'localhost',
+    :address => 'smtp.sendgrid.net',
+    :port => 587,
+    :authentication => :plain,
+    :enable_starttls_auto => true
   }
+
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 
@@ -47,6 +48,11 @@ Rails.application.configure do
   # Checks for improperly declared sprockets dependencies.
   # Raises helpful error messages.
   config.assets.raise_runtime_errors = true
+
+  config.twitter_publish = false
+  config.twitter_user = 'paulblizzard'
+  config.twitter_list = 'test'
+  config.twitter_list_url = 'https://twitter.com/paulblizzard/lists/codex-lti1'
 
   # Raises error for missing translations
   # config.action_view.raise_on_missing_translations = true

@@ -20,12 +20,22 @@
 # available at http://guides.rubyonrails.org/i18n.html.
 
 en:
-  hello: "Hello world"
+  site_title: "LegalTechList"
+  mailers:
+    company:
+      created: "New Legal Tech Company Suggested"
+      updated: "Correction submitted for Legal Tech Company."
+      create_admin_link: "http://techindex.law.stanford.edu/admin/companies?scope=in_moderation"
+      create_admin_link_text: "Admin Moderation Interface"
+      update_admin_link: "http://techindex.law.stanford.edu/admin/companies"
+      update_admin_link_test: "Admin Interface"
+  twitter:
+    publish: "Announcing a new member of the LegalTechList!"
   controllers:
     company:
-      created_success: "Company was successfully submitted. It will be reviewed in the next days."
+      created_success: "Company was successfully submitted and will be reviewed by an administrator shortly."
       created_failure: "There was a problem with your submission, please review."
-      updated_success: "Company updates were successfully submitted."
+      updated_success: "Company updates were successfully submitted and will be reviewed by an administrator shortly."
       updated_failure: "There was a problem with your submission, please review."
       destroyed_success: "Company was successfully destroyed."
       destroyed_failure: "There was a problem with your submission, please review."
@@ -44,10 +54,13 @@ en:
           angellist_url: "AngelList"
           crunchbase_url: "CrunchBase"
           employee_count: "Employees (#)"
+          all_tags: "Tags"
           edit:
             title: "Edit Company"
           contact_name: "Contact Name"
           contact_email: "Contact Email"
+          codex_presenter: "Presented at CodeX"
+          codex_presentation_date: "CodeX Presentation Date"
       hints:
         company:
           name: "The name of the company"
@@ -62,6 +75,8 @@ en:
           employee_count: "How many employees are currently employed?"
           contact_name: "Public relations or marketing contact name"
           contact_email: "Public relations or marketing email address"
+          codex_presenter: "Has this company presented at CodeX?"
+          codex_presentation_date: "The date of the presentation."
       placeholders:
         company:
           name: "LegalTech, Inc."
@@ -75,6 +90,8 @@ en:
           employee_count: "1"
           contact_name: "Contact Name"
           contact_email: "contact@example.com"
+          codex_presenter: ""
+          codex_presentation_date: ""
       actions:
         create: "Create my %{model}"
         update: "Save changes"
