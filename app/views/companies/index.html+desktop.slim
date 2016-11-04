@@ -8,13 +8,13 @@
 		.panel.panel-default.lg-panel
 			.panel-body
 				h3 Categories
-				- Category.all.each do |category|
+				- Category.where.not(:name => 'Unknown').each do |category|
 					= link_to category.name, companies_path(:category => category)
 					br
 
 				.panel_body.hidden-xs.hidden-sm	
 					h3 Target Audience
-					- TargetClient.all.each do |targ|
+					- TargetClient.where.not(:name => 'Unknown').each do |targ|
 						= link_to targ.name, companies_path(:target_client => targ)
 						br
 						
