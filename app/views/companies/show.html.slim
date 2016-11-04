@@ -106,7 +106,7 @@
 				.panel.panel-default.lg-panel
 					.panel-body
 						.tags-cloud.glassy-bg
-							h4 Related companies
+							h3 Related companies
 							- related_company_list @company do |related_companies|
 								- related_companies.each do |related|
 									hr/
@@ -124,3 +124,9 @@
 															| window.location = $(this).find("a").attr("href");
 															| return false;
 															| });
+		- if @company.twitter_name.present?
+			.col-md-12
+				.panel.panel-default.lg-panel
+					.panel-body
+						.tags-cloud.glassy-bg
+							| <a class="twitter-timeline" href="https://twitter.com/#{@company.twitter_name}">Tweets from #{@company.twitter_name}</a><script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
