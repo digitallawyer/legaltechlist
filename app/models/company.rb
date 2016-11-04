@@ -65,11 +65,11 @@ class Company < ActiveRecord::Base
   def twitter_name
     #parse the twitter url to get the twitter_name
     if self.twitter_url.present?
-      if self.twitter_url.include? "twitter.com"
-        if self.twitter_url.split('/').last.include? "@"
-          self.twitter_url.split('/').split('@').last
+      if self.twitter_url.include? "twitter.com/"
+        if self.twitter_url.split('twitter.com/').last.include? "@"
+          self.twitter_url.split('twitter.com/').last.split('@').last
         else
-          self.twitter_url.split('/').last
+          self.twitter_url.split('twitter.com/').last
         end
       else 
         if self.twitter_url.include? "@"

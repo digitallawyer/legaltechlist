@@ -50,9 +50,9 @@ Rails.application.configure do
   config.assets.raise_runtime_errors = true
 
   config.twitter_publish = false
-  config.twitter_user = 'paulblizzard'
-  config.twitter_list = 'test'
-  config.twitter_list_url = 'https://twitter.com/paulblizzard/lists/codex-lti1'
+  config.twitter_user = 'CodeXStanford'
+  config.twitter_list = 'Legaltechlist'
+  config.twitter_list_url = 'https://twitter.com/CodeXStanford/lists/legaltechlist'
 
   # Raises error for missing translations
   # config.action_view.raise_on_missing_translations = true
