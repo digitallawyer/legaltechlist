@@ -61,6 +61,7 @@ ActiveAdmin.register Company do
       f.input :founded_date,  :required => true
       f.input :visible,       as: :boolean
       f.input :category,      as: :select, collection: Category.all.order(:name), :required => true, :include_blank => false
+      f.input :sub_category,      as: :select, collection: SubCategory.all.order(:name), :required => true, :include_blank => false
       f.input :target_client, as: :select, collection: TargetClient.all, :required => true, :include_blank => false
       f.input :business_model,as: :select, collection: BusinessModel.all, :required => true, :include_blank => false
       f.input :description,   :required => true
