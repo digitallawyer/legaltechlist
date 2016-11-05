@@ -70,6 +70,19 @@ table.borderless tbody tr td {
 	margin-top: 110px;
 	padding-bottom: 40px;
 	background-color: $gray !important;
+	.col-md-6{
+		h1{
+			font-weight: 200 !important;
+			color: $strong_gray;
+			font-size: 63px;
+		}
+		p{
+			font-size: 25px;
+			margin-top: 30px;
+			color: $strong_gray;
+		}
+	}
 }
 .tags-cloud{
+	margin-top: 30px;
 }

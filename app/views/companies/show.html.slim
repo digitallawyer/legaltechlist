@@ -8,8 +8,7 @@
 			a> href="/companies"  Companies
 			span
 				| › #{@company.name}
-		span.pull-right
-			=< link_to 'Suggest Update', edit_company_path(@company)
+		=< link_to 'Suggest Update', edit_company_path(@company), class: "btn btn-sls-orange pull-right"
 	.row
 		.col-md-12
 			.panel.panel-default.lg-panel
