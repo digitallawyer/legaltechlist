@@ -9,14 +9,13 @@
 	.css7 {font-size: 2.2em;}
 
 	.css1, .css2, .css3, .css4{
-		color: grey;
+		color: $sls_red;
 		font-weight: 350;
-		border: black solid 1px;
-		margin: 7px;
-		padding: 2px;
+		margin-left: 5px;
+		margin-bottom: 5px;
 	}
 	.css1:hover, .css2:hover, .css3:hover, .css4:hover{
-		color: $sls_red;
-		text-decoration: none;
+		color: #700000;
+		text-decoration: underline;
 	}
 }
