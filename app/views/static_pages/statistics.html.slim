@@ -1,0 +1,76 @@
+/ .jumbotron.statistics-jumbotron
+/   .container-fluid
+/     .col-md-12
+/       h1 Statistics
+/       h3  
+/         | Chosen numbers about our database.
+.container.statistics-container
+  /.row
+    .col-md-12
+      = javascript_include_tag "//www.google.com/jsapi", "chartkick"
+      = line_chart Company.group(:category).count, colors: ["red", "red"], height: "400px", library: {backgroundColor: "#F2EFEA"}
+  .row
+    .col-md-2
+      - if !params[:founded_date]
+        a class="blue" href="/statistics"
+          h2 All
+      - else
+        a class="gray" href="/statistics"
+          h2 All
+      end
+      - @years.each do |year|
+        - if year == params[:founded_date]
+          a class="blue" href="/statistics?founded_date=#{year}"
+            p #{year}
+        - else
+          a class="gray" href="/statistics?founded_date=#{year}"
+            p #{year}
+        end
+      end
+    .col-md-10
+      .row
+        .col-md-4.statbox
+          h3 Total number of companies
+          p.large-number.blue #{@companies.count}
+        /.col-md-4.statbox
+          h3 Companies presented at CodeX
+          p.large-number.red #{@companies.where('codex_presenter' => true).count}
+      .row
+        .col-md-4.statbox
+          h3 Marketplace companies
+          p.large-number.orange #{@companies.where(:category => '1').count}
+        .col-md-4.statbox
+          h3 Document automation companies
+          p.large-number.orange #{@companies.where(:category => '2').count}
+        .col-md-4.statbox
+          h3 Practice management companies
+          p.large-number.orange #{@companies.where(:category => '3').count}
+      .row
+        .col-md-4.statbox
+          h3 Legal research companies
+          p.large-number.orange #{@companies.where(:category => '4').count}
+        .col-md-4.statbox
+          h3 Legal education companies
+          p.large-number.orange #{@companies.where(:category => '5').count}
+        .col-md-4.statbox
+          h3 ODR companies
+          p.large-number.orange #{@companies.where(:category => '6').count}
+      .row
+        .col-md-4.statbox
+          h3 Analytics companies
+          p.large-number.orange #{@companies.where(:category => '7').count}
+  hr
+  .row
+    .col-md-4.statbox
+      h3 Total number of tags
+      p.large-number.green #{Tag.count}
+    .col-md-4.statbox
+      h3 Total number of categories
+      p.large-number.green #{Category.count}
+    .col-md-4.statbox
+      h3 Total number of sub-categories
+      p.large-number.green #{SubCategory.count}
+
+
+
+

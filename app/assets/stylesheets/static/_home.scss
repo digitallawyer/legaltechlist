@@ -54,22 +54,35 @@ table.borderless tbody tr td {
 	p{
 		color:white;
 		font-size: 25px;
+		max-width: 440px;
 	}
 	.col-md-6{
 		padding-left: 100px;
 	}
 }
-.about-image{
-	background-image:url('/images/backgrounds/sls_1.jpg');
-	height: 500px;
-	background-size: cover;
-}
+// .about-image{
+// 	background-image:url('/images/backgrounds/sls_1.jpg');
+// 	height: 500px;
+// 	background-size: cover;
+// }
 // Tags container on homepage styling
 .home-tags-cloud-container{
 	margin-top: 110px;
 	padding-bottom: 40px;
+	background-color: $gray !important;
+	.col-md-6{
+		h1{
+			font-weight: 200 !important;
+			color: $strong_gray;
+			font-size: 63px;
+		}
+		p{
+			font-size: 25px;
+			margin-top: 30px;
+			color: $strong_gray;
+		}
+	}
 }
-.tags-box{
-	height: 500px;
-	padding-top: 40px;
+.tags-cloud{
+	margin-top: 30px;
 }

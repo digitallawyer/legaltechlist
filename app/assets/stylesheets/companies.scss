@@ -7,6 +7,9 @@
 	h3{
 		margin-left: 0px;
 	}
+	.tags-cloud{
+		padding-bottom: 25px;
+	}
 }
 .company-list-container{
 	.btn-sls-orange{
@@ -27,6 +30,8 @@
 		margin-bottom: 35px;
 	}
 	.list-item:hover{
+		border-radius: 3px;
+		border: 1px solid $mid_gray;
 		background-color:$gray;
 		a {
 			text-decoration: none;
@@ -51,14 +56,23 @@
 /* show single company */
 .company-show-container{
 	.breadcrumb{
-		padding: 20px !important;
+		border: 1px solid $mid_gray;
+		border-radius: 3px;
 		font-size: 15px;
 		background-color: white;
-		border-radius: 0 !important;
 		color: black;
+		padding-top: 22px !important;
+		padding-left: 20px !important;
+		padding-right: 20px !important;
 		a{
 			color: black !important;
 			text-decoration: underline;
+		}
+		.btn{
+			color: white !important;
+			text-decoration: none;
+			margin-top: -5px;
+			margin-bottom: 3px;
 		}
 	}
 	.panel-default{
@@ -74,7 +88,9 @@
 			font-weight: 300 !important;
 		}
 		.panel-footer{
-			background-color: $gray;
+			background-color: white;
+			border: solid 1px $sls_orange;
+			border-radius: 3px;
 			span{
 				color: black !important;
 			}
