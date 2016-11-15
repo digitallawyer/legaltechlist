@@ -62,6 +62,9 @@ gem 'google-analytics-rails', '1.1.0'
 # Use i18n for localization
 gem 'i18n'
 
+#Visualising the statistics page
+gem "chartkick"
+
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 

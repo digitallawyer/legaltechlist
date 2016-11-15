@@ -93,13 +93,6 @@ ActiveRecord::Schema.define(version: 20161017182627) do
   add_index "companies", ["sub_category_id"], name: "index_companies_on_sub_category_id", using: :btree
   add_index "companies", ["target_client_id"], name: "index_companies_on_target_client_id", using: :btree
 
-  create_table "contacts", force: :cascade do |t|
-    t.string   "name"
-    t.string   "email"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
   create_table "sub_categories", force: :cascade do |t|
     t.string   "name"
     t.text     "description"

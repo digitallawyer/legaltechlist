@@ -5,6 +5,10 @@
 /       h3  
 /         | Chosen numbers about our database.
 .container.statistics-container
+  /.row
+    .col-md-12
+      = javascript_include_tag "//www.google.com/jsapi", "chartkick"
+      = line_chart Company.group(:category).count, colors: ["red", "red"], height: "400px", library: {backgroundColor: "#F2EFEA"}
   .row
     .col-md-2
       - if !params[:founded_date]
@@ -28,7 +32,7 @@
         .col-md-4.statbox
           h3 Total number of companies
           p.large-number.blue #{@companies.count}
-        .col-md-4.statbox
+        /.col-md-4.statbox
           h3 Companies presented at CodeX
           p.large-number.red #{@companies.where('codex_presenter' => true).count}
       .row

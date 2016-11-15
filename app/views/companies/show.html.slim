@@ -8,8 +8,7 @@
 			a> href="/companies"  Companies
 			span
 				| › #{@company.name}
-		span.pull-right
-			=< link_to 'Suggest Update', edit_company_path(@company)
+		=< link_to 'Suggest Update', edit_company_path(@company), class: "btn btn-sls-orange pull-right"
 	.row
 		.col-md-12
 			.panel.panel-default.lg-panel
@@ -33,12 +32,11 @@
 									td
 										span> class="label label-success" Active
 								tr
-									td.text-muted Category
-									td
-										=> Category.find(@company.category).name
-										/- if SubCategory.find(@company.sub_category).name != ""
-											| - #{SubCategory.find(@company.sub_category).name}
-								
+									-if Category.find(@company.category).name != "Unknown"
+										td.text-muted Category
+										td= Category.find(@company.category).name
+											- if SubCategory.find(@company.sub_category).name != ""
+												= SubCategory.find(@company.sub_category).name
 								tr
 									-if @company.location.present? && @company.location != "Nowhere"
 										td.text-muted Headquarters
@@ -57,11 +55,11 @@
 											- else 
 												.text-muted No tags yet
 								tr
-									-if @company.target_client.present?
+									-if @company.target_client.present? && @company.target_client.name != "Unknown"
 										td.text-muted Target Market
 										td= TargetClient.find(@company.target_client).name
 								tr
-									-if @company.business_model.present?
+									-if @company.business_model.present? && @company.target_client.name !="Unknown"
 										td.text-muted Business Model
 										td= BusinessModel.find(@company.business_model).name
 								tr

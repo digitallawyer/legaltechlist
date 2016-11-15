@@ -66,6 +66,13 @@ a.navbar-brand {
 	}
 }
 
+/* Override for all panels in the the appliaction */
+
+.panel{
+	border: 1px solid $mid_gray;
+	border-radius: 3px;
+}
+
 // STATIC Page design is located in static_pages.scss and imports from 'static' folder
 .footer{
 	min-height: 100px !important;
