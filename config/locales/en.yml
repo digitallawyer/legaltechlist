@@ -29,6 +29,8 @@ en:
       create_admin_link_text: "Admin Moderation Interface"
       update_admin_link: "http://techindex.law.stanford.edu/admin/companies"
       update_admin_link_test: "Admin Interface"
+  twitter:
+    publish: "Announcing a new member of the LegalTechList!"
   controllers:
     company:
       created_success: "Company was successfully submitted and will be reviewed by an administrator shortly."

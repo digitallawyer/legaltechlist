@@ -30,21 +30,26 @@
               a class=("see-companies-button #{'see-companies-button-'+ category.id.to_s}") href="/companies?category=#{category.id}"
                 |
                   SEE COMPANIES
-
 .jumbotron.home-codex-jumbotron
   .container.home-codex-container
-    .col-md-6
+    .col-md-12
       h1 Stanford CodeX
       p 
         | This database and tool was designed and created by the Stanford CodeX Center for Legal Informatics. For more information please see our  
-        = link_to "Website.", "http://codex.stanford.edu", :target => "_blank"
-
+        = link_to "Website", "http://codex.stanford.edu", :target => "_blank"
+        |  and visit our 
+        = link_to "About Page", "/about"
+        |  to see who has contributed to this project.
 .home-tags-cloud-container.container
   .row
-    .col-md-6.tags-box
-      .panel.panel-default.lg-panel.flex-panel
-        .panel-body
-          .tags-cloud.glassy-bg
-            - tag_cloud @tags.counts, %w{css1 css2 css3 css4} do |tag, css_class|
-              =< link_to tag.name, tag_path(tag.name), class: css_class
-    .col-md-6.about-image
+    .col-md-6
+      h1 Community
+      p 
+        | This database is built on a growing community of legal technology companies worldwide. Our Twitter stream gives you a real time glance of what the companies in our database are sharing. To specify your search result, click on one of the tags below.
+        br
+      .tags-cloud
+        - tag_cloud @tags.counts, %w{css1 css2 css3 css4} do |tag, css_class|
+          =< link_to tag.name, tag_path(tag.name), class: css_class
+    .col-md-6
+      p 
+        | <a class="twitter-timeline" data-height="900" href="#{Rails.configuration.twitter_list_url}"></a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>

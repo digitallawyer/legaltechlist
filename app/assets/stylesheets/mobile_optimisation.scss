@@ -1,4 +1,4 @@
-@media (min-width: 1000px) and (max-width: 1200px){
+@media (min-width: 960px) and (max-width: 1200px){
 	.flex{
 		padding-left: 50px !important;
 	}
@@ -12,7 +12,7 @@
 		}
 	}
 }
-@media (min-width: 900px) and (max-width: 1000px){
+@media (min-width: 900px) and (max-width: 1040px){
 	.flex{
 		padding-left: 40px !important;
 	}
@@ -28,12 +28,15 @@
 }
 /* Everything above iPad */
 @media (min-width: 771px){
+	.flex{
+		padding-left: 30px !important;
+	}
 	.mobile-row{
 		display: none !important;
 	}
 	.desktop-row{
-		padding-left: 100px;
-		padding-right: 100px;
+		padding-left: 80px;
+		padding-right: 80px;
 	}
 }
 /* Everything iPad or below */

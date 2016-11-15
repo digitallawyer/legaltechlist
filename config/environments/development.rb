@@ -28,6 +28,7 @@ Rails.application.configure do
     :authentication => :plain,
     :enable_starttls_auto => true
   }
+
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 
@@ -47,6 +48,11 @@ Rails.application.configure do
   # Checks for improperly declared sprockets dependencies.
   # Raises helpful error messages.
   config.assets.raise_runtime_errors = true
+
+  config.twitter_publish = false
+  config.twitter_user = 'codexstanford'
+  config.twitter_list = 'Legaltechindex'
+  config.twitter_list_url = 'https://twitter.com/codexstanford/lists/Legaltechindex'
 
   # Raises error for missing translations
   # config.action_view.raise_on_missing_translations = true

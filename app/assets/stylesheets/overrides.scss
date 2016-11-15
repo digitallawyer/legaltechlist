@@ -42,7 +42,7 @@ a.navbar-brand {
 		font-weight: 400 !important;
 	}
 	.dropdown-menu{
-		height: 164px !important;
+		height: 210px !important;
 		font-size: 18px;
 		line-height: 70px !important;
 		width: 150px !important;
@@ -64,6 +64,13 @@ a.navbar-brand {
 	.label{
 		color:#000;
 	}
+}
+
+/* Override for all panels in the the appliaction */
+
+.panel{
+	border: 1px solid $mid_gray;
+	border-radius: 3px;
 }
 
 // STATIC Page design is located in static_pages.scss and imports from 'static' folder

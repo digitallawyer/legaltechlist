@@ -19,5 +19,7 @@
 //= require topojson.v1.min
 //= require d3
 //= require_tree .
+//= require Chart.bundle
+//= require chartkick
 
 

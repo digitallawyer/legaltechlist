@@ -62,6 +62,9 @@ gem 'google-analytics-rails', '1.1.0'
 # Use i18n for localization
 gem 'i18n'
 
+#Visualising the statistics page
+gem "chartkick"
+
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 
@@ -71,6 +74,8 @@ gem 'i18n'
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
 gem 'rails_12factor', group: :production
+
+gem 'twitter'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
