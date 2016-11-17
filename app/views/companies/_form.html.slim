@@ -16,7 +16,7 @@
     br/
     .row
       .col-md-6
-        = f.input :name, class: "form-control"
+        = f.input :name
     .row
       .col-md-6
         = f.input :location
@@ -48,11 +48,12 @@
       .col-md-6
         = f.input :crunchbase_url
     .row
-      .col-md-8
-        =< recaptcha_tags
+      .col-md-6
+        div style="margin-left: 130px;"
+          =< recaptcha_tags
     br/
     .row
-      .col-md-10
+      .col-md-6
         = f.actions do
           = f.action :submit, :label => "Save", :button_html => { :class => "btn btn-sls-orange-form" }
           = f.action :cancel, :label => "Cancel", :button_html => { :class => "btn btn-sls-red-form" }
