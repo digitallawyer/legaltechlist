@@ -4,9 +4,13 @@
     br/
     .row
       .col-md-6
-        = f.input :contact_name
+        =< if !@company.contact_name.nil? 
+        =<  @company.contact_name=nil
+        = f.input :contact_name, class: "form-control"
     .row
       .col-md-6
+        =< if !@company.contact_email.nil? 
+        =<  @company.contact_email=nil
         = f.input :contact_email
   = f.inputs "Company Info" do
     br/
@@ -43,6 +47,9 @@
     .row
       .col-md-6
         = f.input :crunchbase_url
+    .row
+      .col-md-8
+        =< recaptcha_tags
     br/
     .row
       .col-md-6

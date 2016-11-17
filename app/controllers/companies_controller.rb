@@ -76,13 +76,12 @@ class CompaniesController < ApplicationController
   # administrator to be added later.
   def create
     @company = Company.new(company_params)
+    @company.visible = false
 
     respond_to do |format|
-      if @company.valid?
+      if verify_recaptcha(model: @company) && @company.save
         # set company to invisible
-        @company.visible = false
-        @company.save
-
+        
         SuggestionMailer.newcompany_email(@company).deliver_now
 
         format.html { redirect_to "/companies", notice: t('controllers.company.created_success') }
