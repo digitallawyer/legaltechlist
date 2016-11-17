@@ -4,7 +4,7 @@
     br/
     .row
       .col-md-6
-        = f.input :contact_name, class: "form-control"
+        = f.input :contact_name
     .row
       .col-md-6
         = f.input :contact_email
@@ -12,7 +12,7 @@
     br/
     .row
       .col-md-6
-        = f.input :name, class: "form-control"
+        = f.input :name
     .row
       .col-md-6
         = f.input :location
@@ -45,7 +45,7 @@
         = f.input :crunchbase_url
     br/
     .row
-      .col-md-10
+      .col-md-6
         = f.actions do
           = f.action :submit, :label => "Save", :button_html => { :class => "btn btn-sls-orange-form" }
           = f.action :cancel, :label => "Cancel", :button_html => { :class => "btn btn-sls-red-form" }
