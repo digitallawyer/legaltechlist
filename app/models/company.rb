@@ -94,7 +94,13 @@ class Company < ActiveRecord::Base
       end
 
       #publish a tweet
-      twitter_client.update(I18n.t("twitter.publish") + " @" + self.twitter_name + " " + self.main_url)
+      if self.twitter_name.nil?
+        #then don't include it
+        twitter_client.update(I18n.t("twitter.publish") + " " + self.main_url)
+      else
+        #include twittername
+        twitter_client.update(I18n.t("twitter.publish") + " @" + self.twitter_name + " " + self.main_url)
+      end
     end
   end
   
