@@ -113,7 +113,7 @@ class Company < ActiveRecord::Base
         begin
           twitter_client.add_list_member(Rails.configuration.twitter_user,Rails.configuration.twitter_list, self.twitter_name)
         rescue Twitter::Error::Forbidden
-          logger.errror "#{self.twitter_name} is not a valid twitter id"
+          logger.error "#{self.twitter_name} is not a valid twitter id"
         end
       end
     end
