@@ -94,7 +94,13 @@ class Company < ActiveRecord::Base
       end
 
       #publish a tweet
-      twitter_client.update(I18n.t("twitter.publish") + " @" + self.twitter_name + " " + self.main_url)
+      if self.twitter_name.nil?
+        #then don't include it
+        twitter_client.update(I18n.t("twitter.publish") + " " + self.main_url)
+      else
+        #include twittername
+        twitter_client.update(I18n.t("twitter.publish") + " @" + self.twitter_name + " " + self.main_url)
+      end
     end
   end
   
@@ -113,7 +119,7 @@ class Company < ActiveRecord::Base
         begin
           twitter_client.add_list_member(Rails.configuration.twitter_user,Rails.configuration.twitter_list, self.twitter_name)
         rescue Twitter::Error::Forbidden
-          logger.errror "#{self.twitter_name} is not a valid twitter id"
+          logger.error "#{self.twitter_name} is not a valid twitter id"
         end
       end
     end
