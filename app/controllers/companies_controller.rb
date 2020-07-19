@@ -3,7 +3,7 @@ class CompaniesController < ApplicationController
 
   # GET /companies
   # GET /companies.json
-  
+
   # this search could easily be made much more complex and powerful
   # with ands and ors if necessary
   def index
@@ -72,7 +72,7 @@ class CompaniesController < ApplicationController
   # POST /companies
   # POST /companies.json
   # Actual companies are created in the Admin module. This function will accept
-  # the values from the new form, verify them, and then e-mail them to the 
+  # the values from the new form, verify them, and then e-mail them to the
   # administrator to be added later.
   def create
     @company = Company.new(company_params)
@@ -81,7 +81,7 @@ class CompaniesController < ApplicationController
     respond_to do |format|
       if verify_recaptcha(model: @company) && @company.save
         # set company to invisible
-        
+
         SuggestionMailer.newcompany_email(@company).deliver_now
 
         format.html { redirect_to "/companies", notice: t('controllers.company.created_success') }
@@ -100,16 +100,17 @@ class CompaniesController < ApplicationController
   # administrator to be added later.
   def update
     @company = Company.new(company_params)
-    
+
     respond_to do |format|
-      if @company.valid?
-        
+      if verify_recaptcha(model: @company) && @company.valid?
+
         SuggestionMailer.editcompany_email(@company).deliver_now
-        
+
         #redirect to the company we're editing, not the company changes we're submitting!
         format.html { redirect_to Company.find(params[:id]), notice: t('controllers.company.updated_success') }
         format.json { render :show, status: :ok, location: @company }
       else
+        flash.now[:notice] = "Failed, please try again"
         format.html { render :edit }
         format.json { render json: @company.errors, status: :unprocessable_entity }
       end
@@ -135,10 +136,10 @@ class CompaniesController < ApplicationController
     # Never trust parameters from the scary internet, only allow the white list through.
     def company_params
       params.require(:company).permit(:name, :location, :founded_date, :category, :sub_category,
-                                      :business_model, :target_client, :description, :main_url, 
-                                      :twitter_url, :angellist_url, :crunchbase_url, :employee_count, 
-                                      :all_tags, :category_id, :sub_category_id, :target_client_id, 
-                                      :business_model_id, :visible, :contact_name, :contact_email, 
+                                      :business_model, :target_client, :description, :main_url,
+                                      :twitter_url, :angellist_url, :crunchbase_url, :employee_count,
+                                      :all_tags, :category_id, :sub_category_id, :target_client_id,
+                                      :business_model_id, :visible, :contact_name, :contact_email,
                                       :codex_presenter, :codex_presentation_date)
     end
 end

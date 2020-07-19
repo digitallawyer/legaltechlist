@@ -16,7 +16,7 @@
           = form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:40px;", method: :get do
           p
             = text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for a company", id: "search-input"
-          .submit-button-mobile-row  
+          .submit-button-mobile-row
             = submit_tag "Search", name: nil, class: "btn btn-primary btn-sls-orange btn-lg"
 .div class=("categories-container container")
   .row
@@ -24,8 +24,8 @@
       - Category.all.each do |category|
         - unless category.name == "Unknown"
           a class=("category-link") href="/companies?category=#{category.id}"
-            div class=("category-card #{'category-background-'+ category.id.to_s}") 
-              p.category-title 
+            div class=("category-card #{'category-background-'+ category.id.to_s}")
+              p.category-title
                 = category.name
               a class=("see-companies-button #{'see-companies-button-'+ category.id.to_s}") href="/companies?category=#{category.id}"
                 |
@@ -34,22 +34,22 @@
   .container.home-codex-container
     .col-md-12
       h1 Stanford CodeX
-      p 
-        | This database and tool was designed and created by the Stanford CodeX Center for Legal Informatics. For more information please see our  
+      p
+        | This database and tool was designed and created by the Stanford CodeX Center for Legal Informatics. For more information please see our
         = link_to "Website", "http://codex.stanford.edu", :target => "_blank"
-        |  and visit our 
+        |  and visit our
         = link_to "About Page", "/about"
         |  to see who has contributed to this project.
 .home-tags-cloud-container.container
   .row
     .col-md-6
       h1 Community
-      p 
+      p
         | This database is built on a growing community of legal technology companies worldwide. Our Twitter stream gives you a real time glance of what the companies in our database are sharing. To specify your search result, click on one of the tags below.
         br
       .tags-cloud
         - tag_cloud @tags.counts, %w{css1 css2 css3 css4} do |tag, css_class|
           =< link_to tag.name, tag_path(tag.name), class: css_class
     .col-md-6
-      p 
+      p
         | <a class="twitter-timeline" data-height="900" href="#{Rails.configuration.twitter_list_url}"></a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
