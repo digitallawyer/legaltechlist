@@ -22,7 +22,7 @@
   .row
     .flex
       - Category.all.each do |category|
-        - unless category.name == "Unknown"
+        - unless category.name == "Unknown" || [ 12, 13, 14].include?(category.id)
           a class=("category-link") href="/companies?category=#{category.id}"
             div class=("category-card #{'category-background-'+ category.id.to_s}") 
               p.category-title 
