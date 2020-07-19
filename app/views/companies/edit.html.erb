@@ -9,6 +9,11 @@
 		<div class="panel panel-default lg-panel">
 	  		<div class="panel-body">
 				<h4>Suggest an update</h4>
+				<% flash.each do |type, msg| %>
+				  <div class="alert alert-info">
+				    <%= msg %>
+				  </div>
+				<% end %>
 				<hr>
 				<div>
 					<%= render 'form' %>
@@ -17,3 +22,4 @@
 		</div>
 	</div>
 </div>
+
