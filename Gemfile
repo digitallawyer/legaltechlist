@@ -69,7 +69,7 @@ gem 'google-analytics-rails', '1.1.0'
 gem 'i18n', '0.9.5'
 
 #Visualising the statistics page
-gem "chartkick", '3.3.1'
+gem "chartkick", '3.4.0'
 
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
