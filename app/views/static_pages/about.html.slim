@@ -2,30 +2,30 @@
   .container-fluid
     .col-md-12
       h1 About tech.law.stanford.edu
-      h3  
+      h3
         | Explore a curated list of #{Company.count} companies changing the way legal is done.
 .container
   - if flash[:notice]
     div class="alert alert-success"
       = flash[:notice]
-  .col-md-12 
+  .col-md-12
     .panel.panel-default.lg-panel.about-info-panel
       .panel-body
-        p 
-          | tech.law.stanford.edu is a curated list of legal technology companies, hosted by 
+        p
+          | tech.law.stanford.edu is a curated list of legal technology companies, hosted by
           a href="https://law.stanford.edu/codex-the-stanford-center-for-legal-informatics/" target="_blank" CodeX, the Stanford Center for Legal Informatics
           | . The database is intended as a resource for the legal technology community, and features data contributions from CodeX, Legal.io, Thomson Reuters and other stakeholders in the community.
 
         p tech.law.stanford.edu was conceived in 2015 at Code = Law, a group created by CodeX Fellow Pieter Gunst. Between 2012 and 2015, Code = Law brought together Stanford Law students interested in the intersection of law and technology. In addition to increasing the familiarity of the participants with legal technology in general, the group also engaged in more hands-on exercises, including coding exercises covering html, css, javascript and modern web frameworks. One of these exercises was the design and development of the initial framework of tech.law.stanford.edu. The database was then further populated and developed by the CodeX team and our CodeX interns and researchers.
 
         p
-          | Our RSS Feed is available 
+          | Our RSS Feed is available
           =<> link_to 'here.', '/feed?format=rss'
 
-        p 
+        p
           | Interested in contributing?
           =<> link_to 'Submit a legal technology company', new_company_path
-          | that is not included in the list, or have a look at the code on 
+          | that is not included in the list, or have a look at the code on
           a href="https://github.com/digitallawyer/legaltechlist" Github!
 
   .col-md-12
@@ -34,65 +34,65 @@
         h3 Contributors
         .row
           .col-md-4
-            img.contributor-image.img-circle src="https://media.licdn.com/media/AAEAAQAAAAAAAAZRAAAAJGY5MTNjMjY4LTE0ZDktNDAyZC04Mzk2LWQ5NzIyNzE5YTZlNg.jpg"
+            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
             p
-              | Pieter Gunst - CodeX Fellow / Co-Founder of 
+              | Pieter Gunst - CodeX Fellow / Co-Founder of
               a< href="https://www.legal.io" Legal.io
             a href="https://www.linkedin.com/in/pietergunst/" target="_blank"
               i.fa.fa-linkedin-square.fa-2x
           .col-md-4
-            img.contributor-image.img-circle src="https://media.licdn.com/mpr/mpr/shrinknp_400_400/AAEAAQAAAAAAAASNAAAAJDAxMzNmMDM3LWY2NzMtNGJhNy05YzgyLTI2Yzg0Y2QxNDI5ZA.jpg"
+            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
             p
               |
                 Kevin Xu  - Code = Law Participant
             a href="https://www.linkedin.com/in/kevinsxu/" target="_blank"
               i.fa.fa-linkedin-square.fa-2x
           .col-md-4
-            img.contributor-image.img-circle src="https://media.licdn.com/mpr/mpr/shrinknp_400_400/AAEAAQAAAAAAAAZrAAAAJGM3ZTBmZGIyLTkwYTAtNGIwMy05YmY4LTA2YzhkZmUxNjFjYw.jpg"
+            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
             p
-              | 
+              |
                 Sam Schroeder - Code = Law Participant
             a href="https://www.linkedin.com/in/sambchroeder/" target="_blank"
               i.fa.fa-linkedin-square.fa-2x
         .row
           .col-md-4
-            img.contributor-image.img-circle src="https://media.licdn.com/mpr/mpr/shrinknp_400_400/AAEAAQAAAAAAAAVIAAAAJDA0MjE0OTIyLThhMTQtNGQ4MC05N2U0LTE4MDk4OWYxMjY5ZQ.jpg"
+            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
             p
-              | 
+              |
                 Elizabeth Lowell - Code = Law Participant
             a href="https://www.linkedin.com/in/elizabeth-lowell-43393911/" target="_blank"
               i.fa.fa-linkedin-square.fa-2x
           .col-md-4
             img.contributor-image.img-circle src="/images/people/evans.jpg"
             p
-              | 
-                Mark Evans - CodeX Fellow 
+              |
+                Mark Evans - CodeX Fellow
             a href="https://www.linkedin.com/in/markharrisevans/" target="_blank"
               i.fa.fa-linkedin-square.fa-2x
           .col-md-4
-            img.contributor-image.img-circle src="https://media.licdn.com/media/p/5/005/02e/1f4/12eafb7.jpg"
-            p 
+            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
+            p
               | David Curle - Thomson Reuters
             a href="https://www.linkedin.com/in/david-curle-6a56/" target="_blank"
               i.fa.fa-linkedin-square.fa-2x
         .row
           .col-md-4
-            img.contributor-image.img-circle src="https://media.licdn.com/media/p/1/000/006/01a/03b1c79.jpg"
+            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
             p
               |
                 Bob Ambrogi - Lawyer, media and technology professional
             a href="https://www.linkedin.com/in/robertambrogi/" target="_blank"
               i.fa.fa-linkedin-square.fa-2x
           .col-md-4
-            img.contributor-image.img-circle src="https://media.licdn.com/mpr/mpr/shrinknp_400_400/AAEAAQAAAAAAAAQEAAAAJDVjYTVjOWRjLTYzZjItNDI5My05MjQyLWFhM2I5MTVjZDg2Mg.jpg"
+            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
             p
               |
                 Patrick Haede - Intern at CodeX
             a href="https://www.linkedin.com/in/patrickhaede/" target="_blank"
               i.fa.fa-linkedin-square.fa-2x
           .col-md-4
-            img.contributor-image.img-circle src="https://media.licdn.com/mpr/mpr/shrinknp_400_400/AAEAAQAAAAAAAAYmAAAAJGIyYzRkZjg2LWM5N2UtNDg4ZS1iOGQzLTBlZDhlM2YwMWU3MQ.jpg"
-            p 
+            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
+            p
               |
                 Taylor Famighetti - Intern at CodeX
             a href="https://www.linkedin.com/in/taylor-famighetti-06456083/" target="_blank"
