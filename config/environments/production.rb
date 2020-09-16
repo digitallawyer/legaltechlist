@@ -98,7 +98,7 @@ Rails.application.configure do
 
 
 
-  config.twitter_publish = true
+  config.twitter_publish = false
   config.twitter_user = 'CodeXStanford'
   config.twitter_list = 'Legaltechlist'
   config.twitter_list_url = 'https://twitter.com/CodeXStanford/lists/legaltechlist'
