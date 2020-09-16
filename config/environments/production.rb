@@ -97,7 +97,7 @@ Rails.application.configure do
   GA.tracker = "UA-176105565-1"
 
 
-  config.twitter_publish = true
+  config.twitter_publish = false
   config.twitter_user = 'CodeXStanford'
   config.twitter_list = 'Legaltechlist'
   config.twitter_list_url = 'https://twitter.com/CodeXStanford/lists/legaltechlist'

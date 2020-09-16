@@ -16,7 +16,7 @@ gem 'devise', '4.7.2'
 gem 'jquery-ui-rails', '5.0.5'
 
 #Use activeadmin for administration
-gem 'activeadmin', '1.0.0.pre4'
+gem 'activeadmin', '1.0.0.pre5'
 
 # Use SCSS for stylesheets
 gem 'sass-rails', '~> 5.0'
