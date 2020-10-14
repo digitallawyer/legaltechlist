@@ -22,7 +22,7 @@
 						table.table.borderless
 							tbody
 								col width="240"
-								col 
+								col
 								tr
 									td
 										h4 Overview
@@ -47,12 +47,12 @@
 										td.text-muted Founded
 										td= @company.founded_date
 								tr
-									td.text-muted Tags              
+									td.text-muted Tags
 									td
 										span
-											- if @company.tags.count > 0
+											- if @company.tags.present? && @company.tags != "n/a" && @company.tags.count > 0
 												= raw tag_links(@company.all_tags)
-											- else 
+											- else
 												.text-muted No tags yet
 								tr
 									-if @company.target_client.present? && @company.target_client.name != "Unknown"
@@ -64,38 +64,53 @@
 										td= BusinessModel.find(@company.business_model).name
 								tr
 									td.text-muted Website
-									-if @company.main_url.present?
+									-if @company.main_url.present? && @company.main_url != "n/a"
 										td
 											-if @company.main_url.include? "http"
 												a href="#{@company.main_url}" = @company.main_url
-											-else 
+											-else
 												a href="http://#{@company.main_url}" = @company.main_url
 									-else
-										td 
+										td
 											.text-muted Unknown
 								-if @company.twitter_url.present? || @company.angellist_url.present? || @company.crunchbase_url.present?
 									tr
 										td.text-muted Social
 										td
-											-if @company.twitter_url.present?
+											-if @company.twitter_url.present? && @company.twitter_url != 'n/a'
 												div
-													img style="margin-right:4px;" src="/images/twitter-logo.png" 
+													img style="margin-right:4px;" src="/images/twitter-logo.png"
 													-if @company.twitter_url.include? "@"
 														a href="https://www.twitter.com/#{@company.twitter_url[1..-1]}" Twitter
 													- else
 														a href="#{@company.twitter_url}" Twitter
 												br
-											-if @company.angellist_url.present?
+											-if @company.angellist_url.present? && @company.angellist_url != 'n/a'
 												div
-													img  style="margin-right:4px;" src="/images/angellist-logo.png" 
+													img  style="margin-right:4px;" src="/images/angellist-logo.png"
 													a href="#{@company.angellist_url}" Angellist
 												br
-											-if @company.crunchbase_url.present?
-												img  style="margin-right:4px;" src="/images/crunchbase-logo.png" 
-												a href="#{@company.crunchbase_url}" Crunchbase
+											-if @company.crunchbase_url.present? && @company.crunchbase_url != 'n/a'
+												div
+													img  style="margin-right:4px;" src="/images/crunchbase-logo.png"
+													a href="#{@company.crunchbase_url}" Crunchbase
+												br
+											-if @company.linkedin_url.present? && @company.linkedin_url != 'n/a'
+												div
+													img  style="margin-right:4px;" src="/images/linkedin-logo.png"
+													a href="#{@company.linkedin_url}" Linkedin
+												br
+											-if @company.legalio_url.present? && @company.legalio_url != 'n/a'
+												div
+													img  style="margin-right:4px;" src="/images/legalio-logo.png"
+													a href="#{@company.legalio_url}" Legalio
+												br
+											-if @company.facebook_url.present? && @company.facebook_url != 'n/a'
+												img  style="margin-right:4px;" src="/images/facebook-logo.png"
+												a href="#{@company.facebook_url}" Facebook
 				.panel-footer
-					.text-center 
-						span.text-muted Help us maintain this page by 
+					.text-center
+						span.text-muted Help us maintain this page by
 						=< link_to 'suggesting an update.', edit_company_path(@company)
 
 					/! Another approach to display the page is to use a screenshot tool like pagepeeker
@@ -115,7 +130,7 @@
 											|  
 										p= related.description
 										span.text-muted
-											i.fa.fa-tags style="margin-right:6px;" 
+											i.fa.fa-tags style="margin-right:6px;"
 											= raw tag_links(related.all_tags)
 									/! Makes entire e class a clickable link to the company page
 									javascript:
