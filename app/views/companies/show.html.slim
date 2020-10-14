@@ -29,8 +29,15 @@
 
 								tr
 									td.text-muted Status
-									td
-										span> class="label label-success" Active
+									-if @company.status == 'active'
+										td
+											span> class="label label-success" Active
+									-if @company.status == 'inactive'
+										td
+											span> class="label label-danger" Inactive
+									-if @company.status == 'acquired'
+										td
+											span> class="label label-info" Acquired
 								tr
 									-if Category.find(@company.category).name != "Unknown"
 										td.text-muted Category
