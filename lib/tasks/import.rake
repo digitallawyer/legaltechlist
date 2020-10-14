@@ -7,8 +7,9 @@ require 'csv'
 namespace :csv do
 
 	task :import => :environment do
-		CSV.foreach("#{Rails.root}/lib/cleaned04.csv", :headers => true, :encoding => 'ISO-8859-1:UTF-8') do |row|
+		CSV.foreach("#{Rails.root}/lib/presentation_data_01.csv", :headers => true, :encoding => 'ISO-8859-1:UTF-8') do |row|
       row.to_hash
+      #9_3_set_2
       #row["category"] = Category.where(:name => row["category"]).first_or_create!
       #Company.create(row)
 
@@ -57,6 +58,22 @@ namespace :csv do
         row["target_client"] = "Unknown"
       end
 
+      if row["linkedin_url"].nil? || row["linkedin_url"] == ""
+        row["linkedin_url"] = "Unknown"
+      end
+
+      if row["facebook_url"].nil? || row["facebook_url"] == ""
+        row["facebook_url"] = "Unknown"
+      end
+
+      if row["legalio_url"].nil? || row["legalio_url"] == ""
+        row["legalio_url"] = "Unknown"
+      end
+
+      if row["status"].nil? || row["status"] == ""
+        row["status"] = "Unknown"
+      end
+
       # split category into category and sub-category
       catFullname = row["category"].split('-')
       catName = catFullname[0].strip
@@ -86,6 +103,10 @@ namespace :csv do
         :twitter_url => row["twitter_url"],
         :angellist_url => row["angellist_url"],
         :crunchbase_url => row["crunchbase_url"],
+        :linkedin_url => row["linkedin_url"],
+        :facebook_url => row["facebook_url"],
+        :legalio_url => row["legalio_url"],
+        :status => row["status"],
         :business_model => biz,
         :target_client => trg,
         :all_tags => row["all_tags"]

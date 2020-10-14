@@ -10,6 +10,10 @@ class CreateCompanies < ActiveRecord::Migration
       t.string :twitter_url
       t.string :angellist_url
       t.string :crunchbase_url
+      t.string :linkedin_url
+      t.string :facebook_url
+      t.string :legalio_url
+      t.string :status
       t.string :employee_count
 
       t.timestamps null: false

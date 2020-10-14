@@ -1,15 +1,15 @@
 = semantic_form_for @company do |f|
-  
+
   = f.inputs "Contact Info" do
     br/
     .row
       .col-md-6
-        =< if !@company.contact_name.nil? 
+        =< if !@company.contact_name.nil?
         =<  @company.contact_name=nil
         = f.input :contact_name, class: "form-control"
     .row
       .col-md-6
-        =< if !@company.contact_email.nil? 
+        =< if !@company.contact_email.nil?
         =<  @company.contact_email=nil
         = f.input :contact_email
   = f.inputs "Company Info" do
@@ -47,6 +47,18 @@
     .row
       .col-md-6
         = f.input :crunchbase_url
+    .row
+      .col-md-6
+        = f.input :linkedin_url
+    .row
+      .col-md-6
+        = f.input :facebook_url
+    .row
+      .col-md-6
+        = f.input :legalio_url
+    .row
+      .col-md-6
+        = f.input :status
     .row
       .col-md-6
         div style="margin-left: 130px;"
