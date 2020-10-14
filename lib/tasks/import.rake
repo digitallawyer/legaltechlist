@@ -7,7 +7,7 @@ require 'csv'
 namespace :csv do
 
 	task :import => :environment do
-		CSV.foreach("#{Rails.root}/lib/presentation_data_01.csv", :headers => true, :encoding => 'ISO-8859-1:UTF-8') do |row|
+		CSV.foreach("#{Rails.root}/lib/presentation_data_03.csv", :headers => true, :encoding => 'UTF-8') do |row|
       row.to_hash
       #9_3_set_2
       #row["category"] = Category.where(:name => row["category"]).first_or_create!
@@ -93,12 +93,12 @@ namespace :csv do
 
       # add the entry to the database
       c = Company.where(:name => row["name"]).first_or_create!(
-        :name => row["name"],
+        :name => row["name"].to_s.encode('UTF-8', invalid: :replace, undef: :replace, replace: ''),
         :location => row["location"],
         :founded_date => row["founded_date"],
         :category => cat,
         :sub_category => sub,
-        :description => row["description"],
+        :description => row["description"].to_s.encode('UTF-8', invalid: :replace, undef: :replace, replace: ''),
         :main_url => row["main_url"],
         :twitter_url => row["twitter_url"],
         :angellist_url => row["angellist_url"],

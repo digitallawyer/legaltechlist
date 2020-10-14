@@ -4,8 +4,8 @@ class ImportCSVtoCompany
   class << self
 
     def import(csv_data)
-
-  		CSV.foreach(csv_data.tempfile, :headers => true, :encoding => 'ISO-8859-1:UTF-8') do |row|
+      #'ISO-8859-1:UTF-8'
+  		CSV.foreach(csv_data.tempfile, :headers => true, :encoding => 'UTF-8') do |row|
 
         row.to_hash
 
