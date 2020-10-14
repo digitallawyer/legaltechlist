@@ -2,22 +2,22 @@ require 'csv'
 
 class ImportCSVtoCompany
   class << self
-    
+
     def import(csv_data)
 
   		CSV.foreach(csv_data.tempfile, :headers => true, :encoding => 'ISO-8859-1:UTF-8') do |row|
 
         row.to_hash
-        
+
         row["name"] = row["name"].strip
-        
+
         if row["name"]!=""
           # clean up data to ensure validation on import
 
           if row["contact_name"].nil? || row["contact_name"] == ""
             row["contact_name"] = "Unknown"
           end
-      
+
           if row["business_model"].nil? || row["business_model"] == ""
             row["business_model"] = "Unknown"
           end
@@ -26,20 +26,20 @@ class ImportCSVtoCompany
           if row["target_client"].nil? || row["target_client"] == ""
             row["target_client"] = "Unknown"
           end
-        
+
           # split category into category and sub-category
           catFullname = row["category"].split('-')
           catName = catFullname[0].strip
           if catFullname[1].nil?
             catFullname[1]=""
           end
-      
+
           cat = Category.where(:name => catName).first_or_create!
           sub = SubCategory.where(:name => catFullname[1],
                                   :category => cat
                                 ).first_or_create!(:name => catFullname[1],
                                                    :category => cat)
-      
+
           #find references
           biz = BusinessModel.where(:name => row["business_model"]).first
           trg = TargetClient.where(:name => row["target_client"]).first
@@ -64,23 +64,27 @@ class ImportCSVtoCompany
             :twitter_url => row["twitter_url"],
             :angellist_url => row["angellist_url"],
             :crunchbase_url => row["crunchbase_url"],
+            :linkedin_url => row["linkedin_url"],
+            :facebook_url => row["facebook_url"],
+            :legalio_url => row["legalio_url"],
+            :status => row["status"],
             :codex_presenter => row["codex_presenter"],
             :codex_presentation_date => row["codex_presentation_date"]
           )
         end
       end
     end
-    
+
     def export(csv)
-      
+
       # NOTE! The order of this list must match the order of the rows (below)
       header =  [
-        "contact_name", 
-        "contact_email", 
-        "name", 
+        "contact_name",
+        "contact_email",
+        "name",
         "location",
         "founded_date",
-        "visible", 
+        "visible",
         "category",
         "target_client",
         "business_model",
@@ -89,28 +93,32 @@ class ImportCSVtoCompany
         "twitter_url",
         "angellist_url",
         "crunchbase_url",
+        "linkedin_url",
+        "facebook_url",
+        "legalio_url",
+        "status",
         "all_tags",
         "codex_presenter",
         "codex_presentation_date"
       ]
-      
+
       csv << header
-      
+
       Company.all.each do |company|
         category = company.category.name
-        
-        if company.sub_category.present? 
-          category = "#{company.category.name} - #{company.sub_category.name}" 
+
+        if company.sub_category.present?
+          category = "#{company.category.name} - #{company.sub_category.name}"
         end
 
-        if company.target_client.present? 
+        if company.target_client.present?
           trg = company.target_client.name
         end
-        
-        if company.business_model.present? 
+
+        if company.business_model.present?
           biz = company.business_model.name
         end
-        
+
         row = [
           company.contact_name,
           company.contact_email,
@@ -123,18 +131,22 @@ class ImportCSVtoCompany
           biz,
           company.description,
           company.main_url,
-          company.twitter_url, 
-          company.angellist_url, 
-          company.crunchbase_url, 
+          company.twitter_url,
+          company.angellist_url,
+          company.crunchbase_url,
+          company.linkedin_url,
+          company.facebook_url,
+          company.legalio_url,
+          company.status,
           company.all_tags,
           company.codex_presenter,
           company.codex_presentation_date
          ]
-        
+
         csv << row
       end
 
     end
-    
+
   end
 end
