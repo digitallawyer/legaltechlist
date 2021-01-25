@@ -1,0 +1,15 @@
+<form action="/admin/pieter" method="get" accept-charset="UTF-8" >
+  <label for="query">Search for:</label>
+  <input id="query" name="query" type="text" />
+  <input type="checkbox" id="exact_match" name="exact_match" unchecked />
+  <label for="exact_match">exact match</label>
+  <input type="submit" />
+</form>
+
+<% if @data != nil %>
+  <% @data.each do |data| %>
+    <p><!-- <%= data.id %> --> <%= data.name %> <a href="/admin/companies/<%= data.id %>">view</a> <a href="/admin/companies/<%= data.id %>/edit">edit</a> <a href="/admin/companies/<%= data.id %>">delete</a> <%= data.description.truncate(50) %></p>
+  <%end %>
+<% else %>
+  <p>Search came up empty.</p>
+<% end %>
