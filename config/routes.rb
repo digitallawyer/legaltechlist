@@ -18,7 +18,7 @@ Rails.application.routes.draw do
  # get 'sub_category/:category' => 'sub_category#index', as: :category
     
   get 'static_pages/home'
-  
+  get 'admin/pieter', to: 'admin/pieter#index'
 
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
