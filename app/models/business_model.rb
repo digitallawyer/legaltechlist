@@ -1,5 +1,5 @@
 class BusinessModel < ActiveRecord::Base
-  has_many :companies
+  belongs_to :company
   
   accepts_nested_attributes_for :companies
   
