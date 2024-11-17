@@ -63,11 +63,11 @@
 								tr
 									-if @company.target_client.present? && @company.target_client.name != "Unknown"
 										td.text-muted Target Market
-										td= TargetClient.find(@company.target_client).name
+										td= @company.target_client.name
 								tr
 									-if @company.business_model.present? && @company.target_client.name !="Unknown"
 										td.text-muted Business Model
-										td= BusinessModel.find(@company.business_model).name
+										td= @company.business_model.name
 								tr
 									td.text-muted Website
 									-if @company.main_url.present? && @company.main_url != "n/a"
