@@ -1,4 +1,4 @@
-class AddUnaccentExtension < ActiveRecord::Migration
+class AddUnaccentExtension < ActiveRecord::Migration[6.1]
   def change
   end
 end

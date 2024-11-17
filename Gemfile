@@ -19,6 +19,7 @@ gem 'coffee-rails', '~> 5.0'
 gem 'uglifier', '>= 4.2.0'
 gem 'jquery-rails', '~> 4.5'
 gem 'turbolinks', '~> 5.2.1'
+gem 'slim-rails'
 
 # API and Data
 gem 'jbuilder', '~> 2.0'
@@ -57,3 +58,5 @@ group :development do
 end
 
 gem 'json', '~> 2.6'
+
+gem 'bootsnap', '>= 1.4.4', require: false

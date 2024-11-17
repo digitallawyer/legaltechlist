@@ -1,4 +1,4 @@
-class CreateBusinessModels < ActiveRecord::Migration
+class CreateBusinessModels < ActiveRecord::Migration[6.1]
   def change
     create_table :business_models do |t|
       t.string :name
