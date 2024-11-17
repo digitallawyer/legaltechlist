@@ -8,7 +8,7 @@ Bundler.require(*Rails.groups)
 module Legaltechlist
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 6.1
+    config.load_defaults 7.0
 
     # Settings in config/environments/* take precedence over those specified here.
     # Application configuration can go into files in config/initializers
@@ -35,5 +35,10 @@ module Legaltechlist
 
     # Add this line to autoload the services directory
     config.autoload_paths += %W(#{config.root}/app/services)
+
+    # Add after your existing configurations
+    config.active_support.cache_format_version = 7.0
+    config.active_support.remove_deprecated_time_with_zone_name = true
+    config.active_support.executor_around_test_case = true
   end
 end

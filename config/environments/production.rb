@@ -1,4 +1,6 @@
 Rails.application.configure do
+  require "active_support/core_ext/integer/time"
+
   # Settings specified here will take precedence over those in config/application.rb.
 
   # Code is not reloaded between requests.
@@ -19,7 +21,6 @@ Rails.application.configure do
   config.public_file_server.enabled = ENV['RAILS_SERVE_STATIC_FILES'].present?
 
   # Compress JavaScripts and CSS.
-  config.assets.js_compressor = :uglifier
   # config.assets.css_compressor = :sass
 
   # Do not fallback to assets pipeline if a precompiled asset is missed.
@@ -44,7 +45,11 @@ Rails.application.configure do
 
   # Use the lowest log level to ensure availability of diagnostic information
   # when problems arise.
-  config.log_level = :debug
+  config.log_level = :info
+
+  # Update deprecation handling
+  config.active_support.report_deprecations = false
+
 
   # Prepend all log lines with the following tags.
   config.log_tags = [ :request_id ]

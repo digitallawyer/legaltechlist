@@ -1,16 +1,16 @@
 source 'https://rubygems.org'
 
-ruby '3.1.4'
+ruby '3.2.2'
 
 # Core
-gem 'rails', '~> 6.1.0'
-gem 'pg', '~> 1.2.3'
+gem 'rails', '~> 7.0.8'
+gem 'pg', '~> 1.5.4'
 gem 'puma'
 gem 'webpacker', '~> 5.4'
 
 # Admin and Authentication
-gem 'activeadmin', '~> 2.13'
-gem 'devise', '~> 4.8'
+gem 'activeadmin', '~> 3.0'
+gem 'devise', '~> 4.9'
 gem 'kaminari', '~> 1.2.1'
 
 # Frontend
