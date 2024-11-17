@@ -8,8 +8,8 @@ class Company < ActiveRecord::Base
   #this should be has_one, but apparently there's a known bug
   belongs_to :category, optional: true
   belongs_to :sub_category, optional: true
-  belongs_to :business_model
-  belongs_to :target_client
+  belongs_to :business_model, optional: true
+  belongs_to :target_client, optional: true
 
   # I'm not 100% sure these are required.
   accepts_nested_attributes_for :category
