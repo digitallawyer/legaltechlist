@@ -1,18 +1,12 @@
-class Category < ActiveRecord::Base
-  has_many :companies
+class Category < ApplicationRecord
   has_many :sub_categories
-
-  accepts_nested_attributes_for :companies
+  has_many :companies, through: :sub_categories
   
-  def sub_category
-    SubCategory.where(:category => id)
-  end
-
   def self.ransackable_attributes(auth_object = nil)
-    ["created_at", "description", "id", "name", "updated_at"]
+    %w[id name created_at updated_at]
   end
 
   def self.ransackable_associations(auth_object = nil)
-    ["companies"]
+    %w[sub_categories companies]
   end
 end
