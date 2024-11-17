@@ -1,4 +1,3 @@
-# encoding: UTF-8
 # This file is auto-generated from the current state of the database. Instead
 # of editing this file, please use the migrations feature of Active Record to
 # incrementally modify your database, and then regenerate this schema definition.
@@ -21,15 +20,14 @@ ActiveRecord::Schema.define(version: 20161017182627) do
     t.text     "body"
     t.string   "resource_id",   null: false
     t.string   "resource_type", null: false
-    t.integer  "author_id"
     t.string   "author_type"
+    t.integer  "author_id"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.index ["author_type", "author_id"], name: "index_active_admin_comments_on_author_type_and_author_id", using: :btree
+    t.index ["namespace"], name: "index_active_admin_comments_on_namespace", using: :btree
+    t.index ["resource_type", "resource_id"], name: "index_active_admin_comments_on_resource_type_and_resource_id", using: :btree
   end
-
-  add_index "active_admin_comments", ["author_type", "author_id"], name: "index_active_admin_comments_on_author_type_and_author_id", using: :btree
-  add_index "active_admin_comments", ["namespace"], name: "index_active_admin_comments_on_namespace", using: :btree
-  add_index "active_admin_comments", ["resource_type", "resource_id"], name: "index_active_admin_comments_on_resource_type_and_resource_id", using: :btree
 
   create_table "admin_users", force: :cascade do |t|
     t.string   "email",                  default: "", null: false
@@ -44,10 +42,9 @@ ActiveRecord::Schema.define(version: 20161017182627) do
     t.inet     "last_sign_in_ip"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.index ["email"], name: "index_admin_users_on_email", unique: true, using: :btree
+    t.index ["reset_password_token"], name: "index_admin_users_on_reset_password_token", unique: true, using: :btree
   end
-
-  add_index "admin_users", ["email"], name: "index_admin_users_on_email", unique: true, using: :btree
-  add_index "admin_users", ["reset_password_token"], name: "index_admin_users_on_reset_password_token", unique: true, using: :btree
 
   create_table "business_models", force: :cascade do |t|
     t.string   "name"
@@ -90,12 +87,11 @@ ActiveRecord::Schema.define(version: 20161017182627) do
     t.string   "contact_name"
     t.boolean  "codex_presenter"
     t.date     "codex_presentation_date"
+    t.index ["business_model_id"], name: "index_companies_on_business_model_id", using: :btree
+    t.index ["category_id"], name: "index_companies_on_category_id", using: :btree
+    t.index ["sub_category_id"], name: "index_companies_on_sub_category_id", using: :btree
+    t.index ["target_client_id"], name: "index_companies_on_target_client_id", using: :btree
   end
-
-  add_index "companies", ["business_model_id"], name: "index_companies_on_business_model_id", using: :btree
-  add_index "companies", ["category_id"], name: "index_companies_on_category_id", using: :btree
-  add_index "companies", ["sub_category_id"], name: "index_companies_on_sub_category_id", using: :btree
-  add_index "companies", ["target_client_id"], name: "index_companies_on_target_client_id", using: :btree
 
   create_table "sub_categories", force: :cascade do |t|
     t.string   "name"
@@ -103,19 +99,17 @@ ActiveRecord::Schema.define(version: 20161017182627) do
     t.integer  "category_id"
     t.datetime "created_at",  null: false
     t.datetime "updated_at",  null: false
+    t.index ["category_id"], name: "index_sub_categories_on_category_id", using: :btree
   end
-
-  add_index "sub_categories", ["category_id"], name: "index_sub_categories_on_category_id", using: :btree
 
   create_table "taggings", force: :cascade do |t|
     t.integer  "company_id"
     t.integer  "tag_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_taggings_on_company_id", using: :btree
+    t.index ["tag_id"], name: "index_taggings_on_tag_id", using: :btree
   end
-
-  add_index "taggings", ["company_id"], name: "index_taggings_on_company_id", using: :btree
-  add_index "taggings", ["tag_id"], name: "index_taggings_on_tag_id", using: :btree
 
   create_table "tags", force: :cascade do |t|
     t.string   "name"

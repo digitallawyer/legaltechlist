@@ -1,22 +1,22 @@
 source 'https://rubygems.org'
 
-ruby "2.4.7"
-
+ruby "2.7.8"
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '4.2.8'
+gem 'rails', '5.0.7.2'
+gem 'railties', '5.0.7.2'
 
 gem 'bigdecimal', '1.3.5'
 
 # Use postgresql as the database for Active Record
-gem 'pg', '0.15'
+gem 'pg', '~> 1.2.3'  # Instead of 0.21
 
 # Authentication
-gem 'devise', '4.7.2'
+gem 'devise', '~> 4.7.2'
 
 gem 'jquery-ui-rails', '5.0.5'
 
 #Use activeadmin for administration
-gem 'activeadmin', '1.0.0.pre5'
+gem 'activeadmin', '~> 1.4.3'  # Update ActiveAdmin for Rails 5
 
 # Use SCSS for stylesheets
 gem 'sass-rails', '~> 5.0'
@@ -79,7 +79,6 @@ gem "chartkick", '3.3.1'
 
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
-gem 'rails_12factor', '0.0.3', group: :production
 
 gem 'twitter'
 
@@ -87,7 +86,7 @@ gem "recaptcha", require: "recaptcha/rails"
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
-  gem 'byebug', '11.0.1'
+  gem 'byebug', '~> 11.1.3'  # Instead of 11.0.1
 
   # Access an IRB console on exception pages or by using <%= console %> in views
   gem 'web-console', '~> 2.0'
