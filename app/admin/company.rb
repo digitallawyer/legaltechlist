@@ -1,4 +1,4 @@
-load 'import_csv_to_company.rb'
+require_relative '../services/import_csv_to_company_service'
 
 ActiveAdmin.register Company do
 
@@ -24,14 +24,14 @@ ActiveAdmin.register Company do
   end
 
   collection_action :import_csv, :method => :post do
-    ImportCSVtoCompany.import(params[:dump][:file])
+    ImportCSVtoCompanyService.import(params[:dump][:file])
     redirect_to :action => :index, :notice => "CSV imported successfully."
   end
 
   collection_action :export_csv, :method => :get do
     encoding = Encoding::UTF_8.name
     csv = CSV.generate( encoding: encoding) do |csv|
-      ImportCSVtoCompany.export(csv)
+      ImportCSVtoCompanyService.export(csv)
     end
 
     send_data csv,
