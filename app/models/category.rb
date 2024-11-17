@@ -13,6 +13,6 @@ class Category < ActiveRecord::Base
   end
 
   def self.ransackable_associations(auth_object = nil)
-    ["companies"]
+    ["companies", "sub_categories"]
   end
 end
