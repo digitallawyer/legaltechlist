@@ -5,7 +5,7 @@
 .container.company-show-container
 	.col-md-12.breadcrumb
 		span
-			a> href="/companies"  Companies
+			a.text-decoration-none> href="/companies"  Companies
 			span
 				| › #{@company.name}
 		=< link_to 'Suggest Update', edit_company_path(@company), class: "btn btn-sls-orange pull-right"
