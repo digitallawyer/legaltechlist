@@ -17,7 +17,7 @@ gem 'kaminari', '~> 1.2.1'
 gem 'sass-rails', '~> 6.0'
 gem 'coffee-rails', '~> 5.0'
 gem 'uglifier', '>= 4.2.0'
-gem 'jquery-rails', '~> 4.4'  # Update to be flexible
+gem 'jquery-rails', '~> 4.5'
 gem 'turbolinks', '~> 5.2.1'
 
 # API and Data
