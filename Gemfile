@@ -39,7 +39,7 @@ gem 'mail'  # Remove version constraint
 gem 'd3-rails', '5.9.2'
 gem 'bootstrap_form', '2.7.0'
 gem 'google-analytics-rails', '1.1.0'
-gem 'chartkick', '3.3.1'
+gem 'chartkick', '3.4.0'
 
 # Twitter integration
 gem 'twitter', '~> 7.0'
