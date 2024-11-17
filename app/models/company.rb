@@ -126,12 +126,13 @@ class Company < ActiveRecord::Base
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    # List all attributes that should be searchable
-    %w[name description website business_model_id category_id sub_category_id target_client_id created_at updated_at]
+    %w[id name description website location founded_date 
+       category_id sub_category_id business_model_id target_client_id 
+       visible created_at updated_at]
   end
 
   def self.ransackable_associations(auth_object = nil)
-    # List all associations that should be searchable
-    ["business_model", "category", "sub_category", "taggings", "tags", "target_client"]
+    ["category", "sub_category", "business_model", "target_client", 
+     "taggings", "tags"]
   end
 end
