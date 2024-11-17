@@ -29,7 +29,4 @@ test:
 
 production:
   <<: *default
-  database: legaltechlist_production
-  username: legaltechlist
-  password: <%= ENV['LEGALTECHLIST_DATABASE_PASSWORD'] %>
   url: <%= ENV['DATABASE_URL'] %>
