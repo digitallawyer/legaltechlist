@@ -6,8 +6,8 @@ class Company < ActiveRecord::Base
   has_many :tags, through: :taggings
 
   #this should be has_one, but apparently there's a known bug
-  belongs_to :category
-  belongs_to :sub_category
+  belongs_to :category, optional: true
+  belongs_to :sub_category, optional: true
   belongs_to :business_model
   belongs_to :target_client
 

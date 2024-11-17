@@ -87,9 +87,12 @@ Rails.application.configure do
   # Analytics
   GA.tracker = "UA-176105565-1"
 
-
+  # Twitter settings
   config.twitter_publish = false
   config.twitter_user = 'CodeXStanford'
   config.twitter_list = 'Legaltechlist'
   config.twitter_list_url = 'https://twitter.com/CodeXStanford/lists/legaltechlist'
+
+  # Add this line for Active Storage (if you plan to use it)
+  config.active_storage.service = :local
 end
