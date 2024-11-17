@@ -130,7 +130,7 @@ class Company < ActiveRecord::Base
        description main_url twitter_url angellist_url crunchbase_url 
        linkedin_url facebook_url legalio_url status visible 
        contact_name contact_email codex_presenter codex_presentation_date 
-       employee_count created_at updated_at]
+       employee_count latitude longitude created_at updated_at]
   end
 
   def self.ransackable_associations(auth_object = nil)
