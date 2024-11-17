@@ -8,6 +8,9 @@ ActiveAdmin.register TargetClient do
 
 permit_params :name, :description
 
+# Remove any default filters that might be trying to use companies association
+remove_filter :companies
+
 index do
 	column :name
 	column :description
@@ -22,5 +25,15 @@ end
 #   permitted
 # end
 
+form do |f|
+  f.inputs do
+    f.input :name
+    f.input :description
+  end
+  f.actions
+end
+
+filter :name
+filter :description
 
 end

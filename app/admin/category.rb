@@ -11,6 +11,17 @@ index do
   actions
 end
 
+# Remove any default filters that might be trying to use companies association
+remove_filter :companies
+
+form do |f|
+  f.inputs do
+    f.input :name
+    f.input :description
+  end
+  f.actions
+end
+
 #
 # or
 #
