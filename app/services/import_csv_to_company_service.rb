@@ -1,6 +1,6 @@
 require 'csv'
 
-class ImportCSVtoCompany
+class ImportCsvToCompanyService
   class << self
 
     def import(csv_data)

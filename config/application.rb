@@ -32,5 +32,8 @@ module Legaltechlist
 
     # Keep your custom configurations
     config.twitter_list_url = ENV['TWITTER_LIST_URL'] || "https://twitter.com/CodeX_Law/lists/legal-tech-companies"
+
+    # Add this line to autoload the services directory
+    config.autoload_paths += %W(#{config.root}/app/services)
   end
 end
