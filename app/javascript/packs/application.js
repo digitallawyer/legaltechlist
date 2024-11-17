@@ -3,10 +3,8 @@
 require("@rails/ujs").start()
 require("turbolinks").start()
 require("@rails/activestorage").start()
-require("channels")
 
-// Your existing JavaScript
-require("jquery")
-require("jquery-ujs")
+import jQuery from 'jquery'
+window.$ = window.jQuery = jQuery
 
 console.log('Hello World from Webpacker')
