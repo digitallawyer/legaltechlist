@@ -100,4 +100,21 @@ Rails.application.configure do
 
   # Add this line for Active Storage (if you plan to use it)
   config.active_storage.service = :local
+
+  # Enable serving of static files from the `/public` folder
+  config.public_file_server.enabled = true
+
+  # Set cache headers for static assets
+  config.public_file_server.headers = {
+    'Cache-Control' => "public, max-age=#{365.days.to_i}"
+  }
+
+  # Compress CSS using a preprocessor
+  config.assets.css_compressor = :sass
+
+  # Do not fallback to assets pipeline if a precompiled asset is missed
+  config.assets.compile = false
+
+  # Enable serving of static files from the `/public` folder
+  config.serve_static_files = true
 end

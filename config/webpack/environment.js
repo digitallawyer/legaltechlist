@@ -5,8 +5,21 @@ environment.plugins.prepend('Provide',
   new webpack.ProvidePlugin({
     $: 'jquery',
     jQuery: 'jquery',
-    'window.jQuery': 'jquery'
+    jquery: 'jquery'
   })
 )
+
+environment.config.merge({
+  resolve: {
+    fallback: {
+      dgram: false,
+      fs: false,
+      net: false,
+      tls: false,
+      child_process: false
+    }
+  },
+  node: false
+})
 
 module.exports = environment
