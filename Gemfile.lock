@@ -181,7 +181,7 @@ GEM
     msgpack (1.7.5)
     multipart-post (2.4.1)
     naught (1.1.0)
-    net-imap (0.4.18)
+    net-imap (0.5.1)
       date
       net-protocol
     net-pop (0.1.2)
@@ -191,16 +191,16 @@ GEM
     net-smtp (0.5.0)
       net-protocol
     nio4r (2.7.4)
-    nokogiri (1.15.6-arm64-darwin)
+    nokogiri (1.16.7-arm64-darwin)
       racc (~> 1.4)
     orm_adapter (0.5.0)
     pg (1.2.3)
-    pg_search (2.3.6)
-      activerecord (>= 5.2)
-      activesupport (>= 5.2)
+    pg_search (2.3.7)
+      activerecord (>= 6.1)
+      activesupport (>= 6.1)
     psych (5.2.0)
       stringio
-    public_suffix (5.1.1)
+    public_suffix (6.0.1)
     puma (6.4.3)
       nio4r (~> 2.0)
     racc (1.8.1)
@@ -247,7 +247,7 @@ GEM
       ffi (~> 1.0)
     rdoc (6.7.0)
       psych (>= 4.0.0)
-    recaptcha (5.16.0)
+    recaptcha (5.17.0)
     responders (3.1.1)
       actionpack (>= 5.2)
       railties (>= 5.2)
@@ -367,7 +367,7 @@ DEPENDENCIES
   webpacker (~> 5.4)
 
 RUBY VERSION
-   ruby 2.7.8p225
+   ruby 3.1.4p223
 
 BUNDLED WITH
-   2.3.25
+   2.5.23
