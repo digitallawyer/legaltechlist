@@ -1,6 +1,12 @@
 module CompaniesHelper
   def tag_links(tags)
-    tags.split(",").map{|tag| link_to tag.strip, tag_path(tag.strip) }.join(", ")
+    return '' if tags.blank?
+    
+    tags.split(',').map do |tag|
+      tag = tag.strip
+      next if tag.blank?
+      link_to(tag, companies_path(tag: tag), class: 'tag-link')
+    end.compact.join(' ').html_safe
   end
   
   def tag_cloud(tags, classes)
