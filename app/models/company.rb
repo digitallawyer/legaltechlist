@@ -126,13 +126,14 @@ class Company < ActiveRecord::Base
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    %w[id name description website location founded_date 
+    %w[id name description website location founded_date main_url twitter_url 
+       angellist_url crunchbase_url linkedin_url facebook_url legalio_url 
        category_id sub_category_id business_model_id target_client_id 
-       visible created_at updated_at]
+       contact_name contact_email visible codex_presenter codex_presentation_date 
+       created_at updated_at]
   end
 
   def self.ransackable_associations(auth_object = nil)
-    ["category", "sub_category", "business_model", "target_client", 
-     "taggings", "tags"]
+    %w[category sub_category business_model target_client taggings tags]
   end
 end
