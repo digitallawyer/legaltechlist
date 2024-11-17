@@ -11,6 +11,6 @@ class Tag < ActiveRecord::Base
   end
 
   def self.ransackable_associations(auth_object = nil)
-    ["taggings", "companies"]
+    %w[taggings companies]
   end
 end
