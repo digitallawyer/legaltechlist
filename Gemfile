@@ -3,7 +3,7 @@ source 'https://rubygems.org'
 ruby "2.7.8"
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 5.2.8'
+gem 'rails', '~> 6.0.6'
 gem 'bootsnap', require: false  # New requirement for Rails 5.2
 
 gem 'bigdecimal', '1.4.4'
@@ -12,25 +12,25 @@ gem 'bigdecimal', '1.4.4'
 gem 'pg', '~> 1.2.3'  # Instead of 0.21
 
 # Authentication
-gem 'devise', '~> 4.8.0'
+gem 'devise', '~> 4.8'
 
 gem 'jquery-ui-rails', '5.0.5'
 
 #Use activeadmin for administration
-gem 'activeadmin', '~> 1.4.3'  # Update ActiveAdmin for Rails 5
+gem 'activeadmin', '~> 2.9'  # Compatible with Rails 6
 
 # Use SCSS for stylesheets
-gem 'sass-rails', '~> 5.1.0'
+gem 'sass-rails', '~> 6.0'
 # Use kaminari for pagination
-gem 'kaminari', '0.17.0'
+gem 'kaminari', '~> 1.2.1'
 
 # Slim support including i18n support using slim/translator
 gem 'slim-rails', require: ['slim-rails', 'slim/translator']
 
 # Use Uglifier as compressor for JavaScript assets
-gem 'uglifier', '>= 1.3.0'
+gem 'uglifier', '>= 4.2.0'
 # Use CoffeeScript for .coffee assets and views
-gem 'coffee-rails', '~> 4.2.0'
+gem 'coffee-rails', '~> 5.0'
 # See https://github.com/rails/execjs#readme for more supported runtimes
 # gem browser to detect mobile devices
 gem 'browser', '2.0.3'
@@ -44,7 +44,7 @@ gem 'jbuilder', '~> 2.0'
 gem 'sdoc', '~> 2.6.0'
 
 # adding pg_search gem here
-gem 'pg_search', '2.1.4'
+gem 'pg_search', '~> 2.3'
 
 #geocoding
 gem 'geocoder', '1.6.3'
@@ -80,7 +80,7 @@ gem "chartkick", '3.3.1'
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
 
-gem 'twitter'
+gem 'twitter', '~> 7.0'
 
 gem "recaptcha", require: "recaptcha/rails"
 
@@ -89,7 +89,7 @@ group :development, :test do
   gem 'byebug', '~> 11.1.3'  # Instead of 11.0.1
 
   # Access an IRB console on exception pages or by using <%= console %> in views
-  gem 'web-console', '~> 2.0'
+  gem 'web-console', '~> 4.2'
 
   # Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring
   gem 'spring', '2.0.2'
@@ -101,3 +101,9 @@ group :development do
 end
 
 gem 'json', '~> 2.6'
+
+# Add these new requirements
+gem 'webpacker', '~> 5.0'
+
+# Add explicit version
+gem 'ffi', '~> 1.15.5'

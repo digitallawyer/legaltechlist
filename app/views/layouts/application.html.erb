@@ -14,18 +14,22 @@
 
   <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
   <meta name="viewport" content="width=device-width" />
-  <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
+  
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+  
+  <%= stylesheet_link_tag 'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+  <%= javascript_pack_tag 'application', 'data-turbolinks-track': 'reload' %>
+  
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
   <link rel="alternate" type="application/rss+xml" title="CodeX Legal Tech"  href="/feed?format=rss" />
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+  
   <%= analytics_init if GoogleAnalytics.valid_tracker? %>
-  <%= csrf_meta_tags %>
 </head>
 <body>
-<%= render '/layouts/navmobile' %>
-<%= yield %>
-<%= render '/layouts/footer' %>
-<%= javascript_include_tag 'application', 'data-turbolinks-track' => false %>
-<%= yield :javascripts %>
+  <%= render '/layouts/navmobile' %>
+  <%= yield %>
+  <%= render '/layouts/footer' %>
+  <%= yield :javascripts %>
 </body>
 </html>
