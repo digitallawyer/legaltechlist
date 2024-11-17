@@ -32,3 +32,4 @@ production:
   database: legaltechlist_production
   username: legaltechlist
   password: <%= ENV['LEGALTECHLIST_DATABASE_PASSWORD'] %>
+  url: <%= ENV['DATABASE_URL'] %>
