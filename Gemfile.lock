@@ -193,6 +193,8 @@ GEM
     nio4r (2.7.4)
     nokogiri (1.16.7-arm64-darwin)
       racc (~> 1.4)
+    nokogiri (1.16.7-x86_64-linux)
+      racc (~> 1.4)
     orm_adapter (0.5.0)
     pg (1.2.3)
     pg_search (2.3.7)
@@ -327,6 +329,7 @@ GEM
 
 PLATFORMS
   arm64-darwin-24
+  x86_64-linux
 
 DEPENDENCIES
   activeadmin (~> 2.13)
