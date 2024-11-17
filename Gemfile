@@ -1,11 +1,12 @@
 source 'https://rubygems.org'
 
 ruby "2.7.8"
+
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '5.0.7.2'
 gem 'railties', '5.0.7.2'
 
-gem 'bigdecimal', '1.3.5'
+gem 'bigdecimal', '1.4.4'
 
 # Use postgresql as the database for Active Record
 gem 'pg', '~> 1.2.3'  # Instead of 0.21
