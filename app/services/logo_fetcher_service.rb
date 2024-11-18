@@ -98,12 +98,14 @@ class LogoFetcherService
 
       # Upload to S3 using public/ prefix
       key = "public/logos/#{filename}"
-      storage_service = ActiveStorage::Service.configure(
-        :bucketeer,
-        Rails.configuration.active_storage.service_configurations
-      )
       
-      storage_service.upload(key, temp_file, checksum: nil)
+      # Use AWS SDK directly as per Bucketeer docs
+      Aws::S3::Client.new.put_object(
+        bucket: ENV['BUCKETEER_BUCKET_NAME'],
+        key: key,
+        body: temp_file,
+        content_type: 'image/png'
+      )
 
       # Return the direct S3 URL
       bucket_name = ENV['BUCKETEER_BUCKET_NAME']
