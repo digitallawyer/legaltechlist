@@ -87,32 +87,38 @@ class LogoFetcherService
   end
 
   def self.upload_to_s3(url, filename)
-    s3 = Aws::S3::Client.new(
-      access_key_id: ENV['BUCKETEER_AWS_ACCESS_KEY_ID'],
-      secret_access_key: ENV['BUCKETEER_AWS_SECRET_ACCESS_KEY'],
-      region: ENV['BUCKETEER_AWS_REGION']
-    )
+    temp_file = nil
+    begin
+      s3 = Aws::S3::Client.new(
+        access_key_id: ENV['BUCKETEER_AWS_ACCESS_KEY_ID'],
+        secret_access_key: ENV['BUCKETEER_AWS_SECRET_ACCESS_KEY'],
+        region: ENV['BUCKETEER_AWS_REGION']
+      )
 
-    # Download the image to a temporary file
-    temp_file = Tempfile.new(['logo', '.png'])
-    temp_file.binmode
-    URI.open(url) { |image| temp_file.write(image.read) }
-    temp_file.rewind
+      # Download the image to a temporary file
+      temp_file = Tempfile.new(['logo', '.png'])
+      temp_file.binmode
+      URI.open(url) { |image| temp_file.write(image.read) }
+      temp_file.rewind
 
-    # Upload to S3
-    s3.put_object(
-      bucket: ENV['BUCKETEER_BUCKET_NAME'],
-      key: "logos/#{filename}",
-      body: temp_file,
-      content_type: 'image/png',
-      acl: 'public-read'
-    )
+      # Upload to S3
+      s3.put_object(
+        bucket: ENV['BUCKETEER_BUCKET_NAME'],
+        key: "logos/#{filename}",
+        body: temp_file,
+        content_type: 'image/png',
+        acl: 'public-read'
+      )
 
-    # Return the public URL
-    "https://#{ENV['BUCKETEER_BUCKET_NAME']}.s3.amazonaws.com/logos/#{filename}"
-  ensure
-    temp_file.close
-    temp_file.unlink
+      # Return the public URL
+      "https://#{ENV['BUCKETEER_BUCKET_NAME']}.s3.amazonaws.com/logos/#{filename}"
+    rescue => e
+      Rails.logger.error("S3 upload error for #{filename}: #{e.message}")
+      raise e
+    ensure
+      temp_file&.close
+      temp_file&.unlink if temp_file
+    end
   end
 
   def self.download_image(url, file_path)
