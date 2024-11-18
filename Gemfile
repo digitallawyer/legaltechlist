@@ -79,4 +79,4 @@ gem 'chartkick'
 gem 'groupdate'
 
 gem 'httparty'
-gem 'aws-sdk-s3', require: false
+gem 'aws-sdk-s3', '~> 1.141'

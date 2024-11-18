@@ -1,3 +1,5 @@
+require 'aws-sdk-s3'
+
 if Rails.env.production? && ENV['BUCKETEER_AWS_ACCESS_KEY_ID'].present?
   begin
     s3 = Aws::S3::Client.new(
