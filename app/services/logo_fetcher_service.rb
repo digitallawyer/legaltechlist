@@ -44,8 +44,8 @@ class LogoFetcherService
           logos_dir = Rails.root.join('public', 'logos')
           FileUtils.mkdir_p(logos_dir)
           file_path = logos_dir.join(filename)
-          download_image(logo_url, file_path)
-          company.update(logo_url: "/logos/#{filename}")
+          local_url = download_image(logo_url, file_path)
+          company.update(logo_url: local_url)
         end
 
         success += 1
@@ -126,6 +126,13 @@ class LogoFetcherService
       File.open(file_path, 'wb') do |file|
         file.write(image.read)
       end
+    end
+    
+    # Return the full URL including host in development
+    if Rails.env.development?
+      "#{ENV['APP_HOST']}/logos/#{File.basename(file_path)}"
+    else
+      "/logos/#{File.basename(file_path)}"
     end
   end
 end
