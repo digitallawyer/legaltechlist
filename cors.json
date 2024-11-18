@@ -1,0 +1,18 @@
+{
+    "CORSRules": [
+        {
+            "AllowedHeaders": [ "*" ],
+            "ExposeHeaders": ["ETag"],
+            "AllowedMethods": [
+                "HEAD",
+                "GET",
+                "PUT",
+                "POST",
+                "DELETE"
+            ],
+            "AllowedOrigins": [
+                "*"
+            ]
+        }
+    ]
+}
