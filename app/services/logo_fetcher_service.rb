@@ -102,16 +102,15 @@ class LogoFetcherService
       URI.open(url) { |image| temp_file.write(image.read) }
       temp_file.rewind
 
-      # Upload to S3
+      # Upload to S3 without ACL
       s3.put_object(
         bucket: ENV['BUCKETEER_BUCKET_NAME'],
         key: "logos/#{filename}",
         body: temp_file,
-        content_type: 'image/png',
-        acl: 'public-read'
+        content_type: 'image/png'
       )
 
-      # Return the Bucketeer bucket URL (using the actual bucket name, not the environment variable)
+      # Return the Bucketeer bucket URL
       bucket_name = ENV['BUCKETEER_BUCKET_NAME'].split('/').last
       "https://#{bucket_name}.s3.#{ENV['BUCKETEER_AWS_REGION']}.amazonaws.com/logos/#{filename}"
     rescue => e
