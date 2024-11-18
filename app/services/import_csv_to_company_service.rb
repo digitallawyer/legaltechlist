@@ -69,7 +69,8 @@ class ImportCsvToCompanyService
             :legalio_url => row["legalio_url"],
             :status => row["status"],
             :codex_presenter => row["codex_presenter"],
-            :codex_presentation_date => row["codex_presentation_date"]
+            :codex_presentation_date => row["codex_presentation_date"],
+            :tag_list => row["all_tags"]&.split(',')&.map(&:strip)
           )
         end
       end
@@ -138,7 +139,7 @@ class ImportCsvToCompanyService
           company.facebook_url,
           company.legalio_url,
           company.status,
-          company.all_tags,
+          company.tag_list.join(", "),
           company.codex_presenter,
           company.codex_presentation_date
          ]
