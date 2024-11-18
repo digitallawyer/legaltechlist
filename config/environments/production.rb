@@ -114,4 +114,7 @@ Rails.application.configure do
 
   # Enable serving of static files from the `/public` folder
   config.serve_static_files = true
+
+  # Add after line 36
+  config.active_storage.service = :bucketeer
 end

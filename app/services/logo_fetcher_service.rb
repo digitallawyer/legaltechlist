@@ -1,6 +1,7 @@
 require 'httparty'
 require 'open-uri'
 require 'aws-sdk-s3'
+require 'active_storage'
 
 class LogoFetcherService
   include HTTParty
@@ -88,35 +89,19 @@ class LogoFetcherService
   end
 
   def self.upload_to_s3(url, filename)
-    temp_file = nil
     begin
-      # Download the image to a temporary file
-      temp_file = Tempfile.new(['logo', '.png'])
-      temp_file.binmode
-      URI.open(url) { |image| temp_file.write(image.read) }
-      temp_file.rewind
-
-      # Upload to S3 using public/ prefix
-      key = "public/logos/#{filename}"
-      
-      # Use the global S3 client configured in initializers/aws.rb
-      S3.put_object(
-        bucket: ENV['BUCKETEER_BUCKET_NAME'],
-        key: key,
-        body: temp_file,
+      downloaded_image = URI.open(url)
+      blob = ActiveStorage::Blob.create_and_upload!(
+        io: downloaded_image,
+        filename: filename,
         content_type: 'image/png'
       )
-
-      # Return the direct S3 URL
-      bucket_name = ENV['BUCKETEER_BUCKET_NAME']
-      region = ENV['BUCKETEER_AWS_REGION']
-      "https://#{bucket_name}.s3.#{region}.amazonaws.com/#{key}"
+      
+      # Return the URL
+      Rails.application.routes.url_helpers.rails_blob_url(blob, only_path: true)
     rescue => e
-      Rails.logger.error("S3 upload error for #{filename}: #{e.message}")
+      Rails.logger.error("Logo upload error for #{filename}: #{e.message}")
       raise e
-    ensure
-      temp_file&.close
-      temp_file&.unlink if temp_file
     end
   end
 
