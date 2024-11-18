@@ -110,8 +110,8 @@ class LogoFetcherService
         content_type: 'image/png'
       )
 
-      # Return the public URL
-      "https://#{ENV['BUCKETEER_BUCKET_NAME']}.s3.amazonaws.com/logos/#{filename}"
+      # Return the Bucketeer CDN URL instead of direct S3 URL
+      "https://#{ENV['BUCKETEER_HOSTNAME']}/logos/#{filename}"
     rescue => e
       Rails.logger.error("S3 upload error for #{filename}: #{e.message}")
       raise e
