@@ -107,7 +107,8 @@ class LogoFetcherService
         bucket: ENV['BUCKETEER_BUCKET_NAME'],
         key: "logos/#{filename}",
         body: temp_file,
-        content_type: 'image/png'
+        content_type: 'image/png',
+        acl: 'public-read'
       )
 
       # Return the Bucketeer bucket URL (using the actual bucket name, not the environment variable)

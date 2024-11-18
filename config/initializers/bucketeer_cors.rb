@@ -11,6 +11,25 @@ if Rails.env.production? && ENV['BUCKETEER_AWS_ACCESS_KEY_ID'].present?
     # Check if bucket exists first
     s3.head_bucket(bucket: ENV['BUCKETEER_BUCKET_NAME'])
 
+    # Configure bucket policy for public read access
+    policy = {
+      Version: "2012-10-17",
+      Statement: [
+        {
+          Sid: "PublicReadForGetBucketObjects",
+          Effect: "Allow",
+          Principal: "*",
+          Action: "s3:GetObject",
+          Resource: "arn:aws:s3:::#{ENV['BUCKETEER_BUCKET_NAME']}/*"
+        }
+      ]
+    }
+
+    s3.put_bucket_policy(
+      bucket: ENV['BUCKETEER_BUCKET_NAME'],
+      policy: policy.to_json
+    )
+
     # Configure CORS
     s3.put_bucket_cors(
       bucket: ENV['BUCKETEER_BUCKET_NAME'],
@@ -27,8 +46,8 @@ if Rails.env.production? && ENV['BUCKETEER_AWS_ACCESS_KEY_ID'].present?
       }
     )
   rescue Aws::S3::Errors::ServiceError => e
-    Rails.logger.error("Bucketeer CORS configuration failed: #{e.message}")
+    Rails.logger.error("Bucketeer configuration failed: #{e.message}")
   rescue StandardError => e
-    Rails.logger.error("Unexpected error configuring Bucketeer CORS: #{e.message}")
+    Rails.logger.error("Unexpected error configuring Bucketeer: #{e.message}")
   end
 end
