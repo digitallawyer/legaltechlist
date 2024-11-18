@@ -90,12 +90,6 @@ class LogoFetcherService
   def self.upload_to_s3(url, filename)
     temp_file = nil
     begin
-      s3 = Aws::S3::Client.new(
-        access_key_id: ENV['BUCKETEER_AWS_ACCESS_KEY_ID'],
-        secret_access_key: ENV['BUCKETEER_AWS_SECRET_ACCESS_KEY'],
-        region: ENV['BUCKETEER_AWS_REGION']
-      )
-
       # Download the image to a temporary file
       temp_file = Tempfile.new(['logo', '.png'])
       temp_file.binmode
@@ -104,7 +98,7 @@ class LogoFetcherService
 
       # Upload to S3 using public/ prefix
       key = "public/logos/#{filename}"
-      s3.put_object(
+      S3.put_object(
         bucket: ENV['BUCKETEER_BUCKET_NAME'],
         key: key,
         body: temp_file,
