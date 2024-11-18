@@ -1,5 +1,6 @@
 require 'httparty'
 require 'open-uri'
+require 'aws-sdk-s3'
 
 class LogoFetcherService
   include HTTParty
