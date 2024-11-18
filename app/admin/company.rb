@@ -40,8 +40,8 @@ ActiveAdmin.register Company do
 
   collection_action :export_csv, :method => :get do
     encoding = Encoding::UTF_8.name
-    csv = CSV.generate( encoding: encoding) do |csv|
-      ImportCSVtoCompanyService.export(csv)
+    csv = CSV.generate(encoding: encoding) do |csv|
+      ImportCsvToCompanyService.export(csv)
     end
 
     send_data csv,

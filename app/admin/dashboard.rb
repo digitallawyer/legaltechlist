@@ -16,10 +16,10 @@ ActiveAdmin.register_page "Dashboard" do
        column do
          panel "Export Database" do
            ul do
-             link_to("Download CSV - Companies", "admin/companies/export_csv")
+             li link_to("Download CSV - Companies", admin_companies_path + "/export_csv")
            end
            ul do
-             link_to("Upload CSV - Companies", "admin/companies/upload_csv")
+             li link_to("Upload CSV - Companies", admin_companies_path + "/upload_csv")
            end
          end
        end

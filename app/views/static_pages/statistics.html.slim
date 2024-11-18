@@ -22,12 +22,12 @@
                 .row.mb-4
                     .col-12
                         - if params[:founded_date]
-                            - all_data = Company.group(:founded_date).count
-                            - highlighted_data = Company.where(founded_date: params[:founded_date]).group(:founded_date).count
+                            - all_data = Company.where("founded_date >= '2000'").group(:founded_date).count.sort.to_h
+                            - highlighted_data = Company.where(founded_date: params[:founded_date]).where("founded_date >= '2000'").group(:founded_date).count.sort.to_h
                             = line_chart [{ name: "All Companies", data: all_data },
                                 { name: "Selected Year", data: highlighted_data }], colors: ["#dee2e6", "#8c1515"], height: "400px", library: { backgroundColor: "#ffffff" }
                         - else
-                            = line_chart Company.group(:founded_date).count, colors: ["#8c1515"], height: "400px", library: { backgroundColor: "#ffffff" }
+                            = line_chart Company.where("founded_date >= '2000'").group(:founded_date).count.sort.to_h, colors: ["#8c1515"], height: "400px", library: { backgroundColor: "#ffffff" }
                 
                 .card.border
                     .card-body
