@@ -43,7 +43,8 @@ gem 'chartkick', '3.4.0'
 
 # Twitter integration
 gem 'twitter', '~> 7.0'
-gem 'ffi', '~> 1.15.5'
+gem 'arbre', '~> 1.7.0'
+gem 'ffi', '~> 1.17.0'
 
 gem 'recaptcha', require: 'recaptcha/rails'
 
