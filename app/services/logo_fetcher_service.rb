@@ -99,8 +99,8 @@ class LogoFetcherService
       # Upload to S3 using public/ prefix
       key = "public/logos/#{filename}"
       
-      # Use AWS SDK directly as per Bucketeer docs
-      Aws::S3::Client.new.put_object(
+      # Use the global S3 client configured in initializers/aws.rb
+      S3.put_object(
         bucket: ENV['BUCKETEER_BUCKET_NAME'],
         key: key,
         body: temp_file,
