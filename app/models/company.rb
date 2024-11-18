@@ -136,4 +136,17 @@ class Company < ActiveRecord::Base
   def self.ransackable_associations(auth_object = nil)
     %w[category sub_category business_model target_client taggings tags]
   end
+
+  scope :text_search, ->(query) {
+    where("name ILIKE :q OR description ILIKE :q OR location ILIKE :q", q: "%#{query}%")
+  }
+
+  def logo
+    if logo_url.present?
+      logo_url
+    else
+      # Default placeholder image
+      "https://placehold.co/64x64?text=#{URI.encode_www_form_component(name[0])}"
+    end
+  end
 end

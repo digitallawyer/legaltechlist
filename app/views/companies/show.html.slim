@@ -2,151 +2,118 @@
 	div class="alert alert-success"
 		= flash[:notice]
 
-.container.company-show-container
-	.col-md-12.breadcrumb
-		span
-			a.text-decoration-none> href="/companies"  Companies
-			span
-				| › #{@company.name}
-		=< link_to 'Suggest Update', edit_company_path(@company), class: "btn btn-sls-orange pull-right"
-	.row
-		.col-md-12
-			.panel.panel-default.lg-panel
-				.panel-body
-					h1
-						= @company.name
-					p
-						= @company.description
-					hr/
-					.col-md-12
-						table.table.borderless
-							tbody
-								col width="240"
-								col
-								tr
-									td
-										h4 Overview
+.bg-body-tertiary.border-bottom
+    .container.py-3
+        .d-flex.justify-content-between.align-items-center
+            nav aria-label="breadcrumb"
+                ol.breadcrumb.mb-0
+                    li.breadcrumb-item
+                        = link_to "Companies", companies_path, class: "text-decoration-none"
+                    li.breadcrumb-item.active= @company.name
+            = link_to 'Suggest Update', edit_company_path(@company), class: "btn btn-primary"
 
-								tr
-									td.text-muted Status
-									-if @company.status == 'active'
-										td
-											span> class="label label-success" Active
-									-if @company.status == 'inactive'
-										td
-											span> class="label label-danger" Inactive
-									-if @company.status == 'acquired'
-										td
-											span> class="label label-info" Acquired
-								tr
-									-if @company.category&.name != "Unknown"
-										td.text-muted Category
-										td= @company.category&.name
-											- if @company.sub_category&.name.present?
-								tr
-									-if @company.location.present? && @company.location != "Nowhere"
-										td.text-muted Headquarters
-										td= @company.location
+    .container
+        .row.g-4
+            .col-md-12
+                .card.border
+                    .card-body
+                        .d-flex.gap-4.align-items-start.mb-4
+                            - if @company.logo_url.present?
+                                = image_tag @company.logo_url, 
+                                    class: "rounded bg-light", 
+                                    style: "width: 80px; height: 80px; object-fit: contain;",
+                                    alt: "#{@company.name} logo"
+                            div
+                                h1.mb-0
+									= @company.name
+                                p.lead.text-secondary.mb-0
+									= @company.description
+                        
+                        hr.mb-4
+                        
+                        .row
+                            .col-md-3.text-secondary Status
+                            .col-md-9
+                                - case @company.status
+                                - when 'active'
+                                    span.badge.bg-success Active
+                                - when 'inactive'
+                                    span.badge.bg-danger Inactive
+                                - when 'acquired'
+                                    span.badge.bg-info Acquired
 
-								tr
-									-if @company.founded_date.present? && @company.founded_date != "0000"
-										td.text-muted Founded
-										td= @company.founded_date
-								tr
-									td.text-muted Tags
-									td
-										span
-											- if @company.tags.present? && @company.tags != "n/a" && @company.tags.count > 0
-												= raw tag_links(@company.all_tags)
-											- else
-												.text-muted No tags yet
-								tr
-									-if @company.target_client.present? && @company.target_client.name != "Unknown"
-										td.text-muted Target Market
-										td= @company.target_client.name
-								tr
-									-if @company.business_model.present? && @company.target_client.name !="Unknown"
-										td.text-muted Business Model
-										td= @company.business_model.name
-								tr
-									td.text-muted Website
-									-if @company.main_url.present? && @company.main_url != "n/a"
-										td
-											-if @company.main_url.include? "http"
-												a href="#{@company.main_url}" = @company.main_url
-											-else
-												a href="http://#{@company.main_url}" = @company.main_url
-									-else
-										td
-											.text-muted Unknown
-								-if @company.twitter_url.present? || @company.angellist_url.present? || @company.crunchbase_url.present?
-									tr
-										td.text-muted Social
-										td
-											-if @company.twitter_url.present? && @company.twitter_url != 'n/a'
-												div
-													img style="margin-right:4px;" src="/images/twitter-logo.png"
-													-if @company.twitter_url.include? "@"
-														a href="https://www.twitter.com/#{@company.twitter_url[1..-1]}" Twitter
-													- else
-														a href="#{@company.twitter_url}" Twitter
-												br
-											-if @company.angellist_url.present? && @company.angellist_url != 'n/a'
-												div
-													img  style="margin-right:4px;" src="/images/angellist-logo.png"
-													a href="#{@company.angellist_url}" Angellist
-												br
-											-if @company.crunchbase_url.present? && @company.crunchbase_url != 'n/a'
-												div
-													img  style="margin-right:4px;" src="/images/crunchbase-logo.png"
-													a href="#{@company.crunchbase_url}" Crunchbase
-												br
-											-if @company.linkedin_url.present? && @company.linkedin_url != 'n/a'
-												div
-													img  style="margin-right:4px;" src="/images/linkedin-logo.png"
-													a href="#{@company.linkedin_url}" Linkedin
-												br
-											-if @company.legalio_url.present? && @company.legalio_url != 'n/a'
-												div
-													img  style="margin-right:4px;" src="/images/legalio-logo.png"
-													a href="#{@company.legalio_url}" Legalio
-												br
-											-if @company.facebook_url.present? && @company.facebook_url != 'n/a'
-												img  style="margin-right:4px;" src="/images/facebook-logo.png"
-												a href="#{@company.facebook_url}" Facebook
-				.panel-footer
-					.text-center
-						span.text-muted Help us maintain this page by
-						=< link_to 'suggesting an update.', edit_company_path(@company)
+                            - if @company.category&.name != "Unknown"
+                                .col-md-3.text-secondary.mt-3 Category
+                                .col-md-9.mt-3= @company.category&.name
+                                - if @company.sub_category&.name.present?
+                                    .col-md-3.text-secondary.mt-3 Sub-Category
+                                    .col-md-9.mt-3= @company.sub_category&.name
 
-					/! Another approach to display the page is to use a screenshot tool like pagepeeker
-					/! <img src="http://free.pagepeeker.com/v2/thumbs.php?size=x&url=<haml_loud>@company.main_url </haml_loud>" style="width:500px;"></a
-		- if @company.tags.count > 0
-			.col-md-12
-				.panel.panel-default.lg-panel
-					.panel-body
-						.tags-cloud.glassy-bg
-							h3 Related companies
-							- related_company_list @company do |related_companies|
-								- related_companies.each do |related|
-									hr/
-									div
-										h4
-											a href="/companies/#{related.id}" = related.name
-											|  
-										p= related.description
-										span.text-muted
-											i.fa.fa-tags style="margin-right:6px;"
-											= raw tag_links(related.all_tags)
-									/! Makes entire e class a clickable link to the company page
-									javascript:
-										| $(".e").click(function() {
-															| window.location = $(this).find("a").attr("href");
-															| return false;
-															| });
-		- if @company.twitter_name.present?
-			.col-md-12
-				.panel.panel-default.lg-panel
-					.panel-body
-						.tags-cloud.glassy-bg
-							| <a class="twitter-timeline" href="https://twitter.com/#{@company.twitter_name}">Tweets from #{@company.twitter_name}</a><script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+                            - if @company.location.present? && @company.location != "Nowhere"
+                                .col-md-3.text-secondary.mt-3 Headquarters
+                                .col-md-9.mt-3= @company.location
+
+                            - if @company.founded_date.present? && @company.founded_date != "0000"
+                                .col-md-3.text-secondary.mt-3 Founded
+                                .col-md-9.mt-3= @company.founded_date
+
+                            .col-md-3.text-secondary.mt-3 Tags
+                            .col-md-9.mt-3
+                                - if @company.tags.present? && @company.tags != "n/a" && @company.tags.count > 0
+                                    = raw tag_links(@company.all_tags)
+                                - else
+                                    span.text-secondary No tags yet
+
+                            - if @company.target_client.present? && @company.target_client.name != "Unknown"
+                                .col-md-3.text-secondary.mt-3 Target Market
+                                .col-md-9.mt-3= @company.target_client.name
+
+                            - if @company.business_model.present? && @company.business_model.name != "Unknown"
+                                .col-md-3.text-secondary.mt-3 Business Model
+                                .col-md-9.mt-3= @company.business_model.name
+
+                            .col-md-3.text-secondary.mt-3 Website
+                            .col-md-9.mt-3
+                                - if @company.main_url.present? && @company.main_url != "n/a"
+                                    = link_to @company.main_url, @company.main_url.include?("http") ? @company.main_url : "http://#{@company.main_url}", class: "text-decoration-none"
+                                - else
+                                    span.text-secondary Unknown
+
+							.col-md-3.text-secondary.mt-3 Social
+							.col-md-9.mt-3
+								.d-flex.gap-3
+									- if @company.twitter_url.present? && @company.twitter_url != 'n/a'
+										= link_to @company.twitter_url.include?("@") ? "https://twitter.com/#{@company.twitter_url[1..-1]}" : @company.twitter_url, class: "text-decoration-none", target: "_blank" do
+											i.fab.fa-twitter.fa-lg
+									- if @company.linkedin_url.present? && @company.linkedin_url != 'n/a'
+										= link_to @company.linkedin_url, class: "text-decoration-none", target: "_blank" do
+											i.fab.fa-linkedin.fa-lg
+									- if @company.facebook_url.present? && @company.facebook_url != 'n/a'
+										= link_to @company.facebook_url, class: "text-decoration-none", target: "_blank" do
+											i.fab.fa-facebook.fa-lg
+
+                    .card-footer.text-center.text-secondary
+                        | Help us maintain this page by 
+                        = link_to 'suggesting an update', edit_company_path(@company), class: "text-decoration-none"
+
+        - if @company.tags.count > 0
+            .col-md-12.mt-4
+                .card.border
+                    .card-body
+                        h3.mb-4 Related Companies
+                        - related_company_list @company do |related_companies|
+                            - related_companies.each do |related|
+                                hr.mb-4 class=('mt-4' unless related == related_companies.first)
+                                h4= link_to related.name, company_path(related), class: "text-decoration-none"
+                                p.mb-3= related.description
+                                .d-flex.gap-2
+                                    i.fa.fa-tags.text-secondary
+                                    = raw tag_links(related.all_tags)
+
+        - if @company.twitter_name.present?
+            .col-md-12.mt-4
+                .card.border
+                    .card-body
+                        a.twitter-timeline href="https://twitter.com/#{@company.twitter_name}" 
+                            | Tweets from #{@company.twitter_name}
+                        script async="async" src="//platform.twitter.com/widgets.js" charset="utf-8"

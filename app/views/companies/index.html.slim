@@ -1,61 +1,141 @@
-.container-fluid style="margin-top: 20px;"
+.bg-body-tertiary.border-bottom.min-vh-100
+    .container.py-3
+        .mb-0
+            .fs-2 Companies
+        p.text-secondary = "#{@companies.total_count} legal technology companies"
+    
+		= form_tag companies_path, method: :get, class: "card mb-4" do
+			.card-body
+				.d-flex.gap-3
+					div style="flex: 1"
+						.input-group
+							= text_field_tag :query, params[:query], class: "form-control", placeholder: "Search companies..."
+							button.btn.btn-primary type="submit"
+								i.fa.fa-search
+					
+					div style="flex: 0 0 200px"
+						.d-flex.gap-2
+							.dropdown
+								button.btn.btn-light.d-flex.align-items-center type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+									i.fa.fa-sliders.me-2
+									| Filters
+								.dropdown-menu.dropdown-menu-end.p-3 style="min-width: 300px"
+									.mb-3
+										label.form-label Category
+										= select_tag :category, options_from_collection_for_select(Category.all, :id, :name, params[:category]), prompt: "All Categories", class: "form-select", data: { form_target: "input" }
+									.mb-3
+										label.form-label Location
+										= text_field_tag :location, params[:location], class: "form-control", placeholder: "Filter by location", data: { form_target: "input" }
+									.d-grid
+										button.btn.btn-primary type="submit"
+											i.fa.fa-filter.me-2
+											| Apply Filters
+							
+							.btn-group
+								= hidden_field_tag :view, params[:view] || "grid", id: "view-input"
+								button.btn.btn-light#grid-view.rounded-start class=("active" if params[:view] != "list") type="button" data-view="grid"
+									i.fa.fa-th
+								button.btn.btn-light#list-view.rounded-end class=("active" if params[:view] == "list") type="button" data-view="list"
+									i.fa.fa-list
+		
+		//.mb-4
+			.d-flex.gap-2
+				= hidden_field_tag :sort, params[:sort]
+				button.btn.btn-outline-primary.btn-sm.d-flex.align-items-center type="button" data-controller="sort" data-action="click->sort#toggle"
+					| Name
+					i.fa.fa-arrow-down-up.ms-1
+				= link_to "Categories", companies_path(category: params[:category]), class: "btn btn-light btn-sm #{"active" if params[:category].present?}"
+				= link_to "Location", companies_path(location: params[:location]), class: "btn btn-light btn-sm #{"active" if params[:location].present?}"
+		
+		- if @view == 'list'
+			.list-view
+				- @companies.each do |company|
+					= link_to company_path(company), class: "text-decoration-none text-dark" do
+						.card.mb-3
+							.card-body
+								.d-flex.gap-3
+									.flex-grow-1
+										h3.h5.mb-1= company.name
+										p.text-secondary.small.mb-0= truncate(company.description, length: 200)
+		- else
+			.row.g-4
+				- @companies.each do |company|
+					.col-md-6.col-lg-4
+						= link_to company_path(company), class: "text-decoration-none text-dark" do
+							.card.h-100.border
+								.card-body
+									.d-flex.gap-3.mb-3
+										= image_tag company.logo, 
+											class: "rounded bg-light", 
+											style: "width: 48px; height: 48px; object-fit: contain;",
+											alt: "#{company.name} logo"
+										.flex-grow-1
+											h3.h5.mb-1= company.name
+											p.text-secondary.small.mb-0= truncate(company.description, length: 100)
+									
+									.d-flex.gap-3.small.text-secondary.mb-3
+										- if company.location.present? && company.location != "Nowhere"
+											.d-flex.align-items-center
+												i.fa.fa-location-dot.me-1
+												= company.location
+										- if company.main_url.present?
+											.d-flex.align-items-center
+												i.fa.fa-globe.me-1
+												| Website
+									
+									- if company.tags.any?
+										.d-flex.flex-wrap.gap-2
+											- company.tags.each do |tag|
+												- unless tag.name.downcase == 'n/a'
+													span.badge.rounded-pill.bg-light.text-secondary= tag.name
 
-	- if flash[:notice]
-	  div class="alert alert-success"
-		  = flash[:notice]
-
-	.col-md-3.company-list-sidecontainer
-		.panel.panel-default.lg-panel
-			.panel-body
-				h3 Categories
-				- Category.where.not(:name => 'Unknown').each do |category|
-					= link_to category.name, companies_path(:category => category)
-					br
-
-				/.panel_body.hidden-xs.hidden-sm	
-					h5 Target Audience
-					- TargetClient.where.not(:name => 'Unknown').each do |targ|
-						= link_to targ.name, companies_path(:target_client => targ)
-						br
-						
-				.tags-cloud.hidden-xs.hidden-sm	
-					h3 Tags
-					- tag_cloud Tag.counts.order("RANDOM()").limit(20), %w{} do |tag, css_class|
-						= link_to tag.name, tag_path(tag.name), class: css_class
-						span<
-							|(
-							= tag.count
-							|)
-						br
-
-				/.panel_body.hidden-xs.hidden-sm	
-					h5 Business Type
-					- BusinessModel.all.each do |biz|
-						= link_to biz.name, companies_path(:business_model => biz)
-				/ br
-				/ 	p 
-				/ 		|
-				/ 			The companies and services listed in this database are provided for informational purposes only and are not endorsed by CodeX, Stanford Law School, or Stanford University.
-
-	.col-md-9.nopadding.company-list-container
-		.panel.panel-default.lg-panel
-			.panel-body
-				= link_to 'Submit a New Company', new_company_path, class: "btn btn-sls-orange pull-right"
-				h3 Companies
-				.company-list
-					- @companies.each do |company|
-						a href="/companies/#{company.id}" 
-							.list-item
-								h4= company.name
-								p= company.description
-							/span.text-muted
-								i.fa.fa-tags style="margin-right:6px;" 
-								= raw tag_links(company.all_tags)
-						/! Makes entire e class a clickable link to the company page
-						javascript:
-							 	$(".e").click(function() {
-									window.location = $(this).find("a").attr("href");
-									return false;
-									});
-		div style="text-align:center;"
+		.container.py-4
 			= paginate @companies
+
+javascript:
+	document.addEventListener('DOMContentLoaded', function() {
+		// Search form handling
+		const searchForm = document.querySelector('form');
+		if (searchForm) {
+			// Handle enter key
+			searchForm.addEventListener('keypress', function(event) {
+				if (event.key === 'Enter') {
+					event.preventDefault();
+					this.submit();
+				}
+			});
+
+			// Handle input changes with debounce
+			const searchInput = searchForm.querySelector('input[type="text"]');
+			if (searchInput) {
+				let timeout = null;
+				searchInput.addEventListener('input', function() {
+					clearTimeout(timeout);
+					timeout = setTimeout(() => {
+						searchForm.submit();
+					}, 300);
+				});
+			}
+		}
+
+		// View toggle handling
+		const gridViewBtn = document.getElementById('grid-view');
+		const listViewBtn = document.getElementById('list-view');
+		const viewInput = document.getElementById('view-input');
+
+		if (gridViewBtn && listViewBtn && viewInput && searchForm) {
+			gridViewBtn.addEventListener('click', function() {
+				viewInput.value = 'grid';
+				gridViewBtn.classList.add('active');
+				listViewBtn.classList.remove('active');
+				searchForm.submit();
+			});
+
+			listViewBtn.addEventListener('click', function() {
+				viewInput.value = 'list';
+				listViewBtn.classList.add('active');
+				gridViewBtn.classList.remove('active');
+				searchForm.submit();
+			});
+		}
+	});

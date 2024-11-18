@@ -1,71 +1,116 @@
-= semantic_form_for @company do |f|
+= form_with(model: @company, local: true, class: "company-form") do |f|
+    .card.border.mb-4
+        .card-body
+            h5.card-title.mb-4 Contact Information
+            .row.g-3
+                .col-md-6
+                    .form-group
+                        = f.label :contact_name, class: "form-label"
+                        = f.text_field :contact_name, class: "form-control"
+                .col-md-6
+                    .form-group
+                        = f.label :contact_email, class: "form-label"
+                        = f.email_field :contact_email, class: "form-control"
 
-  = f.inputs "Contact Info" do
-    br/
-    .row
-      .col-md-6
-        =< if !@company.contact_name.nil?
-        =<  @company.contact_name=nil
-        = f.input :contact_name, class: "form-control"
-    .row
-      .col-md-6
-        =< if !@company.contact_email.nil?
-        =<  @company.contact_email=nil
-        = f.input :contact_email
-  = f.inputs "Company Info" do
-    br/
-    .row
-      .col-md-6
-        = f.input :name
-    .row
-      .col-md-6
-        = f.input :location
-    .row
-      .col-md-6
-        = f.input :founded_date
-    .row
-      .col-md-6
-        = f.input :employee_count
-    .row
-      .col-md-6
-        = f.input :all_tags
-    .row
-      .col-md-6
-        = f.input :category, as: :select,  collection: Category.all.order(:name), :required => true, :include_blank => false
-    .row
-      .col-md-6
-        = f.input :description
-    .row
-      .col-md-6
-        = f.input :main_url
-    .row
-      .col-md-6
-        = f.input :twitter_url
-    .row
-      .col-md-6
-        = f.input :angellist_url
-    .row
-      .col-md-6
-        = f.input :crunchbase_url
-    .row
-      .col-md-6
-        = f.input :linkedin_url
-    .row
-      .col-md-6
-        = f.input :facebook_url
-    .row
-      .col-md-6
-        = f.input :legalio_url
-    .row
-      .col-md-6
-        = f.input :status
-    .row
-      .col-md-6
-        div style="margin-left: 130px;"
-          =< recaptcha_tags
-    br/
-    //.row
-      .col-md-6
-        = f.actions do
-          = f.action :submit, :label => "Save", :button_html => { :class => "btn btn-sls-orange-form" }
-          = f.action :cancel, :label => "Cancel", :button_html => { :class => "btn btn-sls-red-form" }
+    .card.border.mb-4
+        .card-body
+            h5.card-title.mb-4 Company Information
+            .row.g-3
+                .col-md-6
+                    .form-group
+                        = f.label :name, class: "form-label"
+                        = f.text_field :name, class: "form-control"
+                .col-md-6
+                    .form-group
+                        = f.label :location, class: "form-label"
+                        = f.text_field :location, class: "form-control"
+                .col-md-6
+                    .form-group
+                        = f.label :founded_date, class: "form-label"
+                        = f.text_field :founded_date, class: "form-control"
+                .col-md-6
+                    .form-group
+                        = f.label :employee_count, class: "form-label"
+                        = f.text_field :employee_count, class: "form-control"
+                .col-md-6
+                    .form-group
+                        = f.label :category_id, class: "form-label"
+                        = f.select :category_id, 
+                            Category.all.order(:name).map { |c| [c.name, c.id] }, 
+                            { include_blank: false }, 
+                            { class: "form-select" }
+                .col-md-12
+                    .form-group
+                        = f.label :description, class: "form-label"
+                        = f.text_area :description, class: "form-control", rows: 4
+                .col-md-12
+                    .form-group
+                        = f.label :all_tags, class: "form-label"
+                        = f.text_field :all_tags, class: "form-control"
+
+    .card.border.mb-4
+        .card-body
+            h5.card-title.mb-4 Online Presence
+            .row.g-3
+                .col-md-6
+                    .form-group
+                        = f.label :main_url, class: "form-label"
+                        = f.text_field :main_url, class: "form-control"
+                .col-md-6
+                    .form-group
+                        = f.label :status, class: "form-label"
+                        = f.select :status, 
+                            ['active', 'inactive', 'acquired'], 
+                            { include_blank: true }, 
+                            { class: "form-select" }
+                .col-md-6
+                    .form-group
+                        = f.label :twitter_url, class: "form-label"
+                        .input-group
+                            span.input-group-text
+                                i.fab.fa-twitter
+                            = f.text_field :twitter_url, class: "form-control"
+                .col-md-6
+                    .form-group
+                        = f.label :linkedin_url, class: "form-label"
+                        .input-group
+                            span.input-group-text
+                                i.fab.fa-linkedin
+                            = f.text_field :linkedin_url, class: "form-control"
+                .col-md-6
+                    .form-group
+                        = f.label :facebook_url, class: "form-label"
+                        .input-group
+                            span.input-group-text
+                                i.fab.fa-facebook
+                            = f.text_field :facebook_url, class: "form-control"
+                .col-md-6
+                    .form-group
+                        = f.label :angellist_url, class: "form-label"
+                        .input-group
+                            span.input-group-text
+                                i.fab.fa-angellist
+                            = f.text_field :angellist_url, class: "form-control"
+                .col-md-6
+                    .form-group
+                        = f.label :crunchbase_url, class: "form-label"
+                        = f.text_field :crunchbase_url, class: "form-control"
+                .col-md-6
+                    .form-group
+                        = f.label :legalio_url, class: "form-label"
+                        = f.text_field :legalio_url, class: "form-control"
+
+    .card.border.mb-4
+        .card-body
+            h5.card-title.mb-4 Company Branding
+            .row.g-3
+                .col-md-6
+                    .form-group
+                        = f.label :logo_url, "Logo URL", class: "form-label"
+                        = f.text_field :logo_url, class: "form-control"
+                        .form-text.text-secondary
+                            | Enter a direct URL to your company logo (recommended size: 64x64px)
+
+    .d-grid.gap-2.d-md-flex.justify-content-md-end
+        = f.submit "Submit", class: "btn btn-primary"
+        = link_to "Cancel", companies_path, class: "btn btn-outline-secondary"

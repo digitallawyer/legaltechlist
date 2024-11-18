@@ -1,3 +1,6 @@
-li class="#{'active' if page.current?}"
-  = link_to page, page.current? ? '#' : url,
-    remote: remote, rel: page.next? ? 'next' : page.prev? ? 'prev' : nil
+- if page.current?
+  li.page-item.active
+    = content_tag :a, page, class: 'page-link', href: '#'
+- else
+  li.page-item
+    = link_to page, url, remote: remote, rel: page.rel, class: 'page-link'

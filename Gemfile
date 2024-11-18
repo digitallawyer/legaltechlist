@@ -39,7 +39,6 @@ gem 'mail'  # Remove version constraint
 gem 'd3-rails', '5.9.2'
 gem 'bootstrap_form', '2.7.0'
 gem 'google-analytics-rails', '1.1.0'
-gem 'chartkick', '3.4.0'
 
 # Twitter integration
 gem 'twitter', '~> 7.0'
@@ -61,3 +60,20 @@ end
 gem 'json', '~> 2.6'
 
 gem 'bootsnap', '>= 1.4.4', require: false
+
+# Add these gems
+gem 'bootstrap', '~> 5.3.3'
+gem 'sassc-rails'
+gem 'font-awesome-sass', '~> 6.5.1'
+
+# JavaScript runtime
+gem 'execjs'
+gem 'mini_racer'  # or 'therubyracer' for older Rails versions
+
+gem 'importmap-rails'
+
+# Add if not already present
+gem "turbo-rails"
+
+gem 'chartkick'
+gem 'groupdate'

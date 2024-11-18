@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_11_17_221741) do
+ActiveRecord::Schema[7.0].define(version: 2024_11_18_053911) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "plpgsql"
@@ -115,6 +115,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_11_17_221741) do
     t.string "contact_name"
     t.boolean "codex_presenter"
     t.date "codex_presentation_date"
+    t.string "logo_url"
     t.index ["business_model_id"], name: "index_companies_on_business_model_id"
     t.index ["category_id"], name: "index_companies_on_category_id"
     t.index ["sub_category_id"], name: "index_companies_on_sub_category_id"

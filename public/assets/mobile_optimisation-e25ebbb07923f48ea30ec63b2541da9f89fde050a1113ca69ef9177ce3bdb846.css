@@ -1,0 +1,159 @@
+@media (min-width: 960px) and (max-width: 1200px) {
+  /* line 2, app/assets/stylesheets/mobile_optimisation.scss */
+  .flex {
+    padding-left: 50px !important;
+  }
+  /* line 6, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron h1 {
+    padding-top: 40px !important;
+  }
+  /* line 9, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron .col-md-6 {
+    width: 500px;
+    padding-left: 70px !important;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1040px) {
+  /* line 16, app/assets/stylesheets/mobile_optimisation.scss */
+  .flex {
+    padding-left: 40px !important;
+  }
+  /* line 20, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron h1 {
+    padding-top: 90px !important;
+  }
+  /* line 23, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron .col-md-6 {
+    width: 550px;
+    padding-left: 70px !important;
+  }
+}
+
+/* Everything above iPad */
+@media (min-width: 771px) {
+  /* line 31, app/assets/stylesheets/mobile_optimisation.scss */
+  .flex {
+    padding-left: 30px !important;
+  }
+  /* line 34, app/assets/stylesheets/mobile_optimisation.scss */
+  .mobile-row {
+    display: none !important;
+  }
+  /* line 37, app/assets/stylesheets/mobile_optimisation.scss */
+  .desktop-row {
+    padding-left: 80px;
+    padding-right: 80px;
+  }
+}
+
+/* Everything iPad or below */
+@media (max-width: 780px) {
+  /* line 44, app/assets/stylesheets/mobile_optimisation.scss */
+  .flex {
+    padding-left: 40px !important;
+  }
+  /* line 47, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron {
+    max-height: 400px !important;
+  }
+  /* line 49, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron h1 {
+    padding-top: 20px !important;
+    font-size: 40px !important;
+  }
+  /* line 53, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron p {
+    font-size: 20px !important;
+  }
+  /* line 56, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron .col-md-6 {
+    width: 400px;
+    padding-left: 50px !important;
+  }
+  /* line 61, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-tags-cloud-container {
+    padding-bottom: 0px !important;
+    margin-top: 20px !important;
+  }
+  /* line 64, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-tags-cloud-container .about-image {
+    display: none !important;
+  }
+  /* line 67, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-tags-cloud-container .tags-box {
+    height: 500px;
+    padding-top: 0px;
+  }
+  /* line 73, app/assets/stylesheets/mobile_optimisation.scss */
+  .company-list-container .btn-sls-orange {
+    display: none !important;
+  }
+}
+
+@media (max-width: 770px) {
+  /* line 80, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-jumbotron .desktop-row {
+    display: none !important;
+  }
+  /* line 83, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-jumbotron .mobile-row {
+    display: inline !important;
+  }
+  /* line 86, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-jumbotron .submit-button-mobile-row {
+    width: 100%;
+    text-align: center;
+  }
+  /* line 89, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-jumbotron .submit-button-mobile-row .btn {
+    width: 150px !important;
+  }
+}
+
+/* Everything below */
+@media (max-width: 500px) {
+  /* line 97, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron {
+    max-height: 400px !important;
+  }
+  /* line 99, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron h1 {
+    padding-top: 10px !important;
+    font-size: 30px !important;
+  }
+  /* line 103, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron p {
+    font-size: 20px !important;
+  }
+  /* line 106, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron .col-md-6 {
+    width: 350px;
+    padding-left: 20px !important;
+  }
+}
+
+@media (max-width: 400px) {
+  /* line 113, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron {
+    max-height: 300px !important;
+  }
+  /* line 115, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron h1 {
+    padding-top: 10px !important;
+    font-size: 25px !important;
+  }
+  /* line 119, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron p {
+    font-size: 15px !important;
+  }
+  /* line 122, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-codex-jumbotron .col-md-6 {
+    width: 300px;
+    padding-left: 10px !important;
+  }
+  /* line 127, app/assets/stylesheets/mobile_optimisation.scss */
+  .home-tags-cloud-container {
+    padding-bottom: 50px !important;
+  }
+}

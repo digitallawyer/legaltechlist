@@ -1,117 +1,83 @@
-.jumbotron.about-jumbotron
-  .container-fluid
-    .col-md-12
-      h1 About tech.law.stanford.edu
-      h3
-        | Explore a curated list of #{Company.count} companies changing the way legal is done.
-.container
-  - if flash[:notice]
-    div class="alert alert-success"
-      = flash[:notice]
-  .col-md-12
-    .panel.panel-default.lg-panel.about-info-panel
-      .panel-body
-        p
-          | tech.law.stanford.edu is a curated list of legal technology companies, hosted by
-          a href="https://law.stanford.edu/codex-the-stanford-center-for-legal-informatics/" target="_blank" CodeX, the Stanford Center for Legal Informatics
-          | . The database is intended as a resource for the legal technology community, and features data contributions from CodeX, <a href="https://www.legal.io">Legal.io</a>, <a href="https://www.crunchbase.com">Crunchbase<a>, <a href="https://www.angel.co">AngelList</a>, <a href="https://www.linkedin.com">LinkedIn</a>, <a href="https://www.wikipedia.com">Wikipedia</a>, and user submissions.
+.bg-body-tertiary.border-bottom
+    .container.py-3
+        .mb-0
+            .fs-2 About
+        p.text-secondary Explore a curated list of #{Company.count} companies changing the way legal is done
 
-        p tech.law.stanford.edu was conceived in 2015 at Code = Law, a group created by CodeX Fellow Pieter Gunst. Between 2012 and 2015, Code = Law brought together Stanford Law students interested in the intersection of law and technology. In addition to increasing the familiarity of the participants with legal technology in general, the group also engaged in more hands-on exercises, including coding exercises covering html, css, javascript and modern web frameworks. One of these exercises was the design and development of the initial framework of tech.law.stanford.edu. The database was then further populated and developed by the CodeX team and our CodeX interns and researchers.
+    .container.py-4
+        - if flash[:notice]
+            .alert.alert-success.mb-4= flash[:notice]
 
-        p
-          | Our RSS Feed is available
-          =<> link_to 'here.', '/feed?format=rss'
+        .row.g-4
+            .col-md-12
+                .card.border
+                    .card-body
+                        h3.mb-4 About tech.law.stanford.edu
+                        p.mb-4
+                            | tech.law.stanford.edu is a comprehensive database of legal technology companies, managed by 
+                            = link_to "CodeX, the Stanford Center for Legal Informatics", "https://law.stanford.edu/codex-the-stanford-center-for-legal-informatics/", target: "_blank", class: "text-decoration-none"
+                            | . It serves the legal tech community with data from CodeX, 
+                            = link_to "Legal.io", "https://www.legal.io", target: "_blank", class: "text-decoration-none"
+                            | , 
+                            = link_to "Crunchbase", "https://www.crunchbase.com", target: "_blank", class: "text-decoration-none"
+                            | , 
+                            = link_to "AngelList", "https://www.angel.co", target: "_blank", class: "text-decoration-none"
+                            | , 
+                            = link_to "LinkedIn", "https://www.linkedin.com", target: "_blank", class: "text-decoration-none"
+                            | , 
+                            = link_to "Wikipedia", "https://www.wikipedia.com", target: "_blank", class: "text-decoration-none"
+                            | , and user contributions.
 
-        p
-          | Interested in contributing?
-          =<> link_to 'Submit a legal technology company', new_company_path
-          | that is not included in the list, or have a look at the code on
-          a href="https://github.com/digitallawyer/legaltechlist" Github!
+                        p.mb-4
+                            | Established in 2015, tech.law.stanford.edu was initiated by CodeX Fellow Pieter Gunst. It evolved from Code = Law, a Stanford Law student group focused on law and technology.
 
-  //.col-md-12
-    .panel.panel-default.lg-panel
-      .panel-body.contributors-panel
-        h3 Contributors
-        .row
-          .col-md-4
-            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
-            p
-              | Pieter Gunst - CodeX Fellow / Co-Founder of
-              a< href="https://www.legal.io" Legal.io
-            a href="https://www.linkedin.com/in/pietergunst/" target="_blank"
-              i.fa.fa-linkedin-square.fa-2x
-          .col-md-4
-            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
-            p
-              |
-                Kevin Xu  - Code = Law Participant
-            a href="https://www.linkedin.com/in/kevinsxu/" target="_blank"
-              i.fa.fa-linkedin-square.fa-2x
-          .col-md-4
-            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
-            p
-              |
-                Sam Schroeder - Code = Law Participant
-            a href="https://www.linkedin.com/in/sambchroeder/" target="_blank"
-              i.fa.fa-linkedin-square.fa-2x
-        .row
-          .col-md-4
-            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
-            p
-              |
-                Elizabeth Lowell - Code = Law Participant
-            a href="https://www.linkedin.com/in/elizabeth-lowell-43393911/" target="_blank"
-              i.fa.fa-linkedin-square.fa-2x
-          .col-md-4
-            img.contributor-image.img-circle src="/images/people/evans.jpg"
-            p
-              |
-                Mark Evans - CodeX Fellow
-            a href="https://www.linkedin.com/in/markharrisevans/" target="_blank"
-              i.fa.fa-linkedin-square.fa-2x
-          .col-md-4
-            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
-            p
-              | David Curle - Thomson Reuters
-            a href="https://www.linkedin.com/in/david-curle-6a56/" target="_blank"
-              i.fa.fa-linkedin-square.fa-2x
-        .row
-          .col-md-4
-            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
-            p
-              |
-                Bob Ambrogi - Lawyer, media and technology professional
-            a href="https://www.linkedin.com/in/robertambrogi/" target="_blank"
-              i.fa.fa-linkedin-square.fa-2x
-          .col-md-4
-            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
-            p
-              |
-                Patrick Haede - Intern at CodeX
-            a href="https://www.linkedin.com/in/patrickhaede/" target="_blank"
-              i.fa.fa-linkedin-square.fa-2x
-          .col-md-4
-            img.contributor-image.img-circle src="/images/people/Portrait_Placeholder.png"
-            p
-              |
-                Taylor Famighetti - Intern at CodeX
-            a href="https://www.linkedin.com/in/taylor-famighetti-06456083/" target="_blank"
-              i.fa.fa-linkedin-square.fa-2x
-        .row
-          .col-md-4
-            img.contributor-image.img-circle src="/images/people/blizzard.jpg"
-            p
-              |
-                Paul Blizzard - Visiting Student Researcher at CodeX
-            a href="https://www.linkedin.com/in/paulblizzard" target="_blank"
-              i.fa.fa-linkedin-square.fa-2x
+                        .d-flex.gap-3.mb-4
+                            = link_to feed_path(format: :rss), class: "text-decoration-none" do
+                                i.fa.fa-rss.me-2
+                                | RSS Feed
+                            = link_to "https://github.com/digitallawyer/legaltechlist", target: "_blank", class: "text-decoration-none" do
+                                i.fa.fa-github.me-2
+                                | GitHub Repository
 
+                        hr.mb-4
 
-  / .col-md-12
-  /   .panel.panel-default.lg-panel
-  /     .panel-body
-  /       .row
-  /       p
-  /         b Disclaimer
-  /       p
-  /         b The companies and services listed in this database are provided for informational purposes only and are not endorsed by CodeX, Stanford Law School, or Stanford University.
+                        h3.mb-4 Contribute
+                        p.mb-4 Help us maintain the most comprehensive database of legal technology companies:
+
+                        .d-grid.gap-2.d-md-block
+                            = link_to new_company_path, class: "btn btn-primary me-2" do
+                                i.fa.fa-plus.me-2
+                                | Submit a Company
+                            = link_to companies_path, class: "btn btn-outline-secondary" do
+                                i.fa.fa-search.me-2
+                                | Browse Companies
+
+            .col-md-12
+                .card.border
+                    .card-body
+                        h3.mb-4 Contributors
+                        .row.g-4
+                            - contributors = [  { name: "Pieter Gunst", role: "CodeX Fellow / Co-Founder of Legal.io", linkedin: "pietergunst", image: "" },
+                                { name: "Kevin Xu", role: "Code = Law Participant", linkedin: "kevinsxu", image: "" },
+                                { name: "Sam Schroeder", role: "Code = Law Participant", linkedin: "sambchroeder", image: "" },
+                                { name: "Elizabeth Lowell", role: "Code = Law Participant", linkedin: "elizabeth-lowell-43393911", image: "" },
+                                { name: "Mark Evans", role: "CodeX Fellow", linkedin: "markharrisevans", image: "evans.jpg" },
+                                { name: "David Curle", role: "Thomson Reuters", linkedin: "david-curle-6a56", image: "" },
+                                { name: "Bob Ambrogi", role: "Lawyer, media and technology professional", linkedin: "robertambrogi", image: "" },
+                                { name: "Patrick Haede", role: "Intern at CodeX", linkedin: "patrickhaede", image: "" },
+                                { name: "Taylor Famighetti", role: "Intern at CodeX", linkedin: "taylor-famighetti-06456083", image: "" },
+                                { name: "Paul Blizzard", role: "Visiting Student Researcher at CodeX", linkedin: "paulblizzard", image: "blizzard.jpg" } ]
+
+                            - contributors.each do |contributor|
+                                .col-md-4.text-center
+                                    = image_tag "", class: "rounded-circle mb-3", style: "width: 120px; height: 120px; object-fit: cover;"
+                                    h5.mb-1= contributor[:name]
+                                    p.text-secondary.mb-2= contributor[:role]
+                                    = link_to "https://www.linkedin.com/in/#{contributor[:linkedin]}", target: "_blank", class: "text-decoration-none" do
+                                        i.fab.fa-linkedin.fa-lg
+
+            .col-md-12
+                .card.border
+                    .card-body
+                        h3.mb-4 Disclaimer
+                        p.mb-0 The companies and services listed in this database are provided for informational purposes only and are not endorsed by CodeX, Stanford Law School, or Stanford University.

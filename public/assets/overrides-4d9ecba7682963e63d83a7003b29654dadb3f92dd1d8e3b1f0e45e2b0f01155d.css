@@ -1,0 +1,192 @@
+/* background gray */
+/* very light */
+/* background gray */
+/* very light */
+/* line 3, app/assets/stylesheets/partials/_tags.scss */
+.home-tags-cloud-container .css1 {
+  font-size: 1.1em;
+}
+
+/* line 4, app/assets/stylesheets/partials/_tags.scss */
+.home-tags-cloud-container .css2 {
+  font-size: 1.9em;
+}
+
+/* line 5, app/assets/stylesheets/partials/_tags.scss */
+.home-tags-cloud-container .css3 {
+  font-size: 2.2em;
+}
+
+/* line 6, app/assets/stylesheets/partials/_tags.scss */
+.home-tags-cloud-container .css4 {
+  font-size: 2.8em;
+}
+
+/* line 7, app/assets/stylesheets/partials/_tags.scss */
+.home-tags-cloud-container .css5 {
+  font-size: 2.2em;
+}
+
+/* line 8, app/assets/stylesheets/partials/_tags.scss */
+.home-tags-cloud-container .css6 {
+  font-size: 2.0em;
+}
+
+/* line 9, app/assets/stylesheets/partials/_tags.scss */
+.home-tags-cloud-container .css7 {
+  font-size: 2.2em;
+}
+
+/* line 11, app/assets/stylesheets/partials/_tags.scss */
+.home-tags-cloud-container .css1, .home-tags-cloud-container .css2, .home-tags-cloud-container .css3, .home-tags-cloud-container .css4 {
+  color: #B30000;
+  font-weight: 350;
+  margin-left: 5px;
+  margin-bottom: 5px;
+}
+
+/* line 17, app/assets/stylesheets/partials/_tags.scss */
+.home-tags-cloud-container .css1:hover, .home-tags-cloud-container .css2:hover, .home-tags-cloud-container .css3:hover, .home-tags-cloud-container .css4:hover {
+  color: #700000;
+  text-decoration: underline;
+}
+
+/* background gray */
+/* very light */
+/* line 3, app/assets/stylesheets/partials/_buttons.scss */
+.btn-sls-orange {
+  background: #E89C2E !important;
+  color: #ffffff !important;
+  border-color: #d28e2c !important;
+}
+
+/* line 8, app/assets/stylesheets/partials/_buttons.scss */
+.btn-sls-orange:hover {
+  background: #d28e2c !important;
+  color: #ffffff !important;
+  border-color: #d28e2c !important;
+}
+
+/* line 13, app/assets/stylesheets/partials/_buttons.scss */
+.btn-sls-orange-form {
+  height: 50px !important;
+  width: 100px !important;
+  background: #E89C2E !important;
+  color: white !important;
+  border-color: #E89C2E !important;
+}
+
+/* line 20, app/assets/stylesheets/partials/_buttons.scss */
+.btn-sls-red-form {
+  height: 50px !important;
+  width: 100px !important;
+  background: #B30000 !important;
+  color: white !important;
+  border-color: #B30000 !important;
+  padding-top: 13px !important;
+}
+
+/* line 6, app/assets/stylesheets/overrides.scss */
+body {
+  background-color: #F2EFEA !important;
+  padding-top: 50px;
+  font-family: proxima-nova, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  color: #1a1a1a;
+}
+
+/* line 12, app/assets/stylesheets/overrides.scss */
+#notice {
+  padding: 14px;
+  background-color: #8bb314;
+  margin: 14px;
+  color: white;
+}
+
+/* line 19, app/assets/stylesheets/overrides.scss */
+a.navbar-brand {
+  color: white !important;
+}
+
+/* line 23, app/assets/stylesheets/overrides.scss */
+.navbar-brand img {
+  width: 45px;
+  margin-bottom: 10px;
+}
+
+/* line 29, app/assets/stylesheets/overrides.scss */
+.navbar .container {
+  margin-left: 15px;
+}
+
+/* line 34, app/assets/stylesheets/overrides.scss */
+.navbar-nav .custom-menu {
+  font-size: 21px;
+  color: #fbfbfb;
+  font-weight: 200;
+}
+
+/* line 39, app/assets/stylesheets/overrides.scss */
+.navbar-nav .dropdown-toggle {
+  font-size: 18px;
+  color: #E89C2E !important;
+  font-weight: 400 !important;
+}
+
+/* line 44, app/assets/stylesheets/overrides.scss */
+.navbar-nav .dropdown-menu {
+  height: 210px !important;
+  font-size: 18px;
+  line-height: 70px !important;
+  width: 150px !important;
+}
+
+/* line 50, app/assets/stylesheets/overrides.scss */
+.navbar-nav .dropdown-menu > li > a:hover {
+  background-color: #E89C2E !important;
+  background-image: none;
+  color: white !important;
+}
+
+/* line 55, app/assets/stylesheets/overrides.scss */
+.navbar-nav .dropdown-menu > li > a {
+  color: grey !important;
+  font-weight: 400 !important;
+  line-height: 45px;
+  height: 50px;
+}
+
+/* line 64, app/assets/stylesheets/overrides.scss */
+.inputs .label {
+  color: #000;
+}
+
+/* Override for all panels in the the appliaction */
+/* line 71, app/assets/stylesheets/overrides.scss */
+.panel {
+  border: 1px solid #bebebe;
+  border-radius: 3px;
+}
+
+/* line 77, app/assets/stylesheets/overrides.scss */
+.footer {
+  min-height: 100px !important;
+  background-color: #222 !important;
+  padding-bottom: 20px;
+}
+
+/* line 81, app/assets/stylesheets/overrides.scss */
+.footer img {
+  float: left;
+  margin-right: 40px;
+  height: 20px;
+}
+
+/* line 86, app/assets/stylesheets/overrides.scss */
+.footer .col-md-3 {
+  padding-top: 40px;
+}
+
+/* line 89, app/assets/stylesheets/overrides.scss */
+.footer .col-md-9 {
+  padding-top: 30px;
+}

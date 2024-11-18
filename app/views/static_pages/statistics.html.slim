@@ -1,76 +1,48 @@
-/ .jumbotron.statistics-jumbotron
-/   .container-fluid
-/     .col-md-12
-/       h1 Statistics
-/       h3  
-/         | Chosen numbers about our database.
-.container.statistics-container
-  /.row
-    .col-md-12
-      = javascript_include_tag "//www.google.com/jsapi", "chartkick"
-      = line_chart Company.group(:category).count, colors: ["red", "red"], height: "400px", library: {backgroundColor: "#F2EFEA"}
-  .row
-    .col-md-2
-      - if !params[:founded_date]
-        a class="blue" href="/statistics"
-          h2 All
-      - else
-        a class="gray" href="/statistics"
-          h2 All
-      end
-      - @years.each do |year|
-        - if year == params[:founded_date]
-          a class="blue" href="/statistics?founded_date=#{year}"
-            p #{year}
-        - else
-          a class="gray" href="/statistics?founded_date=#{year}"
-            p #{year}
-        end
-      end
-    .col-md-10
-      .row
-        .col-md-4.statbox
-          h3 Total number of companies
-          p.large-number.blue #{@companies.count}
-        /.col-md-4.statbox
-          h3 Companies presented at CodeX
-          p.large-number.red #{@companies.where('codex_presenter' => true).count}
-      .row
-        .col-md-4.statbox
-          h3 Marketplace companies
-          p.large-number.orange #{@companies.where(:category => '1').count}
-        .col-md-4.statbox
-          h3 Document automation companies
-          p.large-number.orange #{@companies.where(:category => '2').count}
-        .col-md-4.statbox
-          h3 Practice management companies
-          p.large-number.orange #{@companies.where(:category => '3').count}
-      .row
-        .col-md-4.statbox
-          h3 Legal research companies
-          p.large-number.orange #{@companies.where(:category => '4').count}
-        .col-md-4.statbox
-          h3 Legal education companies
-          p.large-number.orange #{@companies.where(:category => '5').count}
-        .col-md-4.statbox
-          h3 ODR companies
-          p.large-number.orange #{@companies.where(:category => '6').count}
-      .row
-        .col-md-4.statbox
-          h3 Analytics companies
-          p.large-number.orange #{@companies.where(:category => '7').count}
-  hr
-  .row
-    .col-md-4.statbox
-      h3 Total number of tags
-      p.large-number.green #{Tag.count}
-    .col-md-4.statbox
-      h3 Total number of categories
-      p.large-number.green #{Category.count}
-    .col-md-4.statbox
-      h3 Total number of sub-categories
-      p.large-number.green #{SubCategory.count}
+.bg-body.border-bottom
+    .container
+        .row.text-center.mt-5.py-5
+            .col-lg-8.mx-auto
+                .fs-1.fw-bold Statistics
+                p.lead.mb-4 Analyzing the legal technology landscape
 
+.bg-body-tertiary.border-bottom
+    .container.py-5
 
+        .row.g-4
+            .col-md-3
+                .card.border
+                    .card-body
+                        h3.h5.mb-3 Filter by Year
+                        .d-flex.flex-column.gap-2
+                            = link_to "All Years", statistics_path, class: "text-decoration-none #{!params[:founded_date] ? 'text-cardinal-red fw-bold' : 'text-secondary'}"
+                            - @years.each do |year|
+                                = link_to year, statistics_path(founded_date: year), class: "text-decoration-none #{year.to_s == params[:founded_date] ? 'text-cardinal-red fw-bold' : 'text-secondary'}"
 
+            .col-md-9
+                .row.mb-4
+                    .col-12
+                        - if params[:founded_date]
+                            - all_data = Company.group(:founded_date).count
+                            - highlighted_data = Company.where(founded_date: params[:founded_date]).group(:founded_date).count
+                            = line_chart [{ name: "All Companies", data: all_data },
+                                { name: "Selected Year", data: highlighted_data }], colors: ["#dee2e6", "#8c1515"], height: "400px", library: { backgroundColor: "#ffffff" }
+                        - else
+                            = line_chart Company.group(:founded_date).count, colors: ["#8c1515"], height: "400px", library: { backgroundColor: "#ffffff" }
+                
+                .card.border
+                    .card-body
+                        h3.h5.mb-4 Statistics
+                        .row.g-4
+                            .col-md-4
+                                .p-3.rounded.bg-light
+                                    p.text-secondary.mb-1 Total Companies
+                                    .fs-3.fw-bold= @companies.count
+                        h3.h5.my-4 Categories
+                        .row.g-4   
+                            - Category.all.each do |category|
+                                - unless category.name == "Unknown"
+                                    .col-md-4
+                                        .p-3.rounded.bg-light
+                                            p.text-secondary.mb-1= "#{category.name}"
+                                            .fs-3.fw-bold= @companies.where(category: category).count
 

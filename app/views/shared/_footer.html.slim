@@ -1,0 +1,10 @@
+footer.footer.py-3.bg-body-tertiary.border-top
+    .container
+        .row
+            .col-md-12
+                p.fs-sm.text-center.text-muted.mb-1.mt-3
+                    | © #{Time.current.year} Stanford Law School
+                p.fs-xs.text-center.text-muted
+                    ' The companies and services listed in this database are provided for informational purposes only and are not endorsed by CodeX, Stanford Law School, or Stanford University. Info may be out of date. Data provided by 
+                    = link_to "Legal.io", "https://legal.io", target: "_blank", class: "text-decoration-none text-muted"
+                    | .

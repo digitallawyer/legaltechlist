@@ -1,55 +1,51 @@
-.jumbotron.home-jumbotron
-  .container-fluid
-    .col-md-12
-      h1 Discover Legal Technology
-      h3
-        | Explore a curated list of #{Company.count} companies changing the way legal is done.
-      .row.desktop-row
-        .col-md-3
-        .col-md-6
-          = form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:40px;", method: :get do
-            p.flex
-              = text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for a company", id: "search-input"
-              = submit_tag "Search", name: nil, class: "btn btn-primary btn-sls-orange btn-lg"
-      .row.mobile-row
-        .col-md-12
-          = form_tag companies_path, :class => 'form-inline form-group', style:"padding-top:40px;", method: :get do
-          p
-            = text_field_tag :query, params[:query], class: "form-control input-lg", placeholder: "Search for a company", id: "search-input"
-          .submit-button-mobile-row
-            = submit_tag "Search", name: nil, class: "btn btn-primary btn-sls-orange btn-lg"
-.div class=("categories-container container")
-  .row
-    .flex
-      - Category.all.each do |category|
-        - unless category.name == "Unknown" || [ 12, 13, 14].include?(category.id)
-          a class=("category-link") href="/companies?category=#{category.id}"
-            div class=("category-card #{'category-background-'+ category.id.to_s}")
-              p.category-title
-                = category.name
-              a class=("see-companies-button #{'see-companies-button-'+ category.id.to_s}") href="/companies?category=#{category.id}"
-                |
-                  SEE COMPANIES
-.jumbotron.home-codex-jumbotron
-  .container.home-codex-container
-    .col-md-12
-      h1 Stanford CodeX
-      p
-        | This database and tool was designed and created by the Stanford CodeX Center for Legal Informatics. For more information please see our
-        = link_to "Website", "http://codex.stanford.edu", :target => "_blank"
-        |  and visit our
-        = link_to "About Page", "/about"
-        |  to see who has contributed to this project.
-.home-tags-cloud-container.container
-  .row
-    .col-md-6
-      h1 Community
-      p
-        | This database is built on a growing community of legal technology companies worldwide. Our Twitter stream gives you a real time glance of what the companies in our database are sharing. To specify your search result, click on one of the tags below.
-        br
-      .tags-cloud
-        - tag_cloud @tags.counts, %w{css1 css2 css3 css4} do |tag, css_class|
-          =< link_to tag.name, tag_path(tag.name), class: css_class
-    .col-md-6
-      p
-        | <a class="twitter-timeline" data-height="900" href="#{Rails.configuration.twitter_list_url}"></a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+.bg-body.border-bottom
+    .container
+        .row.text-center.mt-5.py-5
+            .col-lg-8.mx-auto
+                .fs-1.fw-bold
+                    ' CodeX TechIndex
+                p.lead.mb-4 Tracking #{Company.count} legal technology solutions and their impact on legal services delivery
+                = form_tag companies_path, class: 'row g-3 justify-content-center', method: :get do
+                    .position-relative
+                        = text_field_tag :query, params[:query], class: "form-control form-control-lg", placeholder: "Search for a company", id: "search-input"
+                        button type="submit" class="btn position-absolute top-50 end-0 translate-middle-y me-3" style="border: none; background: none;"
+                            i class="fa fa-search"
+.bg-body-tertiary.border-bottom
+    .container.py-5
+        .row.g-4
+            - Category.all.each do |category|
+                - unless category.name == "Unknown" || [12, 13, 14].include?(category.id)
+                    .col-md-6.col-lg-4
+                        .card.border.h-100
+                            .card-body.px-4.pt-4
+                                .d-flex.justify-content-between.align-items-start.mb-3
+                                    = link_to companies_path(category: category.id), class: "rounded d-flex justify-content-center align-items-center text-decoration-none", style: "background-color:#8c15151a; width: 40px; height: 40px;" do
+                                        i class="#{category_icon(category.name)} text-cardinal-red text-decoration-none"
+                                    span.badge.bg-light.text-dark #{category.companies.count} companies
+                                h3.h5.card-title.mb-2
+                                    = link_to category.name, companies_path(category: category.id), class: "text-decoration-none text-dark"
+                                p.mb-0.card-text.text-muted.small 
+                                    = category.description
+                            .card-footer.bg-white.border-top-0.px-4.pb-4
+                                = link_to companies_path(category: category.id), class: "text-decoration-none d-flex align-items-center " do
+                                    span.fs-sm style="color: rgb(140 21 21)"
+                                        b 
+                                            ' View companies
+                                        i.fa.fa-arrow-right.ms-2
+.container
+    .card.border.my-5
+        .card-body.p-4.p-lg-5
+            h2.h4.mb-3 About the Codex TechIndex
+            p.text-muted
+                | The Codex TechIndex is a research initiative that tracks and analyzes the evolving landscape of legal technology. It aims to provide insight into technological innovations transforming legal practice, regulatory compliance, and access to justice.
+            p.text-muted.mb-0
+                | This resource serves researchers, practitioners, and decision-makers in understanding technology adoption trends, market dynamics, and the impact of innovation on legal service delivery.
+
+css:
+
+    .bg-cardinal-red {
+        background-color: #8c1515;
+    }
+    .text-cardinal-red {
+        color: #8c1515;
+    }

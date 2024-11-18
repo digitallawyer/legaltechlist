@@ -7,18 +7,33 @@ class CompaniesController < ApplicationController
   # this search could easily be made much more complex and powerful
   # with ands and ors if necessary
   def index
-    if params[:tag]
-      @companies = Company.where('visible' => true).tagged_with(params[:tag]).page(params[:page]).per(10)
-    elsif params[:category]
-      @cat = Category.find(params[:category])
-      @companies = Company.where('visible' => true).where(:category => params[:category]).page(params[:page]).per(10)
-    elsif params[:business_model]
-      @companies = Company.where('visible' => true).where(:business_model => params[:business_model]).page(params[:page]).per(10)
-    elsif params[:target_client]
-      @target = TargetClient.find(params[:target_client])
-      @companies = Company.where('visible' => true).where(:target_client => params[:target_client]).page(params[:page]).per(10)
-    else
-      @companies = Company.where('visible' => true).text_search(params[:query]).page(params[:page]).per(10)
+    @companies = Company.where(visible: true)
+    
+    begin
+      # Search
+      @companies = @companies.text_search(params[:query]) if params[:query].present?
+      
+      # Filters
+      @companies = @companies.where(category_id: params[:category]) if params[:category].present?
+      @companies = @companies.where("location ILIKE ?", "%#{params[:location]}%") if params[:location].present?
+      
+      # Sorting
+      case params[:sort]
+      when 'name_asc'
+        @companies = @companies.order(name: :asc)
+      when 'name_desc'
+        @companies = @companies.order(name: :desc)
+      end
+      
+      # View handling
+      @view = params[:view] || 'grid'
+      
+      @total_count = @companies.count
+      @companies = @companies.page(params[:page]).per(12)
+    rescue => e
+      Rails.logger.error "Error in companies#index: #{e.message}"
+      @companies = Company.none
+      flash.now[:error] = "An error occurred while loading companies"
     end
   end
 
@@ -79,7 +94,7 @@ class CompaniesController < ApplicationController
     @company.visible = false
 
     respond_to do |format|
-      if verify_recaptcha(model: @company) && @company.save
+      if @company.save
         # set company to invisible
 
         SuggestionMailer.newcompany_email(@company).deliver_now
@@ -102,7 +117,7 @@ class CompaniesController < ApplicationController
     @company = Company.new(company_params)
 
     respond_to do |format|
-      if verify_recaptcha(model: @company) && @company.valid?
+      if @company.valid?
 
         SuggestionMailer.editcompany_email(@company).deliver_now
 

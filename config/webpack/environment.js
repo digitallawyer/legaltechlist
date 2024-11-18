@@ -9,6 +9,12 @@ environment.plugins.prepend('Provide',
   })
 )
 
+environment.plugins.append('Provide',
+  new webpack.ProvidePlugin({
+    Popper: ['@popperjs/core', 'default']
+  })
+)
+
 environment.config.merge({
   resolve: {
     fallback: {

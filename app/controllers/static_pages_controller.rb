@@ -12,9 +12,22 @@ class StaticPagesController < ApplicationController
   	else
   		@companies = Company.all
   	end
-    @years_all = Company.order(founded_date: :asc).all
-    @years = @years_all.uniq.pluck(:founded_date)
-    #@years = ['2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016']
+  
+  	# Filter companies from year 2000 onwards and only valid years
+  	@companies = @companies.where('founded_date >= ? AND founded_date <= ? AND founded_date ~ ?', 
+  								 '2000', 
+  								 Time.current.year.to_s,
+  								 '^\d{4}$')
+  
+  	# Get unique years from 2000 onwards, sorted, only valid years
+  	@years = Company.where('founded_date >= ? AND founded_date <= ? AND founded_date ~ ?',
+  							'2000',
+  							Time.current.year.to_s,
+  							'^\d{4}$')
+  				 .distinct
+  				 .pluck(:founded_date)
+  				 .sort
+  				 .reject(&:blank?)
   end
 
 end

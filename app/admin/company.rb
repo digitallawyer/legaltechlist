@@ -7,7 +7,17 @@ ActiveAdmin.register Company do
 
   scope("In Moderation") { |scope| scope.where(visible: false) }
 
-  permit_params :name, :location, :founded_date, :category, :business_model, :target_client, :description, :main_url, :twitter_url, :angellist_url, :crunchbase_url, :linkedin_url, :facebook_url, :legalio_url, :status, :all_tags, :category_id, :sub_category_id, :business_model_id, :target_client_id, :latitude, :longitude, :contact_name, :contact_email, :visible, :codex_presenter, :employee_count, :codex_presentation_date
+  permit_params :name, :location, :founded_date, :category, :business_model, :target_client, :description, :main_url, :twitter_url, :angellist_url, :crunchbase_url, :linkedin_url, :facebook_url, :legalio_url, :status, :all_tags, :category_id, :sub_category_id, :business_model_id, :target_client_id, :latitude, :longitude, :contact_name, :contact_email, :visible, :codex_presenter, :employee_count, :codex_presentation_date, :logo_url
+
+  filter :name
+  filter :location
+  filter :description
+  filter :category
+  filter :sub_category
+  filter :status, as: :select, collection: ['active', 'inactive', 'acquired']
+  filter :visible
+  filter :created_at
+  filter :updated_at
 
 ######
 
@@ -49,6 +59,11 @@ ActiveAdmin.register Company do
   	column :main_url
     column :all_tags
     column :visible
+    column :logo do |company|
+      if company.logo_url.present?
+        image_tag company.logo_url, style: "height: 30px; width: 30px; object-fit: contain"
+      end
+    end
     actions
   end
 
@@ -76,6 +91,7 @@ ActiveAdmin.register Company do
       f.input :all_tags
       f.input :codex_presenter
       f.input :codex_presentation_date
+      f.input :logo_url
     end
     f.actions do
       f.action :submit
