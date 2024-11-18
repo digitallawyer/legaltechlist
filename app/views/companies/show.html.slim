@@ -19,15 +19,16 @@
                     .card-body
                         .d-flex.gap-4.align-items-start.mb-4
                             - if @company.logo_url.present?
+                                - Rails.logger.debug "Logo URL in view: #{@company.logo_url}"
                                 = image_tag @company.logo_url, 
                                     class: "rounded bg-light", 
                                     style: "width: 80px; height: 80px; object-fit: contain;",
                                     alt: "#{@company.name} logo"
-                            div
+                            .flex-grow-1
                                 h1.mb-0
-									= @company.name
+                                    = @company.name
                                 p.lead.text-secondary.mb-0
-									= @company.description
+                                    = @company.description
                         
                         hr.mb-4
                         

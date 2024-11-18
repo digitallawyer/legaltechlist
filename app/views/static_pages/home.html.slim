@@ -4,7 +4,7 @@
             .col-lg-8.mx-auto
                 .fs-1.fw-bold
                     ' CodeX TechIndex
-                p.lead.mb-4 Tracking #{Company.count} legal technology solutions and their impact on legal services delivery
+                p.lead.mb-4 Tracking #{Company.where(visible: true).count} legal technology solutions and their impact on legal services delivery
                 = form_tag companies_path, class: 'row g-3 justify-content-center', method: :get do
                     .position-relative
                         = text_field_tag :query, params[:query], class: "form-control form-control-lg", placeholder: "Search for a company", id: "search-input"

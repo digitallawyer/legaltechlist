@@ -77,3 +77,6 @@ gem "turbo-rails"
 
 gem 'chartkick'
 gem 'groupdate'
+
+gem 'httparty'
+gem 'aws-sdk-s3', require: false

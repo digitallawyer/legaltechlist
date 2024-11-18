@@ -67,4 +67,13 @@ Rails.application.configure do
 
   # Uncomment if you wish to allow Action Cable access from any origin.
   # config.action_cable.disable_request_forgery_protection = true
+
+  # Enable serving of static files from the `/public` folder
+  config.public_file_server.enabled = true
+
+  # Optional: Add headers for debugging
+  config.public_file_server.headers = {
+    'Cache-Control' => 'public, max-age=3600',
+    'X-Debug-Path' => 'true'
+  }
 end

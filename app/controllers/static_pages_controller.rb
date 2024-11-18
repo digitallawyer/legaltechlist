@@ -8,9 +8,9 @@ class StaticPagesController < ApplicationController
 
   def statistics
   	if params[:founded_date]
-  		@companies = Company.where('founded_date' => params[:founded_date]).all
+  		@companies = Company.where(visible: true, founded_date: params[:founded_date]).all
   	else
-  		@companies = Company.all
+  		@companies = Company.where(visible: true)
   	end
   
   	# Filter companies from year 2000 onwards and only valid years
@@ -20,7 +20,8 @@ class StaticPagesController < ApplicationController
   								 '^\d{4}$')
   
   	# Get unique years from 2000 onwards, sorted, only valid years
-  	@years = Company.where('founded_date >= ? AND founded_date <= ? AND founded_date ~ ?',
+  	@years = Company.where(visible: true)
+  				 .where('founded_date >= ? AND founded_date <= ? AND founded_date ~ ?',
   							'2000',
   							Time.current.year.to_s,
   							'^\d{4}$')
