@@ -1,34 +1,24 @@
 const path = require('path')
-const webpack = require('webpack')
 
 module.exports = {
-  mode: process.env.NODE_ENV === 'development' ? 'development' : 'production',
-  devtool: 'source-map',
+  mode: "production",
   entry: {
-    application: './app/javascript/packs/application.js'
+    application: path.resolve(__dirname, '../../app/javascript/packs/application.js')
+  },
+  output: {
+    filename: "[name].js",
+    path: path.resolve(__dirname, "../../app/assets/builds")
+  },
+  resolve: {
+    extensions: ['.js', '.jsx']
   },
   module: {
     rules: [
       {
-        test: /\.(js)$/,
+        test: /\.(js|jsx)$/,
         exclude: /node_modules/,
-        use: ['babel-loader']
+        use: ['babel-loader'],
       }
     ]
-  },
-  output: {
-    filename: '[name].js',
-    sourceMapFilename: '[name].js.map',
-    path: path.resolve(__dirname, '../../public/packs')
-  },
-  plugins: [
-    new webpack.ProvidePlugin({
-      $: 'jquery',
-      jQuery: 'jquery',
-      Popper: ['@popperjs/core', 'default']
-    })
-  ],
-  resolve: {
-    extensions: ['.js', '.jsx']
   }
 }
