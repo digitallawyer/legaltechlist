@@ -102,17 +102,19 @@ class LogoFetcherService
       URI.open(url) { |image| temp_file.write(image.read) }
       temp_file.rewind
 
-      # Upload to S3 without ACL
+      # Upload to S3 using public/ prefix
+      key = "public/logos/#{filename}"
       s3.put_object(
         bucket: ENV['BUCKETEER_BUCKET_NAME'],
-        key: "logos/#{filename}",
+        key: key,
         body: temp_file,
         content_type: 'image/png'
       )
 
-      # Return the Bucketeer bucket URL
-      bucket_name = ENV['BUCKETEER_BUCKET_NAME'].split('/').last
-      "https://#{bucket_name}.s3.#{ENV['BUCKETEER_AWS_REGION']}.amazonaws.com/logos/#{filename}"
+      # Return the direct S3 URL
+      bucket_name = ENV['BUCKETEER_BUCKET_NAME']
+      region = ENV['BUCKETEER_AWS_REGION']
+      "https://#{bucket_name}.s3.#{region}.amazonaws.com/#{key}"
     rescue => e
       Rails.logger.error("S3 upload error for #{filename}: #{e.message}")
       raise e
