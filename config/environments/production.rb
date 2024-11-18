@@ -98,13 +98,6 @@ Rails.application.configure do
   config.twitter_list = 'Legaltechlist'
   config.twitter_list_url = 'https://twitter.com/CodeXStanford/lists/legaltechlist'
 
-  # Add this line for Active Storage (if you plan to use it)
-  if Rails.env.production?
-    Rails.application.config.active_storage.service = :bucketeer
-  else
-    Rails.application.config.active_storage.service = :local
-  end
-
   # Enable serving of static files from the `/public` folder
   config.public_file_server.enabled = true
 
