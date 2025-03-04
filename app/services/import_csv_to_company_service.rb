@@ -139,7 +139,7 @@ class ImportCsvToCompanyService
           company.facebook_url,
           company.legalio_url,
           company.status,
-          company.tag_list.join(", "),
+          company.tags.any? ? company.all_tags : "",
           company.codex_presenter,
           company.codex_presentation_date
          ]
