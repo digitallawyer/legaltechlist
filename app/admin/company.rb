@@ -9,15 +9,15 @@ ActiveAdmin.register Company do
 
   scope("Duplicates") do |scope|
     # Get names that appear more than once (accounting for spaces)
-    duplicate_names = scope.pluck(:name)
+    duplicate_names = scope.pluck('companies.name')
                           .map(&:strip)
                           .group_by(&:itself)
                           .select { |_, v| v.length > 1 }
                           .keys
 
     # Return companies with those names
-    scope.where("TRIM(name) IN (?)", duplicate_names)
-         .order("TRIM(name), visible DESC, created_at DESC")
+    scope.where("TRIM(companies.name) IN (?)", duplicate_names)
+         .order("TRIM(companies.name), companies.visible DESC, companies.created_at DESC")
   end
 
   permit_params :name, :location, :founded_date, :category, :business_model, :target_client, :description, :main_url, :twitter_url, :angellist_url, :crunchbase_url, :linkedin_url, :facebook_url, :legalio_url, :status, :all_tags, :category_id, :sub_category_id, :business_model_id, :target_client_id, :latitude, :longitude, :contact_name, :contact_email, :visible, :codex_presenter, :employee_count, :codex_presentation_date, :logo_url, tag_list: []
@@ -36,7 +36,7 @@ ActiveAdmin.register Company do
 
   batch_action :count_invisible_duplicates, confirm: "Count invisible duplicate entries?", if: proc { true } do
     # First, get all names after trimming spaces
-    duplicates = Company.pluck(:name)
+    duplicates = Company.pluck('companies.name')
                        .map(&:strip)
                        .group_by(&:itself)
                        .select { |_, v| v.length > 1 }
@@ -44,7 +44,7 @@ ActiveAdmin.register Company do
 
     # Then find companies with those names (using TRIM)
     invisible_duplicates = Company.where(visible: false)
-                                .where("TRIM(name) IN (?)", duplicates)
+                                .where("TRIM(companies.name) IN (?)", duplicates)
     count = invisible_duplicates.count
 
     redirect_to collection_path, notice: "Found #{count} invisible duplicate entries that could be deleted"
@@ -52,7 +52,7 @@ ActiveAdmin.register Company do
 
   batch_action :remove_invisible_duplicates, confirm: "Are you sure you want to delete all invisible duplicate entries? This cannot be undone!", if: proc { true } do
     # First, get all names after trimming spaces
-    duplicates = Company.pluck(:name)
+    duplicates = Company.pluck('companies.name')
                        .map(&:strip)
                        .group_by(&:itself)
                        .select { |_, v| v.length > 1 }
@@ -60,7 +60,7 @@ ActiveAdmin.register Company do
 
     # Then find and delete companies with those names (using TRIM)
     invisible_duplicates = Company.where(visible: false)
-                                .where("TRIM(name) IN (?)", duplicates)
+                                .where("TRIM(companies.name) IN (?)", duplicates)
     count = invisible_duplicates.count
     invisible_duplicates.destroy_all
 
