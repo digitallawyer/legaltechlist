@@ -7,6 +7,19 @@ ActiveAdmin.register Company do
 
   scope("In Moderation") { |scope| scope.where(visible: false) }
 
+  scope("Duplicates") do |scope|
+    # Get names that appear more than once (accounting for spaces)
+    duplicate_names = scope.pluck(:name)
+                          .map(&:strip)
+                          .group_by(&:itself)
+                          .select { |_, v| v.length > 1 }
+                          .keys
+
+    # Return companies with those names
+    scope.where("TRIM(name) IN (?)", duplicate_names)
+         .order("TRIM(name), visible DESC, created_at DESC")
+  end
+
   permit_params :name, :location, :founded_date, :category, :business_model, :target_client, :description, :main_url, :twitter_url, :angellist_url, :crunchbase_url, :linkedin_url, :facebook_url, :legalio_url, :status, :all_tags, :category_id, :sub_category_id, :business_model_id, :target_client_id, :latitude, :longitude, :contact_name, :contact_email, :visible, :codex_presenter, :employee_count, :codex_presentation_date, :logo_url, tag_list: []
 
   batch_action :destroy, confirm: "Are you sure you want to delete these companies?" do |ids|
@@ -92,16 +105,32 @@ ActiveAdmin.register Company do
 
   index do
     selectable_column
-  	column :name
-  	column :category
-    column :sub_category
-    column :description
-  	column :main_url
-    column :all_tags
-    column :visible
-    column :logo do |company|
-      if company.logo_url.present?
-        image_tag company.logo_url, style: "height: 30px; width: 30px; object-fit: contain"
+    if params[:scope] == "duplicates"
+      column :name do |company|
+        div style: "color: #{company.visible ? 'green' : 'red'}" do
+          text_node company.name
+          text_node " (#{company.visible ? 'visible' : 'invisible'})"
+        end
+      end
+      column :created_at
+      column :updated_at
+      column :category
+      column :description
+      column :main_url
+      column :all_tags
+      column :visible
+    else
+      column :name
+      column :category
+      column :sub_category
+      column :description
+      column :main_url
+      column :all_tags
+      column :visible
+      column :logo do |company|
+        if company.logo_url.present?
+          image_tag company.logo_url, style: "height: 30px; width: 30px; object-fit: contain"
+        end
       end
     end
     actions
