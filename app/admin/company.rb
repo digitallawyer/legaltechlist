@@ -14,6 +14,39 @@ ActiveAdmin.register Company do
     redirect_to collection_path, notice: "Successfully deleted #{ids.count} companies"
   end
 
+  batch_action :count_invisible_duplicates, confirm: "Count invisible duplicate entries?", if: proc { true } do
+    # First, get all names after trimming spaces
+    duplicates = Company.pluck(:name)
+                       .map(&:strip)
+                       .group_by(&:itself)
+                       .select { |_, v| v.length > 1 }
+                       .keys
+
+    # Then find companies with those names (using TRIM)
+    invisible_duplicates = Company.where(visible: false)
+                                .where("TRIM(name) IN (?)", duplicates)
+    count = invisible_duplicates.count
+
+    redirect_to collection_path, notice: "Found #{count} invisible duplicate entries that could be deleted"
+  end
+
+  batch_action :remove_invisible_duplicates, confirm: "Are you sure you want to delete all invisible duplicate entries? This cannot be undone!", if: proc { true } do
+    # First, get all names after trimming spaces
+    duplicates = Company.pluck(:name)
+                       .map(&:strip)
+                       .group_by(&:itself)
+                       .select { |_, v| v.length > 1 }
+                       .keys
+
+    # Then find and delete companies with those names (using TRIM)
+    invisible_duplicates = Company.where(visible: false)
+                                .where("TRIM(name) IN (?)", duplicates)
+    count = invisible_duplicates.count
+    invisible_duplicates.destroy_all
+
+    redirect_to collection_path, notice: "Successfully deleted #{count} invisible duplicate entries"
+  end
+
   filter :name
   filter :location
   filter :description
