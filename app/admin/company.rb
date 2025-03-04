@@ -9,6 +9,11 @@ ActiveAdmin.register Company do
 
   permit_params :name, :location, :founded_date, :category, :business_model, :target_client, :description, :main_url, :twitter_url, :angellist_url, :crunchbase_url, :linkedin_url, :facebook_url, :legalio_url, :status, :all_tags, :category_id, :sub_category_id, :business_model_id, :target_client_id, :latitude, :longitude, :contact_name, :contact_email, :visible, :codex_presenter, :employee_count, :codex_presentation_date, :logo_url, tag_list: []
 
+  batch_action :destroy, confirm: "Are you sure you want to delete these companies?" do |ids|
+    Company.where(id: ids).destroy_all
+    redirect_to collection_path, notice: "Successfully deleted #{ids.count} companies"
+  end
+
   filter :name
   filter :location
   filter :description
@@ -53,6 +58,7 @@ ActiveAdmin.register Company do
   ######
 
   index do
+    selectable_column
   	column :name
   	column :category
     column :sub_category
