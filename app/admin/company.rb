@@ -93,8 +93,9 @@ ActiveAdmin.register Company do
   end
 
   collection_action :import_csv, :method => :post do
-    ImportCSVtoCompanyService.import(params[:dump][:file])
-    redirect_to :action => :index, :notice => "CSV imported successfully."
+    stats = ImportCsvToCompanyService.import(params[:dump][:file])
+    redirect_to :action => :index,
+                :notice => "CSV imported successfully. Created: #{stats[:created]}, Updated: #{stats[:updated]}, Skipped: #{stats[:skipped]} companies."
   end
 
   collection_action :export_csv, :method => :get do
@@ -119,6 +120,7 @@ ActiveAdmin.register Company do
           text_node " (#{company.visible ? 'visible' : 'invisible'})"
         end
       end
+      column :founded_date
       column :created_at
       column :updated_at
       column :category
@@ -128,6 +130,7 @@ ActiveAdmin.register Company do
       column :visible
     else
       column :name
+      column :founded_date
       column :category
       column :sub_category
       column :description
