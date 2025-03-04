@@ -27,6 +27,13 @@ ActiveAdmin.register Company do
     redirect_to collection_path, notice: "Successfully deleted #{ids.count} companies"
   end
 
+  batch_action :make_visible, confirm: "Are you sure you want to make these companies visible?" do |ids|
+    companies = Company.where(id: ids)
+    count = companies.count
+    companies.update_all(visible: true)
+    redirect_to collection_path, notice: "Successfully made #{count} companies visible"
+  end
+
   batch_action :count_invisible_duplicates, confirm: "Count invisible duplicate entries?", if: proc { true } do
     # First, get all names after trimming spaces
     duplicates = Company.pluck(:name)
