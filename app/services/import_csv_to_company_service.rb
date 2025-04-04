@@ -267,7 +267,7 @@ class ImportCsvToCompanyService
         'stage' => row['Stage'],
         'company_type' => row['Company Type'],
         'number_of_funding_rounds' => row['Number of Funding Rounds'].to_i,
-        'total_funding_amount_usd' => row['Total Funding Amount (in USD)'].to_d,
+        'total_funding_amount_usd' => clean_funding_amount(row),
         'funding_status' => row['Funding Status'],
         'founders' => row['Founders'],
         'contact_email' => row['Contact Email'],
