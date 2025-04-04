@@ -1,25 +1,39 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  location: MyString
-  founded_date: MyString
-  category: MyString
-  description: MyText
-  main_url: MyString
-  twitter_url: MyString
-  angellist_url: MyString
-  crunchbase_url: MyString
-  employee_count: MyString
+  id: 1
+  name: Test Company One
+  location: San Francisco, CA
+  founded_date: 2020
+  description: A test company description that is long enough
+  main_url: http://example.com
+  twitter_url: http://twitter.com/example
+  angellist_url: http://angel.co/example
+  crunchbase_url: http://crunchbase.com/example
+  linkedin_url: http://linkedin.com/example
+  facebook_url: http://facebook.com/example
+  employee_count: 1-10
+  visible: true
+  category_id: 1
+  business_model_id: 1
+  target_client_id: 1
+  sub_category_id: 1
 
 two:
-  name: MyString
-  location: MyString
-  founded_date: MyString
-  category: MyString
-  description: MyText
-  main_url: MyString
-  twitter_url: MyString
-  angellist_url: MyString
-  crunchbase_url: MyString
-  employee_count: MyString
+  id: 2
+  name: Test Company Two
+  location: New York, NY
+  founded_date: 2021
+  description: Another test company description that is long enough
+  main_url: http://example2.com
+  twitter_url: http://twitter.com/example2
+  angellist_url: http://angel.co/example2
+  crunchbase_url: http://crunchbase.com/example2
+  linkedin_url: http://linkedin.com/example2
+  facebook_url: http://facebook.com/example2
+  employee_count: 11-50
+  visible: true
+  category_id: 2
+  business_model_id: 2
+  target_client_id: 2
+  sub_category_id: 2

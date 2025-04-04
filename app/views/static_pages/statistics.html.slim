@@ -2,47 +2,202 @@
     .container
         .row.text-center.mt-5.py-5
             .col-lg-8.mx-auto
-                .fs-1.fw-bold Statistics
-                p.lead.mb-4 Analyzing the legal technology landscape
+                .fs-1.fw-bold Stanford Legal Tech Index
+                p.lead.mb-4 Research insights into the legal technology landscape
 
 .bg-body-tertiary.border-bottom
     .container.py-5
-
         .row.g-4
-            .col-md-3
-                .card.border
-                    .card-body
-                        h3.h5.mb-3 Filter by Year
-                        .d-flex.flex-column.gap-2
-                            = link_to "All Years", statistics_path, class: "text-decoration-none #{!params[:founded_date] ? 'text-cardinal-red fw-bold' : 'text-secondary'}"
-                            - @years.each do |year|
-                                = link_to year, statistics_path(founded_date: year), class: "text-decoration-none #{year.to_s == params[:founded_date] ? 'text-cardinal-red fw-bold' : 'text-secondary'}"
 
-            .col-md-9
-                .row.mb-4
-                    .col-12
-                        - if params[:founded_date]
-                            - all_data = Company.where("founded_date >= '2000'").group(:founded_date).count.sort.to_h
-                            - highlighted_data = Company.where(founded_date: params[:founded_date]).where("founded_date >= '2000'").group(:founded_date).count.sort.to_h
-                            = line_chart [{ name: "All Companies", data: all_data },
-                                { name: "Selected Year", data: highlighted_data }], colors: ["#dee2e6", "#8c1515"], height: "400px", library: { backgroundColor: "#ffffff" }
-                        - else
-                            = line_chart Company.where("founded_date >= '2000'").group(:founded_date).count.sort.to_h, colors: ["#8c1515"], height: "400px", library: { backgroundColor: "#ffffff" }
-                
-                .card.border
-                    .card-body
-                        h3.h5.mb-4 Statistics
-                        .row.g-4
-                            .col-md-4
-                                .p-3.rounded.bg-light
-                                    p.text-secondary.mb-1 Total Companies
-                                    .fs-3.fw-bold= @companies.count
-                        h3.h5.my-4 Categories
-                        .row.g-4   
-                            - Category.all.each do |category|
-                                - unless category.name == "Unknown"
-                                    .col-md-4
-                                        .p-3.rounded.bg-light
-                                            p.text-secondary.mb-1= "#{category.name}"
-                                            .fs-3.fw-bold= @companies.where(category: category).count
 
+            .col-md-6.col-lg-4
+                .card.border.h-100
+                    .card-body.px-4.pt-4
+                        .d-flex.justify-content-between.align-items-start.mb-3
+                            = link_to statistics_total_companies_path, class: "rounded d-flex justify-content-center align-items-center text-decoration-none", style: "background-color:#8c15151a; width: 40px; height: 40px;" do
+                                i.fas.fa-chart-line.text-cardinal-red
+                            span.badge.bg-success.text-white Live
+                        h3.h5.card-title.mb-2
+                            = link_to "Total Companies Evolution", statistics_total_companies_path, class: "text-decoration-none text-dark"
+                        p.mb-0.card-text.text-muted.small Growth of the legal tech ecosystem over time
+                    .card-footer.bg-white.border-top-0.px-4.pb-4
+                        = link_to statistics_total_companies_path, class: "text-decoration-none d-flex align-items-center" do
+                            span.fs-sm style="color: rgb(140 21 21)"
+                                b View analysis
+                                i.fa.fa-arrow-right.ms-2
+
+            .col-md-6.col-lg-4
+                .card.border.h-100
+                    .card-body.px-4.pt-4
+                        .d-flex.justify-content-between.align-items-start.mb-3
+                            = link_to statistics_category_evolution_path, class: "rounded d-flex justify-content-center align-items-center text-decoration-none", style: "background-color:#8c15151a; width: 40px; height: 40px;" do
+                                i.fas.fa-chart-line.text-cardinal-red
+                            span.badge.bg-success.text-white Live
+                        h3.h5.card-title.mb-2
+                            = link_to "Category Evolution", statistics_category_evolution_path, class: "text-decoration-none text-dark"
+                        p.mb-0.card-text.text-muted.small Growth patterns across legal tech segments over time
+                    .card-footer.bg-white.border-top-0.px-4.pb-4
+                        = link_to statistics_category_evolution_path, class: "text-decoration-none d-flex align-items-center" do
+                            span.fs-sm style="color: rgb(140 21 21)"
+                                b View analysis
+                                i.fa.fa-arrow-right.ms-2
+
+            .col-md-6.col-lg-4
+                .card.border.h-100
+                    .card-body.px-4.pt-4
+                        .d-flex.justify-content-between.align-items-start.mb-3
+                            = link_to statistics_funding_concentration_path, class: "rounded d-flex justify-content-center align-items-center text-decoration-none", style: "background-color:#8c15151a; width: 40px; height: 40px;" do
+                                i.fas.fa-globe.text-cardinal-red
+                            span.badge.bg-success.text-white Live
+                        h3.h5.card-title.mb-2
+                            = link_to "Funding Concentration", statistics_funding_concentration_path, class: "text-decoration-none text-dark"
+                        p.mb-0.card-text.text-muted.small Geographic distribution of legal tech investments
+                    .card-footer.bg-white.border-top-0.px-4.pb-4
+                        = link_to statistics_funding_concentration_path, class: "text-decoration-none d-flex align-items-center" do
+                            span.fs-sm style="color: rgb(140 21 21)"
+                                b View analysis
+                                i.fa.fa-arrow-right.ms-2
+
+            .col-md-6.col-lg-4
+                .card.border.h-100
+                    .card-body.px-4.pt-4
+                        .d-flex.justify-content-between.align-items-start.mb-3
+                            = link_to statistics_country_distribution_path, class: "rounded d-flex justify-content-center align-items-center text-decoration-none", style: "background-color:#8c15151a; width: 40px; height: 40px;" do
+                                i.fas.fa-globe-americas.text-cardinal-red
+                            span.badge.bg-success.text-white Live
+                        h3.h5.card-title.mb-2
+                            = link_to "Country Distribution", statistics_country_distribution_path, class: "text-decoration-none text-dark"
+                        p.mb-0.card-text.text-muted.small Geographic distribution of legal tech companies by country
+                    .card-footer.bg-white.border-top-0.px-4.pb-4
+                        = link_to statistics_country_distribution_path, class: "text-decoration-none d-flex align-items-center" do
+                            span.fs-sm style="color: rgb(140 21 21)"
+                                b View analysis
+                                i.fa.fa-arrow-right.ms-2
+
+            .col-md-6.col-lg-4
+                .card.border.h-100
+                    .card-body.px-4.pt-4
+                        .d-flex.justify-content-between.align-items-start.mb-3
+                            = link_to statistics_category_success_path, class: "rounded d-flex justify-content-center align-items-center text-decoration-none", style: "background-color:#8c15151a; width: 40px; height: 40px;" do
+                                i.fas.fa-chart-bar.text-cardinal-red
+                            span.badge.bg-success.text-white Live
+                        h3.h5.card-title.mb-2
+                            = link_to "Category Success Rates", statistics_category_success_path, class: "text-decoration-none text-dark"
+                        p.mb-0.card-text.text-muted.small Survival and growth rates by legal tech segment
+                    .card-footer.bg-white.border-top-0.px-4.pb-4
+                        = link_to statistics_category_success_path, class: "text-decoration-none d-flex align-items-center" do
+                            span.fs-sm style="color: rgb(140 21 21)"
+                                b View analysis
+                                i.fa.fa-arrow-right.ms-2
+
+            .col-md-6.col-lg-4
+                .card.border.h-100
+                    .card-body.px-4.pt-4
+                        .d-flex.justify-content-between.align-items-start.mb-3
+                            = link_to statistics_growth_stage_path, class: "rounded d-flex justify-content-center align-items-center text-decoration-none", style: "background-color:#8c15151a; width: 40px; height: 40px;" do
+                                i.fas.fa-chart-area.text-cardinal-red
+                            span.badge.bg-success.text-white Live
+                        h3.h5.card-title.mb-2
+                            = link_to "Growth Stage Distribution", statistics_growth_stage_path, class: "text-decoration-none text-dark"
+                        p.mb-0.card-text.text-muted.small Analysis of company stages and progression patterns
+                    .card-footer.bg-white.border-top-0.px-4.pb-4
+                        = link_to statistics_growth_stage_path, class: "text-decoration-none d-flex align-items-center" do
+                            span.fs-sm style="color: rgb(140 21 21)"
+                                b View analysis
+                                i.fa.fa-arrow-right.ms-2
+
+            .col-md-6.col-lg-4
+                .card.border.h-100
+                    .card-body.px-4.pt-4
+                        .d-flex.justify-content-between.align-items-start.mb-3
+                            = link_to statistics_business_model_path, class: "rounded d-flex justify-content-center align-items-center text-decoration-none", style: "background-color:#8c15151a; width: 40px; height: 40px;" do
+                                i.fas.fa-sitemap.text-cardinal-red
+                            span.badge.bg-success.text-white Live
+                        h3.h5.card-title.mb-2
+                            = link_to "Business Model Analysis", statistics_business_model_path, class: "text-decoration-none text-dark"
+                        p.mb-0.card-text.text-muted.small Distribution and success of different business models
+                    .card-footer.bg-white.border-top-0.px-4.pb-4
+                        = link_to statistics_business_model_path, class: "text-decoration-none d-flex align-items-center" do
+                            span.fs-sm style="color: rgb(140 21 21)"
+                                b View analysis
+                                i.fa.fa-arrow-right.ms-2
+
+            .col-md-6.col-lg-4
+                .card.border.h-100
+                    .card-body.px-4.pt-4
+                        .d-flex.justify-content-between.align-items-start.mb-3
+                            = link_to statistics_target_client_path, class: "rounded d-flex justify-content-center align-items-center text-decoration-none", style: "background-color:#8c15151a; width: 40px; height: 40px;" do
+                                i.fas.fa-users.text-cardinal-red
+                            span.badge.bg-success.text-white Live
+                        h3.h5.card-title.mb-2
+                            = link_to "Target Client Insights", statistics_target_client_path, class: "text-decoration-none text-dark"
+                        p.mb-0.card-text.text-muted.small Market focus and client segment analysis
+                    .card-footer.bg-white.border-top-0.px-4.pb-4
+                        = link_to statistics_target_client_path, class: "text-decoration-none d-flex align-items-center" do
+                            span.fs-sm style="color: rgb(140 21 21)"
+                                b View analysis
+                                i.fa.fa-arrow-right.ms-2
+
+            .col-md-6.col-lg-4
+                .card.border.h-100
+                    .card-body.px-4.pt-4
+                        .d-flex.justify-content-between.align-items-start.mb-3
+                            = link_to statistics_funding_stages_path, class: "rounded d-flex justify-content-center align-items-center text-decoration-none", style: "background-color:#8c15151a; width: 40px; height: 40px;" do
+                                i.fas.fa-project-diagram.text-cardinal-red
+                            span.badge.bg-success.text-white Live
+                        h3.h5.card-title.mb-2
+                            = link_to "Funding Stage Progression", statistics_funding_stages_path, class: "text-decoration-none text-dark"
+                        p.mb-0.card-text.text-muted.small Investment patterns across company lifecycles
+                    .card-footer.bg-white.border-top-0.px-4.pb-4
+                        = link_to statistics_funding_stages_path, class: "text-decoration-none d-flex align-items-center" do
+                            span.fs-sm style="color: rgb(140 21 21)"
+                                b View analysis
+                                i.fa.fa-arrow-right.ms-2
+
+            .col-md-6.col-lg-4
+                .card.border.h-100
+                    .card-body.px-4.pt-4
+                        .d-flex.justify-content-between.align-items-start.mb-3
+                            = link_to statistics_category_maturity_path, class: "rounded d-flex justify-content-center align-items-center text-decoration-none", style: "background-color:#8c15151a; width: 40px; height: 40px;" do
+                                i.fas.fa-chart-pie.text-cardinal-red
+                            span.badge.bg-success.text-white Live
+                        h3.h5.card-title.mb-2
+                            = link_to "Category Maturity Index", statistics_category_maturity_path, class: "text-decoration-none text-dark"
+                        p.mb-0.card-text.text-muted.small Segment maturity and development stages
+                    .card-footer.bg-white.border-top-0.px-4.pb-4
+                        = link_to statistics_category_maturity_path, class: "text-decoration-none d-flex align-items-center" do
+                            span.fs-sm style="color: rgb(140 21 21)"
+                                b View analysis
+                                i.fa.fa-arrow-right.ms-2
+
+            .col-md-6.col-lg-4
+                .card.border.h-100
+                    .card-body.px-4.pt-4
+                        .d-flex.justify-content-between.align-items-start.mb-3
+                            = link_to statistics_funding_efficiency_path, class: "rounded d-flex justify-content-center align-items-center text-decoration-none", style: "background-color:#8c15151a; width: 40px; height: 40px;" do
+                                i.fas.fa-coins.text-cardinal-red
+                            span.badge.bg-success.text-white Live
+                        h3.h5.card-title.mb-2
+                            = link_to "Funding Efficiency", statistics_funding_efficiency_path, class: "text-decoration-none text-dark"
+                        p.mb-0.card-text.text-muted.small Capital utilization across segments
+                    .card-footer.bg-white.border-top-0.px-4.pb-4
+                        = link_to statistics_funding_efficiency_path, class: "text-decoration-none d-flex align-items-center" do
+                            span.fs-sm style="color: rgb(140 21 21)"
+                                b View analysis
+                                i.fa.fa-arrow-right.ms-2
+
+            .col-md-6.col-lg-4
+                .card.border.h-100
+                    .card-body.px-4.pt-4
+                        .d-flex.justify-content-between.align-items-start.mb-3
+                            = link_to statistics_tag_distribution_path, class: "rounded d-flex justify-content-center align-items-center text-decoration-none", style: "background-color:#8c15151a; width: 40px; height: 40px;" do
+                                i.fas.fa-tags.text-cardinal-red
+                            span.badge.bg-success.text-white Live
+                        h3.h5.card-title.mb-2
+                            = link_to "Tag Distribution", statistics_tag_distribution_path, class: "text-decoration-none text-dark"
+                        p.mb-0.card-text.text-muted.small Technology focus areas in the legal tech ecosystem
+                    .card-footer.bg-white.border-top-0.px-4.pb-4
+                        = link_to statistics_tag_distribution_path, class: "text-decoration-none d-flex align-items-center" do
+                            span.fs-sm style="color: rgb(140 21 21)"
+                                b View analysis
+                                i.fa.fa-arrow-right.ms-2

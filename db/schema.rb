@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_11_18_053911) do
+ActiveRecord::Schema[7.0].define(version: 2025_04_04_064550) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -116,6 +116,12 @@ ActiveRecord::Schema[7.0].define(version: 2024_11_18_053911) do
     t.boolean "codex_presenter"
     t.date "codex_presentation_date"
     t.string "logo_url"
+    t.decimal "total_funding_usd", precision: 15, scale: 2
+    t.string "funding_status"
+    t.integer "number_of_funding_rounds"
+    t.date "exit_date"
+    t.string "founders"
+    t.string "headquarters_region"
     t.index ["business_model_id"], name: "index_companies_on_business_model_id"
     t.index ["category_id"], name: "index_companies_on_category_id"
     t.index ["sub_category_id"], name: "index_companies_on_sub_category_id"

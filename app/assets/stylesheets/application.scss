@@ -9,7 +9,7 @@ $stanford-red: #8c1515;
   background-color: $stanford-red;
   border-color: $stanford-red;
   color: white;
-  
+
   &:hover {
     background-color: darken($stanford-red, 10%);
     border-color: darken($stanford-red, 10%);
@@ -34,5 +34,36 @@ $stanford-red: #8c1515;
 .formtastic ol {
     list-style: none;
     padding-left: 0;
+}
+
+// Custom styles for jQCloud
+.jqcloud {
+    font-family: inherit;
+
+    a {
+        color: inherit;
+        text-decoration: none;
+
+        &:hover {
+            color: #8c1515 !important;
+            text-decoration: none;
+        }
+    }
+
+    span {
+        padding: 0.3em;
+        transition: transform 0.2s ease;
+
+        &:hover {
+            transform: scale(1.1);
+        }
+    }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+    .jqcloud {
+        height: 300px !important;
+    }
 }
 

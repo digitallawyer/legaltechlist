@@ -115,3 +115,31 @@ namespace :csv do
     end
 	end
 end
+
+namespace :import do
+  desc "Import companies from CSV file"
+  task companies: :environment do
+    input_file = 'input.csv'
+
+    unless File.exist?(input_file)
+      puts "Error: Could not find #{input_file}"
+      exit 1
+    end
+
+    # Create a temporary uploaded file object that ImportCsvToCompanyService expects
+    temp_file = ActionDispatch::Http::UploadedFile.new(
+      tempfile: File.open(input_file),
+      filename: File.basename(input_file),
+      type: 'text/csv'
+    )
+
+    puts "Starting import from #{input_file}..."
+    stats = ImportCsvToCompanyService.import(temp_file)
+
+    puts "\nImport completed!"
+    puts "Created: #{stats[:created]}"
+    puts "Updated: #{stats[:updated]}"
+    puts "Skipped: #{stats[:skipped]}"
+    puts "Errors: #{stats[:errors]}"
+  end
+end

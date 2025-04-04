@@ -8,15 +8,15 @@ class CompaniesController < ApplicationController
   # with ands and ors if necessary
   def index
     @companies = Company.where(visible: true)
-    
+
     begin
       # Search
       @companies = @companies.text_search(params[:query]) if params[:query].present?
-      
+
       # Filters
       @companies = @companies.where(category_id: params[:category]) if params[:category].present?
       @companies = @companies.where("location ILIKE ?", "%#{params[:location]}%") if params[:location].present?
-      
+
       # Sorting
       case params[:sort]
       when 'name_asc'
@@ -24,10 +24,10 @@ class CompaniesController < ApplicationController
       when 'name_desc'
         @companies = @companies.order(name: :desc)
       end
-      
+
       # View handling
       @view = params[:view] || 'grid'
-      
+
       @total_count = @companies.count
       @companies = @companies.page(params[:page]).per(12)
     rescue => e
@@ -99,7 +99,7 @@ class CompaniesController < ApplicationController
 
         SuggestionMailer.newcompany_email(@company).deliver_now
 
-        format.html { redirect_to "/companies", notice: t('controllers.company.created_success') }
+        format.html { redirect_to @company, notice: t('controllers.company.created_success') }
         format.json { render :show, status: :created, location: @company }
       else
         format.html { render :new }
@@ -114,15 +114,11 @@ class CompaniesController < ApplicationController
   # values from the edit form, verify them, and then e-mail them to the
   # administrator to be added later.
   def update
-    @company = Company.new(company_params)
-
     respond_to do |format|
-      if @company.valid?
-
+      if @company.update(company_params)
         SuggestionMailer.editcompany_email(@company).deliver_now
 
-        #redirect to the company we're editing, not the company changes we're submitting!
-        format.html { redirect_to Company.find(params[:id]), notice: t('controllers.company.updated_success') }
+        format.html { redirect_to @company, notice: t('controllers.company.updated_success') }
         format.json { render :show, status: :ok, location: @company }
       else
         flash.now[:notice] = "Failed, please try again"

@@ -19,4 +19,53 @@ module ApplicationHelper
     else 'fa fa-cube'
     end
   end
+
+  def growth_indicator_class(rate)
+    return 'text-muted' if rate.nil?
+
+    case rate
+    when 0..20
+      'text-danger'
+    when 20..40
+      'text-warning'
+    when 40..60
+      'text-info'
+    when 60..80
+      'text-primary'
+    else
+      'text-success'
+    end
+  end
+
+  def maturity_stage_class(stage)
+    case stage
+    when 'Emerging'
+      'badge bg-info'
+    when 'Growing'
+      'badge bg-success'
+    when 'Established'
+      'badge bg-primary'
+    when 'Mature'
+      'badge bg-dark'
+    else
+      'badge bg-secondary'
+    end
+  end
+
+  def tag_cloud(tags, classes)
+    return if tags.empty?
+
+    max = tags.max_by(&:count)
+    min = tags.min_by(&:count)
+    spread = max.count - min.count + 1
+
+    tags.each do |tag|
+      index = if spread == 1
+        0
+      else
+        ((tag.count - min.count) / spread.to_f * (classes.size - 1)).round
+      end
+      yield(tag, classes[index])
+    end
+  end
 end

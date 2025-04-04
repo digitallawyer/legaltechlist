@@ -1,12 +1,12 @@
-css: 
+css:
     .fs-sm {
-        font-size: 0.875rem !important; 
+        font-size: 0.875rem !important;
     }
-    
+
     .fs-xs {
-        font-size: 0.75rem !important; 
+        font-size: 0.75rem !important;
     }
-    
+
     .fs-xxs {
         font-size: 0.625rem !important;
     }
@@ -14,8 +14,8 @@ css:
 doctype html
 html
     head
-        title CodeX Techindex
-        meta name="viewport" content="width=device-width, initial-scale=1"
+        title= content_for?(:title) ? yield(:title) : "Legal Tech List"
+        meta name="viewport" content="width=device-width, initial-scale=1.0"
         meta name="description" content="Legal Tech Business Database"
         meta property="og:type" content="website"
         meta property="og:title" content="CodeX Techindex"
@@ -24,25 +24,35 @@ html
         meta name="audience" content="all"
         meta name="robots" content="index,follow"
         meta name="keywords" content="codex,legal,tech,index,sls,stanford,bay,area,database,search"
-        
+
         = csrf_meta_tags
         = csp_meta_tag
-         / Bootstrap CSS and JS from CDN
+
+        / Bootstrap CSS
         link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-        script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        
-        = stylesheet_link_tag "application"
-        = javascript_include_tag "https://code.jquery.com/jquery-3.7.1.min.js"
-        = javascript_include_tag "application", defer: true, type: "module"
-        = javascript_include_tag "https://www.gstatic.com/charts/loader.js"
-        = javascript_include_tag "chartkick"
-        
+
+        = stylesheet_link_tag "application", media: "all"
+
         / Font Awesome
         link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-    
+
+        / jQuery first, then Bootstrap bundle, then other scripts
+        script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+
+        / Chart.js and Chartkick
+        script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+        script src="https://cdn.jsdelivr.net/npm/chartkick@5.0.1/dist/chartkick.js"
+
+        / Google Charts for GeoChart
+        script src="https://www.gstatic.com/charts/loader.js"
+
+        / jQCloud
+        link href="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud.min.css" rel="stylesheet"
+        script src="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud.min.js"
+
     body
         = render "shared/navbar"
         div style="margin-top: 60px"
             = yield
         = render "shared/footer"
-  

@@ -1,9 +1,11 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  description: MyText
+  id: 1
+  name: SaaS
+  description: Software as a Service
 
 two:
-  name: MyString
-  description: MyText
+  id: 2
+  name: Subscription
+  description: Subscription-based service

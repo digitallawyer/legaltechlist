@@ -11,9 +11,9 @@ namespace :data do
     ActiveRecord::Base.transaction do
       # First remove all associations
       puts "Removing company associations..."
-      CompanyBusinessModel.delete_all
-      CompanyTargetClient.delete_all
-      CompanyTag.delete_all
+      CompaniesBusinessModel.delete_all
+      CompaniesTargetClient.delete_all
+      CompaniesTag.delete_all
 
       # Then remove all companies
       puts "Removing companies..."

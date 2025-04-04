@@ -49,12 +49,13 @@ gem 'recaptcha', require: 'recaptcha/rails'
 
 group :development, :test do
   gem 'byebug', '~> 11.1.3'
-  gem 'web-console', '~> 4.2'
   gem 'spring', '2.0.2'
+  gem 'rails-controller-testing'
 end
 
 group :development do
   gem 'listen', '~> 3.2'
+  gem 'web-console', '~> 4.2'
 end
 
 gem 'json', '~> 2.6'

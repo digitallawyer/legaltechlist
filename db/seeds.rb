@@ -7,17 +7,20 @@
 #   Mayor.create(name: 'Emanuel', city: cities.first)
 
 target_clients = TargetClient.create([
-  {name:"Unknown",     description:"Business Model Not Known."},
-  {name:"Individuals", description:"Serves Individuals Directly."},
-  {name:"Companies",   description:"Serves Companies Directly."},
-  {name:"Government",  description:"Serves Governmnet Directly."},
-  {name:"Service Providers", description:"Serves Lawyers, Law Firms, and Other Legal Service Providers."}
+  {name: "Law Firms", description: "Products and services for law firms and legal practices"},
+  {name: "Corporate Legal", description: "Solutions for in-house legal departments and corporate counsel"},
+  {name: "Government", description: "Services for government legal departments and agencies"},
+  {name: "Individual Consumers", description: "Direct-to-consumer legal solutions and services"},
+  {name: "Legal Education", description: "Tools for law schools, continuing education, and training"},
+  {name: "Legal Service Providers", description: "Solutions for alternative legal service providers and legal tech companies"}
 ])
 
 business_model = BusinessModel.create([
-  {name:"Unknown", description:"Business Model not known"},
-  {name:"Legal Tech", description:"Creates and Sells Technology Products."},
-  {name:"Legal Service Using Tech", description:"Provides a legal service using legal tech."}
+  {name: "SaaS", description: "Software as a Service - subscription-based software products"},
+  {name: "Marketplace", description: "Platform connecting legal service providers with clients"},
+  {name: "Data & Analytics", description: "Legal data, research, and analytics services"},
+  {name: "Managed Service", description: "Technology-enabled legal services with human support"},
+  {name: "Content Provider", description: "Legal content, forms, and document providers"}
 ])
 
 # Only create admin if it doesn't exist

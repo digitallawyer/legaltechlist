@@ -1,4 +1,6 @@
 class Company < ActiveRecord::Base
+  attr_accessor :skip_geocoding
+
   before_update :publish_tweet, :if => :visible_changed?
   before_update :publish_to_list, :if => :visible_changed?
 
@@ -22,14 +24,14 @@ class Company < ActiveRecord::Base
   validates :location, presence: true, length: {minimum: 1}
   validates :founded_date, presence: true, format: {with: /\d\d\d\d/, message: "must be a 4-digit year."}
   validates :category, presence: true
-  # validates :business_model, presence: true
-  # validates :target_client, presence: true
+  validates :business_model, presence: true
+  validates :target_client, presence: true
   validates :description, presence: true, length: {minimum: 5}
 
   #geocoding
 
   geocoded_by :location
-  after_validation :geocode, :if => :location_changed?
+  after_validation :geocode, if: ->(obj) { obj.location.present? && obj.location_changed? && !obj.skip_geocoding }
 
 	include PgSearch
 	pg_search_scope :search,
@@ -126,10 +128,10 @@ class Company < ActiveRecord::Base
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    %w[name location founded_date category business_model target_client 
-       description main_url twitter_url angellist_url crunchbase_url 
-       linkedin_url facebook_url legalio_url status visible 
-       contact_name contact_email codex_presenter codex_presentation_date 
+    %w[name location founded_date category business_model target_client
+       description main_url twitter_url angellist_url crunchbase_url
+       linkedin_url facebook_url legalio_url status visible
+       contact_name contact_email codex_presenter codex_presentation_date
        employee_count latitude longitude created_at updated_at]
   end
 

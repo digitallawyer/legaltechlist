@@ -30,3 +30,6 @@ yarn-debug.log*
 .yarn-integrity
 
 /config/master.key
+
+# Ignore scripts directory
+/scripts/
