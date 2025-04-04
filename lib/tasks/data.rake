@@ -9,15 +9,23 @@ namespace :data do
 
     # Remove in transaction to ensure consistency
     ActiveRecord::Base.transaction do
-      # First remove all associations
-      puts "Removing company associations..."
-      CompaniesBusinessModel.delete_all
-      CompaniesTargetClient.delete_all
-      CompaniesTag.delete_all
+      # Disable geocoding and twitter callbacks temporarily
+      Company.class_eval do
+        skip_callback :update, :before, :publish_tweet
+        skip_callback :update, :before, :publish_to_list
+        skip_callback :validation, :after, :geocode
+      end
 
-      # Then remove all companies
-      puts "Removing companies..."
+      # Delete all companies - this will automatically delete taggings due to dependent: :destroy
+      puts "Removing companies and their associations..."
       Company.delete_all
+
+      # Re-enable callbacks
+      Company.class_eval do
+        set_callback :update, :before, :publish_tweet
+        set_callback :update, :before, :publish_to_list
+        set_callback :validation, :after, :geocode
+      end
     end
 
     # Verify
