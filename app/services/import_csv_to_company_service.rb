@@ -6,10 +6,10 @@ class ImportCsvToCompanyService
     def import(csv_data)
       stats = { created: 0, updated: 0, skipped: 0, errors: 0 }
 
-      CSV.foreach(csv_data.tempfile, :headers => true, :encoding => 'UTF-8') do |row|
+      CSV.foreach(csv_data.tempfile, :headers => true, :encoding => 'UTF-8') do |raw_row|
         begin
-          row.to_hash
-          name = row["Organization Name"].to_s.strip
+          row = map_input_row(raw_row)
+          name = row["name"].to_s.strip
 
           if name.blank?
             stats[:skipped] += 1
@@ -17,15 +17,15 @@ class ImportCsvToCompanyService
           end
 
           # Only import verified legal tech companies
-          unless row["is_legal_tech"].to_s.downcase == 'true' && row["verified"].to_s.downcase == 'true'
+          unless raw_row["is_legal_tech"].to_s.downcase == 'true' && raw_row["verified"].to_s.downcase == 'true'
             stats[:skipped] += 1
             next
           end
 
           # Clean up required fields
-          business_model = row["suggested_business_model"] || "Unknown"
-          target_client = row["suggested_target_client"] || "Unknown"
-          category = row["suggested_category"] || "Unknown"
+          business_model = raw_row["suggested_business_model"] || "Unknown"
+          target_client = raw_row["suggested_target_client"] || "Unknown"
+          category = raw_row["suggested_category"] || "Unknown"
 
           # Get category and subcategory
           catName = category.to_s.split('-').first.to_s.strip
@@ -49,51 +49,51 @@ class ImportCsvToCompanyService
           end
 
           # Determine funding status and stage
-          funding_status = determine_funding_status(row)
+          funding_status = determine_funding_status(raw_row)
 
           # Build a comprehensive description
           description_parts = []
-          description_parts << row["Description"] if row["Description"].present?
-          description_parts << "Industry: #{row['Industries']}" if row['Industries'].present?
+          description_parts << row["description"] if row["description"].present?
+          description_parts << "Industry: #{raw_row['Industries']}" if raw_row['Industries'].present?
           description_parts << "Stage: #{funding_status}" if funding_status.present?
-          description_parts << "Operating Status: #{row['Operating Status']}" if row['Operating Status'].present?
-          description_parts << row["verification_notes"] if row["verification_notes"].present?
+          description_parts << "Operating Status: #{row['status']}" if row['status'].present?
+          description_parts << raw_row["verification_notes"] if raw_row["verification_notes"].present?
 
           full_description = description_parts.join("\n\n").strip
           full_description = "No detailed description available." if full_description.blank?
 
           # Get location, with fallbacks
-          location = clean_location(row["Headquarters Location"])
-          if location.blank? && row["Headquarters Regions"].present?
-            location = clean_location(row["Headquarters Regions"].split(',').first)
+          location = row["location"]
+          if location.blank? && row["headquarters_region"].present?
+            location = clean_location(row["headquarters_region"])
           end
           location ||= "Location unknown" # Final fallback
 
           attributes = {
             name: name,
-            contact_name: row["Contact Name"] || "Unknown",
-            contact_email: row["Contact Email"],
+            contact_name: raw_row["Contact Name"] || "Unknown",
+            contact_email: row["contact_email"],
             location: location,
-            founded_date: clean_date(row["Founded Date"]),
+            founded_date: row["founded_date"],
             visible: true, # All imported companies are verified
             category: cat,
             sub_category: sub,
             target_client: trg,
             business_model: biz,
             description: full_description,
-            main_url: clean_url(row["Website"]),
-            twitter_url: clean_url(row["Twitter"]),
-            linkedin_url: clean_url(row["LinkedIn"]),
-            facebook_url: clean_url(row["Facebook"]),
-            status: row["Operating Status"],
+            main_url: row["main_url"],
+            twitter_url: row["twitter_url"],
+            linkedin_url: row["linkedin_url"],
+            facebook_url: row["facebook_url"],
+            status: row["status"],
 
             # Trend analysis fields
-            total_funding_usd: clean_funding_amount(row),
+            total_funding_amount_usd: row["total_funding_amount_usd"],
             funding_status: funding_status,
-            number_of_funding_rounds: row["Number of Funding Rounds"].to_i,
+            number_of_funding_rounds: row["number_of_funding_rounds"],
             exit_date: exit_date,
-            founders: row["Founders"],
-            headquarters_region: row["Headquarters Regions"],
+            founders: row["founders"],
+            headquarters_region: row["headquarters_region"],
 
             # Skip geocoding during import
             skip_geocoding: true
@@ -104,7 +104,7 @@ class ImportCsvToCompanyService
               company.assign_attributes(attributes)
               company.skip_geocoding = true
               company.save!
-              company.all_tags = row["suggested_tags"].to_s if row["suggested_tags"].present?
+              company.all_tags = raw_row["suggested_tags"].to_s if raw_row["suggested_tags"].present?
               stats[:updated] += 1
             else
               stats[:skipped] += 1
@@ -113,11 +113,11 @@ class ImportCsvToCompanyService
             company = Company.new(attributes)
             company.skip_geocoding = true
             company.save!
-            company.all_tags = row["suggested_tags"].to_s if row["suggested_tags"].present?
+            company.all_tags = raw_row["suggested_tags"].to_s if raw_row["suggested_tags"].present?
             stats[:created] += 1
           end
         rescue => e
-          Rails.logger.error "Error importing row: #{row.inspect}"
+          Rails.logger.error "Error importing row: #{raw_row.inspect}"
           Rails.logger.error e.message
           Rails.logger.error e.backtrace.join("\n")
           stats[:errors] += 1
@@ -267,7 +267,7 @@ class ImportCsvToCompanyService
         'stage' => row['Stage'],
         'company_type' => row['Company Type'],
         'number_of_funding_rounds' => row['Number of Funding Rounds'].to_i,
-        'total_funding_usd' => row['Total Funding Amount (in USD)'].to_d,
+        'total_funding_amount_usd' => row['Total Funding Amount (in USD)'].to_d,
         'funding_status' => row['Funding Status'],
         'founders' => row['Founders'],
         'contact_email' => row['Contact Email'],

@@ -1,0 +1,84 @@
+.bg-body.border-bottom
+    .container-lg
+        .row.text-center.mt-5.pt-5
+            .col-lg-10.mx-auto
+                .fs-1.fw-bold Tag Distribution
+                p.lead Technology focus areas in the legal tech ecosystem
+        .row
+            .col-12
+                .p-3.border
+                    .h4.fw-bold Popular Tags
+                    #tag-cloud.mt-4 style="height: 400px;"
+
+            .col-12.mt-4
+                .table-responsive
+                    table.table.table-hover.border#tagDistributionTable
+                        thead
+                            tr
+                                th.bg-body-tertiary Tag
+                                th.bg-body-tertiary Companies
+                                th.bg-body-tertiary.text-end Percentage
+                                th.bg-body-tertiary.text-end Average Funding
+                        tbody
+                            - @tag_metrics.each do |metric|
+                                tr
+                                    td= metric[:name]
+                                    td= metric[:count]
+                                    td.text-end= number_to_percentage(metric[:percentage], precision: 1)
+                                    td.text-end= number_to_currency(metric[:avg_funding], precision: 0)
+                .mt-3.text-end
+                    = link_to "Download CSV", download_tag_distribution_path(format: :csv), class: "btn btn-sm btn-outline-secondary"
+
+        .card.border.mt-4
+            .card-body
+                h3.h5.mb-4 Research Notes
+                .row.g-4
+                    .col-md-6
+                        .card.h-100.bg-light.border-0
+                            .card-body
+                                h6.fw-bold.mb-3 Key Findings
+                                ul.mb-0
+                                    li.mb-2 Most common tags represent core legal tech functionalities
+                                    li.mb-2 Emerging technology tags show rapid adoption trends
+                                    li.mb-2 Specialized tags indicate niche market opportunities
+                                    li.mb-2 Cross-category tags reveal integration patterns
+                    .col-md-6
+                        .card.h-100.bg-light.border-0
+                            .card-body
+                                h6.fw-bold.mb-3 Methodology
+                                p.small.text-muted.mb-0
+                                    ' Analysis based on company-assigned tags.
+                                    ' Tag size indicates frequency of use.
+                                    ' Only tags used by 3 or more companies are included.
+                                    ' Percentages calculated against total verified companies.
+
+javascript:
+    $(document).ready(function() {
+        var words = #{@tag_metrics.map { |m| { text: m[:name], weight: m[:count], link: tag_path(m[:name]), html: { class: 'text-decoration-none' } } }.to_json.html_safe};
+
+        $("#tag-cloud").jQCloud(words, {
+            width: $("#tag-cloud").parent().width(),
+            height: 400,
+            delay: 50,
+            colors: ["#8c1515", "#820000", "#5D0F0F", "#8F2424", "#A82A2A", "#C13030"],
+            fontSize: {
+                from: 0.08,
+                to: 0.02
+            }
+        });
+
+        // Handle resize
+        $(window).on('resize', function() {
+            $("#tag-cloud").jQCloud('destroy');
+            $("#tag-cloud").jQCloud(words, {
+                width: $("#tag-cloud").parent().width(),
+                height: 400,
+                delay: 50,
+                colors: ["#8c1515", "#820000", "#5D0F0F", "#8F2424", "#A82A2A", "#C13030"],
+                fontSize: {
+                    from: 0.08,
+                    to: 0.02
+                }
+            });
+        });
+    });

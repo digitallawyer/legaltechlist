@@ -222,8 +222,8 @@ class StaticPagesController < ApplicationController
                               .transform_values do |companies|
       {
         companies: companies.count,
-        total_funding: companies.sum(&:total_funding_usd),
-        avg_funding: companies.sum(&:total_funding_usd) / companies.count.to_f
+        total_funding: companies.sum(&:total_funding_amount_usd),
+        avg_funding: companies.sum(&:total_funding_amount_usd) / companies.count.to_f
       }
     end
 
@@ -461,7 +461,7 @@ class StaticPagesController < ApplicationController
 
     # Calculate metrics for each country
     @country_metrics = country_data.transform_values do |companies|
-      total_funding = companies.sum { |c| c.total_funding_usd.to_f }
+      total_funding = companies.sum { |c| c.total_funding_amount_usd.to_f }
       {
         companies: companies.size,
         total_funding: total_funding,
@@ -561,7 +561,7 @@ class StaticPagesController < ApplicationController
 
     # Calculate companies in each stage
     @companies.each do |company|
-      funding = company.total_funding_usd.to_f
+      funding = company.total_funding_amount_usd.to_f
       stage = funding_stages.find { |_, threshold| funding <= threshold }&.first || 'Series C+'
       @stage_data[stage] ||= { count: 0, total_funding: 0 }
       @stage_data[stage][:count] += 1
@@ -588,7 +588,7 @@ class StaticPagesController < ApplicationController
     # Count companies that have progressed through stages
     @companies.each do |company|
       rounds = company.number_of_funding_rounds.to_i
-      funding = company.total_funding_usd.to_f
+      funding = company.total_funding_amount_usd.to_f
 
       if rounds >= 2 && funding > funding_stages['Pre-seed']
         progression_counts['Pre-seed to Seed'] += 1
@@ -611,7 +611,7 @@ class StaticPagesController < ApplicationController
 
     # Get top performing categories in late stages
     @top_categories = Category.joins(:companies)
-                            .where(companies: { id: @companies.where('total_funding_usd > ?', funding_stages['Series A']) })
+                            .where(companies: { id: @companies.where('total_funding_amount_usd > ?', funding_stages['Series A']) })
                             .group('categories.id', 'categories.name')
                             .order('COUNT(companies.id) DESC')
                             .limit(3)
@@ -660,11 +660,11 @@ class StaticPagesController < ApplicationController
       # Calculate various maturity indicators
       total_companies = category_companies.count.to_f
       avg_age = category_companies.average("EXTRACT(YEAR FROM CURRENT_DATE) - founded_date::integer")
-      total_funding = category_companies.sum(:total_funding_usd)
+      total_funding = category_companies.sum(:total_funding_amount_usd)
       avg_funding = total_funding / total_companies
-      funded_companies = category_companies.where('total_funding_usd > 0').count
+      funded_companies = category_companies.where('total_funding_amount_usd > 0').count
       funding_rate = (funded_companies / total_companies * 100)
-      late_stage_companies = category_companies.where('total_funding_usd > ?', 10_000_000).count
+      late_stage_companies = category_companies.where('total_funding_amount_usd > ?', 10_000_000).count
       late_stage_rate = (late_stage_companies / total_companies * 100)
 
       # Calculate maturity score (0-100)
@@ -746,11 +746,11 @@ class StaticPagesController < ApplicationController
       category_companies = @companies.where(category: category)
       next if category_companies.empty?
 
-      funded_companies = category_companies.where('total_funding_usd > 0')
+      funded_companies = category_companies.where('total_funding_amount_usd > 0')
       next if funded_companies.empty?
 
       total_companies = category_companies.count.to_f
-      total_funding = funded_companies.sum(:total_funding_usd)
+      total_funding = funded_companies.sum(:total_funding_amount_usd)
       avg_funding_per_company = total_funding / funded_companies.count
       avg_rounds = funded_companies.average(:number_of_funding_rounds).to_f
       funding_per_round = avg_funding_per_company / avg_rounds if avg_rounds > 0
@@ -760,7 +760,7 @@ class StaticPagesController < ApplicationController
       funding_per_year = avg_funding_per_company / avg_age if avg_age > 0
 
       # Calculate success metrics
-      late_stage = funded_companies.where('total_funding_usd > ?', 10_000_000).count
+      late_stage = funded_companies.where('total_funding_amount_usd > ?', 10_000_000).count
       success_rate = (late_stage / funded_companies.count.to_f * 100)
 
       # Calculate efficiency score (0-100)
@@ -902,10 +902,10 @@ class StaticPagesController < ApplicationController
       []
     end
 
-    funded_companies = companies.select { |c| c.total_funding_usd.to_i > 0 }
+    funded_companies = companies.select { |c| c.total_funding_amount_usd.to_i > 0 }
     return 0 if funded_companies.empty?
 
-    funded_companies.sum { |c| c.total_funding_usd.to_i } / funded_companies.length.to_f
+    funded_companies.sum { |c| c.total_funding_amount_usd.to_i } / funded_companies.length.to_f
   end
 
   def extract_region(location)
@@ -934,7 +934,7 @@ class StaticPagesController < ApplicationController
 
   def calculate_funding_success(companies)
     # Companies that raised more than one round
-    has_funding = companies.count { |c| c.total_funding_usd.to_i > 0 }
+    has_funding = companies.count { |c| c.total_funding_amount_usd.to_i > 0 }
     return 0 if has_funding.zero?
 
     multiple_rounds = companies.count { |c| c.number_of_funding_rounds.to_i > 1 }
