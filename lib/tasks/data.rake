@@ -16,8 +16,12 @@ namespace :data do
         skip_callback :validation, :after, :geocode
       end
 
-      # Delete all companies - this will automatically delete taggings due to dependent: :destroy
-      puts "Removing companies and their associations..."
+      # First delete all taggings
+      puts "Removing taggings..."
+      Tagging.delete_all
+
+      # Then delete all companies
+      puts "Removing companies..."
       Company.delete_all
 
       # Re-enable callbacks
