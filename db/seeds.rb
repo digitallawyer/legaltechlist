@@ -20,4 +20,7 @@ business_model = BusinessModel.create([
   {name:"Legal Service Using Tech", description:"Provides a legal service using legal tech."}
 ])
 
-AdminUser.create!(email: 'admin@example.com', password: 'password', password_confirmation: 'password')
+# Only create admin if it doesn't exist
+unless AdminUser.exists?(email: 'admin@example.com')
+  AdminUser.create!(email: 'admin@example.com', password: 'password', password_confirmation: 'password')
+end

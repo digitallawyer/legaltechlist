@@ -12,18 +12,18 @@
 
 ActiveRecord::Schema[7.0].define(version: 2024_11_18_053911) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "pg_stat_statements"
   enable_extension "plpgsql"
 
-  create_table "active_admin_comments", id: :serial, force: :cascade do |t|
+  create_table "active_admin_comments", force: :cascade do |t|
     t.string "namespace"
     t.text "body"
     t.string "resource_id", null: false
     t.string "resource_type", null: false
-    t.integer "author_id"
     t.string "author_type"
-    t.datetime "created_at", precision: nil
-    t.datetime "updated_at", precision: nil
+    t.bigint "author_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_type", "author_id"], name: "index_active_admin_comments_on_author"
     t.index ["author_type", "author_id"], name: "index_active_admin_comments_on_author_type_and_author_id"
     t.index ["namespace"], name: "index_active_admin_comments_on_namespace"
     t.index ["resource_type", "resource_id"], name: "index_active_admin_comments_on_resource_type_and_resource_id"
@@ -57,7 +57,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_11_18_053911) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
-  create_table "admin_users", id: :serial, force: :cascade do |t|
+  create_table "admin_users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
     t.string "reset_password_token"
@@ -68,27 +68,27 @@ ActiveRecord::Schema[7.0].define(version: 2024_11_18_053911) do
     t.datetime "last_sign_in_at", precision: nil
     t.inet "current_sign_in_ip"
     t.inet "last_sign_in_ip"
-    t.datetime "created_at", precision: nil
-    t.datetime "updated_at", precision: nil
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["email"], name: "index_admin_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_admin_users_on_reset_password_token", unique: true
   end
 
-  create_table "business_models", id: :serial, force: :cascade do |t|
+  create_table "business_models", force: :cascade do |t|
     t.string "name"
     t.text "description"
-    t.datetime "created_at", precision: nil, null: false
-    t.datetime "updated_at", precision: nil, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
-  create_table "categories", id: :serial, force: :cascade do |t|
+  create_table "categories", force: :cascade do |t|
     t.string "name"
     t.text "description"
-    t.datetime "created_at", precision: nil, null: false
-    t.datetime "updated_at", precision: nil, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
-  create_table "companies", id: :serial, force: :cascade do |t|
+  create_table "companies", force: :cascade do |t|
     t.string "name"
     t.string "location"
     t.string "founded_date"
@@ -102,12 +102,12 @@ ActiveRecord::Schema[7.0].define(version: 2024_11_18_053911) do
     t.string "legalio_url"
     t.string "status"
     t.string "employee_count"
-    t.datetime "created_at", precision: nil, null: false
-    t.datetime "updated_at", precision: nil, null: false
-    t.integer "category_id"
-    t.integer "target_client_id"
-    t.integer "business_model_id"
-    t.integer "sub_category_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "category_id"
+    t.bigint "target_client_id"
+    t.bigint "business_model_id"
+    t.bigint "sub_category_id"
     t.float "latitude"
     t.float "longitude"
     t.boolean "visible", default: true
@@ -122,35 +122,35 @@ ActiveRecord::Schema[7.0].define(version: 2024_11_18_053911) do
     t.index ["target_client_id"], name: "index_companies_on_target_client_id"
   end
 
-  create_table "sub_categories", id: :serial, force: :cascade do |t|
+  create_table "sub_categories", force: :cascade do |t|
     t.string "name"
     t.text "description"
-    t.integer "category_id"
-    t.datetime "created_at", precision: nil, null: false
-    t.datetime "updated_at", precision: nil, null: false
+    t.bigint "category_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["category_id"], name: "index_sub_categories_on_category_id"
   end
 
-  create_table "taggings", id: :serial, force: :cascade do |t|
-    t.integer "company_id"
-    t.integer "tag_id"
-    t.datetime "created_at", precision: nil, null: false
-    t.datetime "updated_at", precision: nil, null: false
+  create_table "taggings", force: :cascade do |t|
+    t.bigint "company_id"
+    t.bigint "tag_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["company_id"], name: "index_taggings_on_company_id"
     t.index ["tag_id"], name: "index_taggings_on_tag_id"
   end
 
-  create_table "tags", id: :serial, force: :cascade do |t|
+  create_table "tags", force: :cascade do |t|
     t.string "name"
-    t.datetime "created_at", precision: nil, null: false
-    t.datetime "updated_at", precision: nil, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
-  create_table "target_clients", id: :serial, force: :cascade do |t|
+  create_table "target_clients", force: :cascade do |t|
     t.string "name"
     t.text "description"
-    t.datetime "created_at", precision: nil, null: false
-    t.datetime "updated_at", precision: nil, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

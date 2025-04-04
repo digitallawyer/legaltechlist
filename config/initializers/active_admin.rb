@@ -180,7 +180,7 @@ ActiveAdmin.setup do |config|
   #   config.register_javascript 'my_javascript.js'
 
   config.register_javascript 'companies'
-  
+
   # == CSV options
   #
   # Set the CSV builder separator
@@ -236,7 +236,7 @@ ActiveAdmin.setup do |config|
   # Pagination is enabled by default for all resources.
   # You can control the default per page count for all resources here.
   #
-  # config.default_per_page = 30
+  config.default_per_page = 100
 
   # == Filters
   #

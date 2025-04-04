@@ -80,3 +80,9 @@ gem 'groupdate'
 
 gem 'httparty'
 gem 'aws-sdk-s3', '~> 1.141'
+
+# For company validation script
+gem 'ruby-openai'
+gem 'parallel'
+
+gem 'dotenv'
