@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_04_04_064550) do
+ActiveRecord::Schema[7.0].define(version: 2025_04_04_094222) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -116,7 +116,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_04_04_064550) do
     t.boolean "codex_presenter"
     t.date "codex_presentation_date"
     t.string "logo_url"
-    t.decimal "total_funding_usd", precision: 15, scale: 2
+    t.decimal "total_funding_amount_usd", precision: 15, scale: 2
     t.string "funding_status"
     t.integer "number_of_funding_rounds"
     t.date "exit_date"
