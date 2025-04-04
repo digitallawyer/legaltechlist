@@ -10,19 +10,19 @@ class RecategorizeAndRemoveOldCategories < ActiveRecord::Migration[7.0]
     execute <<-SQL
       UPDATE companies
       SET category_id = #{practice_mgmt.id}
-      WHERE id = 300;
+      WHERE id IN (300, 9779);
 
       UPDATE companies
       SET category_id = #{marketplace.id}
-      WHERE id = 390;
+      WHERE id IN (390, 9869, 10868);
 
       UPDATE companies
       SET category_id = #{analytics.id}
-      WHERE id IN (1389, 1726);
+      WHERE id IN (1389, 1726, 11204);
 
       UPDATE companies
       SET category_id = #{doc_mgmt.id}
-      WHERE id = 1744;
+      WHERE id IN (1744, 11222);
     SQL
 
     # Remove old categories
