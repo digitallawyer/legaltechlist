@@ -88,9 +88,9 @@ class ImportCsvToCompanyService
             status: row["Operating Status"],
 
             # Trend analysis fields
-            number_of_funding_rounds: row["Number of Funding Rounds"].to_i,
             total_funding_usd: clean_funding_amount(row),
             funding_status: funding_status,
+            number_of_funding_rounds: row["Number of Funding Rounds"].to_i,
             exit_date: exit_date,
             founders: row["Founders"],
             headquarters_region: row["Headquarters Regions"],
@@ -266,7 +266,7 @@ class ImportCsvToCompanyService
         'category' => row['suggested_category'],
         'stage' => row['Stage'],
         'company_type' => row['Company Type'],
-        'funding_rounds' => row['Number of Funding Rounds'].to_i,
+        'number_of_funding_rounds' => row['Number of Funding Rounds'].to_i,
         'total_funding_usd' => row['Total Funding Amount (in USD)'].to_d,
         'funding_status' => row['Funding Status'],
         'founders' => row['Founders'],
