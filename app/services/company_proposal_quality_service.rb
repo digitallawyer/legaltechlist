@@ -20,6 +20,7 @@ class CompanyProposalQualityService
       "missing_required_fields" => missing_required_fields,
       "missing_publish_blocking_fields" => missing_publish_blocking_fields,
       "blockers" => blockers,
+      "description_critic" => description_critic,
       "warnings" => warnings,
       "usable_web_evidence_count" => usable_web_results.size,
       "usable_source_evidence_count" => usable_source_evidence_count,
@@ -84,6 +85,16 @@ class CompanyProposalQualityService
       source_description: proposal.source_payload["source_description"],
       full_source_description: proposal.source_payload["full_source_description"]
     )
+  end
+
+  # The critic verdict exposed on the report so readers (get_proposal,
+  # list_review_queue) see the SAME determination the publish gate acts on — never
+  # a stale stored verdict. Nil when there is no description yet (a missing
+  # description is reported via missing_publish_blocking_fields instead).
+  def description_critic
+    return nil if changes["description"].blank?
+
+    description_critic_verdict
   end
 
   # Public submissions are the main spam vector (recruitment/advance-fee scams,

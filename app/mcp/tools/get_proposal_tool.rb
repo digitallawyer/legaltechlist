@@ -16,6 +16,8 @@ module Mcp
         proposal = CompanyProposal.find_by(id: id)
         return not_found("Proposal #{id} not found") unless proposal
 
+        quality = CompanyProposalQualityService.call(proposal)
+
         json_response(
           "id" => proposal.id,
           "name" => proposal.display_name,
@@ -30,9 +32,11 @@ module Mcp
           "enriched_at" => proposal.enriched_at&.iso8601,
           "enrichment_error" => proposal.agent_details["enrichment_error"],
           "founded_date_source" => proposal.agent_details["founded_date_source"],
-          "description_critic" => proposal.agent_details["description_critic"],
+          # Surface the LIVE critic verdict (computed on the current description),
+          # so it always agrees with the publish gate rather than a stale stored one.
+          "description_critic" => quality["description_critic"],
           "taxonomy_suggestion" => proposal.agent_details["taxonomy_suggestion"],
-          "quality" => CompanyProposalQualityService.call(proposal),
+          "quality" => quality,
           "admin_url" => admin_proposal_url(proposal)
         )
       end

@@ -406,11 +406,33 @@ module Mcp
       assert_equal 1, done["queued_proposals_count"]
     end
 
-    test "get_proposal surfaces the discovery description critic verdict" do
+    test "get_proposal surfaces the description critic verdict for a clean draft" do
       proposal = ready_proposal
-      proposal.update!(agent_details: { "description_critic" => { "verdict" => "pass", "issues" => [] } })
       result = call(Mcp::Tools::GetProposalTool, id: proposal.id)
       assert_equal "pass", result["description_critic"]["verdict"]
+    end
+
+    test "get_proposal critic verdict reflects the live gate decision, not a stale stored verdict" do
+      proposal = ready_proposal
+      # Stored verdict says pass, but the current description is weak: get_proposal
+      # must report the same 'revise' the publish gate acts on, not the stale value.
+      proposal.update!(
+        agent_details: proposal.agent_details.merge("description_critic" => { "verdict" => "pass", "issues" => [] }),
+        final_changes: proposal.final_changes.merge(
+          "description" => "BestProfi operates bestprofi.com as its primary web presence for publishing information and enabling online access to its services."
+        )
+      )
+      result = call(Mcp::Tools::GetProposalTool, id: proposal.id)
+      assert_equal "revise", result["description_critic"]["verdict"], result["description_critic"].inspect
+      assert_equal false, result["quality"]["publish_ready"]
+      assert_equal result["quality"]["description_critic"]["verdict"], result["description_critic"]["verdict"]
+    end
+
+    test "update_proposal refreshes the stored critic verdict when the description changes" do
+      proposal = ready_proposal
+      proposal.update!(agent_details: proposal.agent_details.merge("description_critic" => { "verdict" => "pass", "issues" => [] }))
+      call(Mcp::Tools::UpdateProposalTool, id: proposal.id, changes: { "description" => "BestProfi operates bestprofi.com as its primary web presence for publishing information and enabling online access to its services." })
+      assert_equal "revise", proposal.reload.agent_details["description_critic"]["verdict"]
     end
 
     test "list_review_queue computes publish_ready live when no cached report exists" do
