@@ -420,8 +420,12 @@ class Company < ActiveRecord::Base
     end
   end
 
+  def twitter_publish_enabled?
+    Rails.configuration.respond_to?(:twitter_publish) && Rails.configuration.twitter_publish
+  end
+
   def publish_tweet
-    if (self.visible? && Rails.configuration.twitter_publish)
+    if (self.visible? && twitter_publish_enabled?)
       #initialize twitter_client to access their API
       twitter_client = Twitter::REST::Client.new do |config|
           config.consumer_key        = ENV["TWITTER_CONSUMER_KEY"]
@@ -442,7 +446,7 @@ class Company < ActiveRecord::Base
   end
 
   def publish_to_list
-    if (self.visible? && Rails.configuration.twitter_publish)
+    if (self.visible? && twitter_publish_enabled?)
       #initialize twitter_client to access their API
       twitter_client = Twitter::REST::Client.new do |config|
           config.consumer_key        = ENV["TWITTER_CONSUMER_KEY"]

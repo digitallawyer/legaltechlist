@@ -335,6 +335,39 @@ module Mcp
       end
     end
 
+    test "approve_proposal publish=true promotes an existing invisible draft to visible" do
+      proposal = ready_proposal
+      with_env("MCP_CURATOR_AUTOPUBLISH" => "true", "MCP_CURATOR_MIN_CONFIDENCE" => "0.8") do
+        drafted = call(Mcp::Tools::ApproveProposalTool, id: proposal.id, publish: false)
+        assert_equal false, drafted["published"]
+        company_id = drafted["company_id"]
+
+        assert_no_difference "Company.count" do
+          promoted = call(Mcp::Tools::ApproveProposalTool, id: proposal.id, publish: true, confidence: 0.95)
+          assert_equal "published", promoted["result"]
+          assert_equal true, promoted["published"]
+          assert_equal company_id, promoted["company_id"]
+        end
+      end
+      assert proposal.reload.company.visible?
+      assert_equal "published", proposal.status
+    end
+
+    test "approve_proposal defaults to publishing when human_approved is passed" do
+      proposal = ready_proposal
+      result = call(Mcp::Tools::ApproveProposalTool, id: proposal.id, human_approved: true)
+      assert_equal true, result["published"]
+      assert_equal "published", result["result"]
+      assert proposal.reload.company.visible?
+    end
+
+    test "approve_proposal still drafts when publish is explicitly false even with human approval" do
+      proposal = ready_proposal
+      result = call(Mcp::Tools::ApproveProposalTool, id: proposal.id, human_approved: true, publish: false)
+      assert_equal false, result["published"]
+      assert_not proposal.reload.company.visible?
+    end
+
     test "update_company_field sets a factual field on a live company" do
       company = companies(:one)
       result = call(Mcp::Tools::UpdateCompanyFieldTool, slug: company.slug, fields: { "location" => "Austin, TX" })

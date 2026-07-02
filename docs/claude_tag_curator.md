@@ -92,6 +92,17 @@ discipline, and the approval rules below.
   (no plausible year) or `main_url` (not a valid HTTP URL). This keeps score-gamed spam
   (e.g. the ROHTO advance-fee submission that scored 100) out of `publish_ready`. It is
   scoped to public submissions to avoid false positives on internal discovery candidates.
+- Publish default + draft recovery: `approve_proposal`'s `publish` now defaults to `true` when
+  `human_approved: true` (and `false` otherwise), so a human approval goes live instead of
+  silently drafting. Re-calling `approve_proposal(publish: true)` on a proposal that was already
+  approved as an invisible draft **promotes that existing draft to visible** (via
+  `CompanyProposalApprovalService#promote_existing_company`) instead of dead-ending on the
+  idempotency guard — no second company is minted and no `propose_company_update` workaround is
+  needed. Promotion still re-checks duplicate/publish blockers.
+- Discovery web-search resilience: `CompanyDiscoverySearchService` retries the web-search step on
+  transient failures (timeouts/`execution expired`, upstream 5xx/rate-limits) with linear backoff
+  (`DISCOVERY_SEARCH_RETRIES`, default 2) before surfacing an error, so a blip no longer fails a
+  whole discovery run.
 - Low-confidence taxonomy: `update_proposal` now marks `agent_details.taxonomy_suggestion.accepted`
   when taxonomy fields are set, so a curator confirmation clears the blocker without
   re-running `enrich_proposal`.

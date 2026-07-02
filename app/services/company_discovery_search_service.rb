@@ -4,6 +4,12 @@ class CompanyDiscoverySearchService
   DISCOVERY_TYPES = %w[category competitors year country funding_year].freeze
   DEFAULT_TIMEOUT_SECONDS = 180
   EMPTY_RESULT_RETRY_BACKOFF_SECONDS = 3
+  # Web search occasionally throws a transient "execution expired"/timeout or an
+  # upstream 5xx/rate-limit. Retry a couple of times with linear backoff so a blip
+  # doesn't fail the whole discovery run and require a manual re-fire.
+  TRANSIENT_SEARCH_RETRIES = 2
+  TRANSIENT_SEARCH_BACKOFF_SECONDS = 5
+  TRANSIENT_SEARCH_ERROR_PATTERN = /execution expired|timed?\s?out|timeout|temporarily unavailable|rate.?limit|too many requests|\b50[234]\b|connection reset|econnreset|econnrefused/i
 
   def self.call(**kwargs)
     new(**kwargs).call
@@ -85,18 +91,42 @@ class CompanyDiscoverySearchService
   end
 
   def perform_search_with_retry
-    response = resolved_search_client.call(search_prompt)
+    response = call_search_client(search_prompt)
     payload = build_search_payload(response)
     return payload if payload["companies"].any? || payload["error_message"].present?
 
     sleep(EMPTY_RESULT_RETRY_BACKOFF_SECONDS)
-    retry_response = resolved_search_client.call(search_prompt)
+    retry_response = call_search_client(search_prompt)
     retry_payload = build_search_payload(retry_response)
     retry_payload.merge(
       "empty_result_retry" => true,
       "discovered_count_before_retry" => 0,
       "retry_discovered_count" => retry_payload["companies"].size
     )
+  end
+
+  # Invoke the web-search client, retrying on transient errors (timeouts, upstream
+  # 5xx/rate-limits) with linear backoff before letting the error propagate.
+  def call_search_client(prompt)
+    attempts = 0
+    begin
+      resolved_search_client.call(prompt)
+    rescue StandardError => e
+      attempts += 1
+      raise unless attempts <= transient_search_retries && transient_search_error?(e)
+
+      Rails.logger.debug("[CompanyDiscoverySearchService] transient web-search error (#{e.class}: #{e.message}); retry #{attempts}/#{transient_search_retries} after backoff")
+      sleep(TRANSIENT_SEARCH_BACKOFF_SECONDS * attempts)
+      retry
+    end
+  end
+
+  def transient_search_retries
+    ENV.fetch("DISCOVERY_SEARCH_RETRIES", TRANSIENT_SEARCH_RETRIES.to_s).to_i
+  end
+
+  def transient_search_error?(error)
+    error.is_a?(Timeout::Error) || error.message.to_s.match?(TRANSIENT_SEARCH_ERROR_PATTERN)
   end
 
   def build_search_payload(response)

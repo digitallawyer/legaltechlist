@@ -3,12 +3,12 @@ module Mcp
     class ApproveProposalTool < BaseTool
       tool_name "approve_proposal"
       title "Approve proposal"
-      description "Approve a proposal into a draft (publish=false) or publish it live (publish=true). Publish live autonomously only when you are certain: the quality gate passes, there are no duplicate signals, and you pass a high confidence (>= the server threshold). Otherwise leave it for a human, or pass human_approved=true only after a human approves in Slack."
+      description "Approve a proposal into a draft (publish=false) or publish it live (publish=true). Publish defaults to true when human_approved=true, and to false otherwise. Re-calling with publish=true on a proposal that was previously approved as an invisible draft promotes that draft to visible (no new company is created). Publish live autonomously only when you are certain: the quality gate passes, there are no duplicate signals, and you pass a high confidence (>= the server threshold). Otherwise leave it for a human, or pass human_approved=true only after a human approves in Slack."
       annotations(read_only_hint: false, destructive_hint: false, idempotent_hint: false, title: "Approve proposal")
       input_schema(
         properties: {
           id: { type: "integer", description: "Proposal id." },
-          publish: { type: "boolean", description: "Publish live (visible) if true; otherwise create an invisible draft. Default false." },
+          publish: { type: "boolean", description: "Publish live (visible) if true; otherwise create an invisible draft. Defaults to true when human_approved=true, else false. Calling with publish=true promotes an existing invisible draft to visible." },
           confidence: { type: "number", description: "Your honest confidence (0.0-1.0) that this action is correct and well-sourced. Required to publish/apply autonomously; when unsure, leave it low and queue for a human instead." },
           human_approved: { type: "boolean", description: "Set true only when a human has approved this in Slack; overrides the auto-publish gate, kill-switch, and confidence threshold." },
           duplicate_override: { type: "boolean", description: "Approve despite duplicate signals (only honored together with human_approved)." }
@@ -16,15 +16,18 @@ module Mcp
         required: ["id"]
       )
 
-      def self.call(server_context:, id:, publish: false, confidence: nil, human_approved: false, duplicate_override: false)
+      def self.call(server_context:, id:, publish: nil, confidence: nil, human_approved: false, duplicate_override: false)
         proposal = CompanyProposal.find_by(id: id)
         return not_found("Proposal #{id} not found") unless proposal
 
-        publish = ActiveModel::Type::Boolean.new.cast(publish)
         human_approved = ActiveModel::Type::Boolean.new.cast(human_approved)
+        # publish defaults to human_approved's value when omitted: a human approval
+        # implies intent to publish live, and the old always-false default silently
+        # left proposals as invisible drafts in batch flows (an easy operator slip).
+        publish = publish.nil? ? human_approved : ActiveModel::Type::Boolean.new.cast(publish)
         duplicate_override = ActiveModel::Type::Boolean.new.cast(duplicate_override)
 
-        already = already_resolved_response(proposal)
+        already = already_resolved_response(proposal, publish: publish)
         return already if already
 
         return apply_existing_company_update(proposal, id: id, publish: publish, confidence: confidence, human_approved: human_approved) if proposal.user_suggestion?
@@ -89,8 +92,10 @@ module Mcp
 
       # Idempotent guard: never mint a second company for a proposal that already
       # produced one. Re-approval returns the existing company instead of creating
-      # a duplicate record.
-      def self.already_resolved_response(proposal)
+      # a duplicate record. Exception: an invisible draft + publish=true is NOT a
+      # no-op — it falls through so the approval flow can promote the draft to
+      # visible (recovering from an accidental publish=false approval).
+      def self.already_resolved_response(proposal, publish: false)
         if proposal.user_suggestion?
           return nil unless proposal.status == "published" && proposal.company
 
@@ -101,6 +106,8 @@ module Mcp
         return nil if proposal.company_id.blank?
 
         company = proposal.company
+        return nil if publish && !company.visible?
+
         json_response("result" => (company.visible ? "already_published" : "already_drafted"), "published" => company.visible, "proposal_id" => proposal.id, "company_id" => company.id, "company_slug" => company.slug, "profile_url" => (profile_url(company) if company.slug.present?), "admin_url" => admin_proposal_url(proposal))
       end
 

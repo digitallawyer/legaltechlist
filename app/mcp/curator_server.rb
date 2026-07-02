@@ -116,6 +116,11 @@ module Mcp
         out-of-scope company, or an ambiguous edit — do NOT publish/apply. Leave it for a human
         (omit publish/human_approved or set a low confidence) and briefly say what is uncertain.
       - A human can always force an action with human_approved=true after approving in Slack.
+      - publish defaults to true when human_approved=true (a human approval implies going live)
+        and to false otherwise. If you approve with publish:false (or omit it) you create an
+        invisible draft; to make that draft live later, just call approve_proposal again with
+        publish:true — it promotes the existing draft to visible without creating a second
+        company (no propose_company_update workaround needed).
       - Externally-submitted proposals (from the public contribution/suggestion forms) are
         lower-trust, so they require a higher confidence bar to publish/apply autonomously.
         Scrutinize them for spam, solicitations, and malformed fields; reject anything that is
@@ -134,7 +139,7 @@ module Mcp
       MCP::Server.new(
         name: "techindex_curator",
         title: "CodeX TechIndex Curator",
-        version: "1.10.0",
+        version: "1.11.0",
         instructions: INSTRUCTIONS,
         tools: Mcp::Tools.all,
         server_context: { actor: actor }
