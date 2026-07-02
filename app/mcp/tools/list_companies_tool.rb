@@ -9,6 +9,9 @@ module Mcp
       DEFAULT_LIMIT = 50
       URL_HEALTH_STATES = %w[ok broken unknown untried].freeze
       REVIEW_STATES = %w[not_reviewed in_review verified rejected].freeze
+      # Accept the get_stats term "needs_review" as an alias for the review_state value
+      # "in_review" so the two tools line up instead of silently returning everything.
+      REVIEW_STATE_ALIASES = { "needs_review" => "in_review" }.freeze
 
       tool_name "list_companies"
       title "List companies"
@@ -18,9 +21,9 @@ module Mcp
         properties: {
           category_id: { type: "integer", description: "Only companies in this primary category (id from get_taxonomy / get_stats.by_category)." },
           country: { type: "string", description: "Only companies resolving to this country (canonical English name as shown in get_stats.by_country, e.g. \"Switzerland\")." },
-          review_state: { type: "string", description: "Review state filter: not_reviewed | in_review | verified | rejected." },
+          review_state: { type: "string", enum: %w[not_reviewed in_review verified rejected needs_review], description: "Review state filter: not_reviewed | in_review | verified | rejected. \"needs_review\" is accepted as an alias for in_review (the get_stats term). An unrecognized value returns an error rather than the unfiltered set." },
           founded_date_null: { type: "boolean", description: "Only companies with no founded_date set." },
-          url_health_status: { type: "string", description: "URL-health verdict filter: ok | broken | unknown | untried (never checked)." },
+          url_health_status: { type: "string", enum: %w[ok broken unknown untried], description: "URL-health verdict filter: ok | broken | unknown | untried (never checked). An unrecognized value returns an error." },
           weak_description: { type: "boolean", description: "Only companies with a weak/too-short description." },
           missing_url: { type: "boolean", description: "Only companies with no main_url." },
           status: { type: "string", description: "Lifecycle status filter (e.g. active, acquired, inactive, closed). Case-insensitive." },
@@ -38,10 +41,18 @@ module Mcp
         capped = [[limit.to_i, 1].max, MAX_LIMIT].min
         skip = [offset.to_i, 0].max
 
+        resolved_review_state = REVIEW_STATE_ALIASES.fetch(review_state.to_s, review_state.to_s) if review_state.present?
+        if review_state.present? && !REVIEW_STATES.include?(resolved_review_state)
+          return error_response("error" => "Unknown review_state '#{review_state}'. Accepted values: #{REVIEW_STATES.join(', ')} (or the alias 'needs_review' for in_review).")
+        end
+        if url_health_status.present? && !URL_HEALTH_STATES.include?(url_health_status.to_s)
+          return error_response("error" => "Unknown url_health_status '#{url_health_status}'. Accepted values: #{URL_HEALTH_STATES.join(', ')}.")
+        end
+
         scope = Company.all
         scope = scope.where(visible: visible) unless visible.nil?
         scope = scope.where(category_id: category_id.to_i) if category_id.present?
-        scope = scope.with_review_state(review_state) if review_state.present? && REVIEW_STATES.include?(review_state.to_s)
+        scope = scope.with_review_state(resolved_review_state) if review_state.present?
         scope = scope.missing_founded_date if founded_date_null
         scope = scope.weak_description if weak_description
         scope = scope.missing_main_url if missing_url

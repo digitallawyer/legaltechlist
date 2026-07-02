@@ -735,6 +735,27 @@ module Mcp
       assert_operator us["count"], :>=, 2
     end
 
+    test "list_companies rejects an unknown review_state instead of returning everything" do
+      response = Mcp::Tools::ListCompaniesTool.call(server_context: @context, review_state: "bogus")
+      assert response.error?
+      body = JSON.parse(response.to_h[:content].first[:text])
+      assert_match(/Unknown review_state/, body["error"])
+    end
+
+    test "list_companies accepts needs_review as an alias for in_review" do
+      companies(:one).update_column(:quality_status, "needs_review")
+      companies(:two).update_column(:quality_status, "")
+      result = call(Mcp::Tools::ListCompaniesTool, review_state: "needs_review")
+      ids = result["companies"].map { |c| c["id"] }
+      assert_includes ids, 1
+      assert_not_includes ids, 2
+    end
+
+    test "list_companies rejects an unknown url_health_status" do
+      response = Mcp::Tools::ListCompaniesTool.call(server_context: @context, url_health_status: "flaky")
+      assert response.error?
+    end
+
     test "list_companies filters by url_health_status untried" do
       companies(:one).update_columns(url_status: Company::URL_STATUS_OK, url_checked_at: Time.current)
       untried = call(Mcp::Tools::ListCompaniesTool, url_health_status: "untried")

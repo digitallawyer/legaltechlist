@@ -4,7 +4,7 @@ module Mcp
   module CuratorServer
     # Running connector build. Surfaced via get_stats.server_version so the curator can
     # confirm which server is live during validation.
-    VERSION = "1.15.0".freeze
+    VERSION = "1.15.1".freeze
 
     module_function
 
