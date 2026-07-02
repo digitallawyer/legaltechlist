@@ -558,6 +558,59 @@ module Mcp
       assert_equal "https://lawvu.com", result["acquisition"]["acquirer_url"]
     end
 
+    test "record_acquisition records year precision and source url, surfaced in get_company" do
+      result = call(Mcp::Tools::RecordAcquisitionTool, slug: "test-company-one", acquirer_name: "LawVu", acquired_on: "2024", source_url: "https://example.com/news")
+      assert_equal "2024-01-01", result["acquired_on"]
+      assert_equal "year", result["date_precision"]
+
+      acq = call(Mcp::Tools::GetCompanyTool, slug: "test-company-one")["acquisition"]
+      assert_equal "2024-01-01", acq["acquired_on"]
+      assert_equal "year", acq["date_precision"]
+      assert_equal "https://example.com/news", acq["source_url"]
+    end
+
+    test "approve_proposal publishes a historical company straight into acquired state" do
+      proposal = ready_proposal
+      result = call(Mcp::Tools::ApproveProposalTool, id: proposal.id, human_approved: true, status: "acquired",
+                    acquisition: { "acquirer_name" => "BigLaw Corp", "acquirer_url" => "https://biglaw.example", "acquired_on" => "2023" })
+      assert result["published"]
+      assert_equal "acquired", result["company_status"]
+      assert_equal "BigLaw Corp", result["acquisition"]["acquirer_name"]
+
+      company = Company.find(result["company_id"])
+      assert_equal "acquired", company.status
+      assert company.visible?
+      assert_equal "BigLaw Corp", company.acquirer_name
+      assert_equal "2023-01-01", company.exit_date.iso8601
+    end
+
+    test "approve_proposal accepts a plain status without an acquisition payload" do
+      proposal = ready_proposal
+      result = call(Mcp::Tools::ApproveProposalTool, id: proposal.id, human_approved: true, status: "inactive")
+      assert_equal "inactive", result["company_status"]
+      assert_equal "inactive", Company.find(result["company_id"]).status
+    end
+
+    test "get_stats surfaces lifecycle counts and server version" do
+      companies(:one).update_columns(status: "acquired")
+      companies(:two).update_columns(status: "inactive")
+      Rails.cache.clear
+      result = call(Mcp::Tools::GetStatsTool)
+      assert_equal Mcp::CuratorServer::VERSION, result["server_version"]
+      assert result["companies"]["by_status"].is_a?(Hash)
+      assert_operator result["companies"]["acquired"].to_i, :>=, 1
+      assert_operator result["companies"]["inactive"].to_i, :>=, 1
+    end
+
+    test "search_companies filters by lifecycle status" do
+      companies(:one).update_columns(status: "acquired")
+      companies(:two).update_columns(status: "active")
+      result = call(Mcp::Tools::SearchCompaniesTool, status: "acquired")
+      ids = result["companies"].map { |c| c["id"] }
+      assert_includes ids, companies(:one).id
+      assert_not_includes ids, companies(:two).id
+    end
+
     test "check_url_health enqueues jobs for due companies" do
       companies(:one).update_columns(status: "active", main_url: "http://example.com", url_checked_at: nil)
       assert_enqueued_with(job: CheckCompanyUrlHealthJob) do

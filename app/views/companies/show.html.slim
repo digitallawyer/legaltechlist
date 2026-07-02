@@ -645,7 +645,8 @@ css:
 - content_for :json_ld, company_organization_json_ld(@company)
 - twitter_url = (@company.twitter_url.present? && @company.twitter_url != "n/a") ? (@company.twitter_url.include?("@") ? "https://twitter.com/#{@company.twitter_url[1..-1]}" : @company.twitter_url) : nil
 - status_label = @company.status.present? ? @company.status.titleize : "Unknown"
-- exit_display = @company.exit_date.present? ? @company.exit_date.strftime("%B %Y") : nil
+- acquisition_precision = (@company.acquisition_details.is_a?(Hash) ? @company.acquisition_details["date_precision"] : nil)
+- exit_display = (@company.exit_date.present? ? (acquisition_precision == "year" ? @company.exit_date.strftime("%Y") : @company.exit_date.strftime("%B %Y")) : nil)
 - acquirer = @company.acquirer_display
 - acquirer_name_display = (acquirer && acquirer[:company].blank?) ? acquirer[:name] : nil
 - show_entity_notice = @company.status.to_s.downcase.in?(%w[acquired inactive]) || @company.successor_company.present? || acquirer.present? || exit_display.present?

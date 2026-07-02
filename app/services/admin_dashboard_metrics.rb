@@ -12,6 +12,9 @@ class AdminDashboardMetrics
   def self.compute
     duplicate_domain_ids = Company.duplicate_domain_candidate_ids
     duplicate_name_ids = Company.duplicate_name_candidate_ids
+    # Lifecycle breakdown keyed by normalized status (nil -> "unknown"). Used for the
+    # at-a-glance index-health view (acquired/inactive counts).
+    by_status = Company.group(:status).count.transform_keys { |status| status.presence || "unknown" }
 
     {
       company_count: Company.count,
@@ -35,6 +38,9 @@ class AdminDashboardMetrics
         duplicate_domain: duplicate_domain_ids.size,
         duplicate_name: duplicate_name_ids.size,
         broken_url: Company.url_broken.count,
+        acquired: by_status["acquired"].to_i,
+        inactive: by_status.values_at("inactive", "closed").compact.sum,
+        by_status: by_status,
         needs_review: Company.needs_review.count,
         not_reviewed: Company.review_state_not_reviewed.count,
         unknown_taxonomy: unknown_taxonomy_count

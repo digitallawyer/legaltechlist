@@ -55,10 +55,15 @@ module Mcp
       def self.acquisition_details(company)
         return nil unless company.acquired? || company.acquirer_name.present? || company.successor_company.present?
 
+        details = company.acquisition_details.is_a?(Hash) ? company.acquisition_details : {}
         {
           "acquirer_name" => company.acquirer_name.presence || company.successor_company&.name,
           "acquirer_url" => company.acquirer_url.presence,
-          "exit_date" => company.exit_date&.iso8601,
+          # acquired_on mirrors the record_acquisition input field name (backed by the
+          # exit_date column); date_precision distinguishes a year-only value from a full date.
+          "acquired_on" => company.exit_date&.iso8601,
+          "date_precision" => details["date_precision"],
+          "source_url" => details["source_url"],
           "successor" => (company.successor_company && { "id" => company.successor_company.id, "slug" => company.successor_company.slug, "name" => company.successor_company.name })
         }.compact
       end

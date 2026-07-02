@@ -26,65 +26,41 @@ module Mcp
         company = find_company(slug)
         return not_found("Company '#{slug}' not found") unless company
 
-        name = acquirer_name.to_s.strip
-        return error_response("result" => "blocked", "retryable" => false, "error" => "acquirer_name is required.") if name.blank?
-
-        if acquirer_url.present? && !valid_http_url?(acquirer_url)
-          return error_response("result" => "blocked", "retryable" => false, "error" => "acquirer_url must be an http(s) URL.")
-        end
-
         successor = nil
         if successor_slug.present?
           successor = find_company(successor_slug)
           return not_found("Successor '#{successor_slug}' not found") unless successor
-          return error_response("result" => "blocked", "retryable" => false, "error" => "A company cannot be its own successor.") if successor.id == company.id
         end
 
-        exit_date = parse_date(acquired_on)
-        return error_response("result" => "blocked", "retryable" => false, "error" => "acquired_on must be YYYY or YYYY-MM-DD.") if acquired_on.present? && exit_date.nil?
+        result = CompanyAcquisitionService.call(
+          company: company,
+          acquirer_name: acquirer_name,
+          acquirer_url: acquirer_url,
+          acquired_on: acquired_on,
+          successor: successor,
+          source_url: source_url
+        )
+        applied = result.applied
 
-        company.status = "acquired"
-        company.acquirer_name = name
-        company.acquirer_url = acquirer_url.presence
-        company.successor_company_id = successor&.id if successor
-        company.exit_date = exit_date if exit_date
-        company.save!
-
-        applied = { "status" => "acquired", "acquirer_name" => name, "acquirer_url" => acquirer_url.presence, "exit_date" => exit_date&.iso8601, "successor_company_id" => successor&.id }.compact
-        audit!(action: "record_acquisition", summary: "#{company.name} acquired by #{name}", records_processed: 1, details: { "company_id" => company.id, "applied" => applied, "source_url" => source_url })
+        audit!(action: "record_acquisition", summary: "#{company.name} acquired by #{applied['acquirer_name']}", records_processed: 1, details: { "company_id" => company.id, "applied" => applied })
 
         json_response(
           "result" => "recorded",
           "company_id" => company.id,
           "company_slug" => company.slug,
-          "acquirer" => { "name" => name, "url" => acquirer_url.presence, "successor_company_id" => successor&.id, "successor_slug" => successor&.slug },
-          "exit_date" => exit_date&.iso8601,
-          "source_url" => source_url,
+          "acquirer" => { "name" => applied["acquirer_name"], "url" => applied["acquirer_url"], "successor_company_id" => applied["successor_company_id"], "successor_slug" => applied["successor_slug"] },
+          "acquired_on" => applied["acquired_on"],
+          "date_precision" => applied["date_precision"],
+          "source_url" => applied["source_url"],
           "company" => company_summary(company)
         )
+      rescue ArgumentError => e
+        error_response("result" => "blocked", "retryable" => false, "error" => e.message)
       rescue ActiveRecord::RecordInvalid => e
         error_response("result" => "blocked", "retryable" => false, "error" => e.message)
       rescue StandardError => e
         Rails.logger.debug("[RecordAcquisitionTool] transient failure for #{slug}: #{e.class}: #{e.message}")
         error_response("result" => "error", "retryable" => true, "error" => "Transient failure (#{e.class}); safe to retry: #{e.message}")
-      end
-
-      # Accepts a bare 4-digit year (stored as Jan 1 of that year) or a full ISO date.
-      def self.parse_date(value)
-        raw = value.to_s.strip
-        return nil if raw.blank?
-        return Date.new(raw.to_i, 1, 1) if raw.match?(/\A(?:19|20)\d{2}\z/)
-
-        Date.iso8601(raw)
-      rescue ArgumentError
-        nil
-      end
-
-      def self.valid_http_url?(value)
-        uri = URI.parse(value.to_s.strip)
-        uri.is_a?(URI::HTTP) && uri.host.present?
-      rescue URI::InvalidURIError
-        false
       end
     end
   end

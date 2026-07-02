@@ -28,7 +28,9 @@ human to approve.
 Read / context: `search_companies`, `get_company`, `list_review_queue`,
 `get_proposal`, `duplicate_check`, `get_taxonomy` (controlled vocabulary of
 categories, business models, target clients, and canonical tags), `get_stats`
-(directory size, data-quality gaps, and backlog counts for cadence planning).
+(directory size, data-quality gaps, lifecycle counts (`acquired`/`inactive`/`by_status`),
+`server_version`, and backlog counts for cadence planning). `search_companies` also filters
+by `status` and `url_broken`.
 
 Discovery: `discover_companies` (async — dry run by default; `queue_proposals: true`
 creates `discovery_candidate` proposals) and `get_discovery_run` (poll a discovery run
@@ -79,11 +81,28 @@ read the per-company verdict via `get_company.url_health`. Also runnable as
 
 ### Acquisitions (`record_acquisition`)
 
-Sets `status=acquired`, stores `acquirer_name` (+ optional `acquirer_url`), records the
-`exit_date`, and links `successor_company_id` when the acquirer/successor is itself in the
-index (`successor_slug`). The acquirer need not be a TechIndex entry — e.g. Clausebase
-acquired by LawVu. The acquired company is retained as a historical record. Surfaced on the
-public profile ("Acquired by …") and in `get_company.acquisition`.
+Sets `status=acquired`, stores `acquirer_name` (+ optional `acquirer_url`), records
+`acquired_on` (a bare year stores at Jan 1 with `date_precision: "year"`; a full date
+stores as `"day"`), persists the announcement `source_url`, and links `successor_company_id`
+when the acquirer/successor is itself in the index (`successor_slug`). The acquirer need not
+be a TechIndex entry — e.g. Clausebase acquired by LawVu. The acquired company is retained as
+a historical record. Surfaced on the public profile ("Acquired by …", rendered as a year when
+precision is year) and in `get_company.acquisition` (`acquirer_name`, `acquirer_url`,
+`acquired_on`, `date_precision`, `source_url`, `successor`). The underlying date column remains
+`exit_date`; the tool/read field is `acquired_on`.
+
+**Adding an already-acquired/defunct company in one step:** `approve_proposal` accepts a
+`status` (e.g. `"acquired"`, `"inactive"`) that is baked into the company at creation — so a
+historical entry publishes straight into that lifecycle state and never briefly appears active.
+Pass an optional `acquisition` payload (`acquirer_name`, `acquirer_url`, `acquired_on`,
+`successor_slug`, `source_url`) to record the acquirer in the same call (this implies
+`status=acquired`). No follow-up `record_acquisition` is needed.
+
+### Lifecycle visibility
+
+`get_stats.companies` includes `acquired`, `inactive`, and a full `by_status` map alongside the
+quality-gap tallies, and `get_stats.server_version` reports the running connector build.
+`search_companies(status: "acquired")` lists entries in a given lifecycle state.
 
 Meta: `suggest_improvement` (Claude records tooling/workflow/data suggestions; logged
 to `PipelineRun` and posted to Slack).

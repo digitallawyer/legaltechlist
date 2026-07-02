@@ -2,6 +2,10 @@ module Mcp
   # Builds a stateless MCP::Server instance (one per request) with the full
   # curator toolset and the curator operating instructions registered.
   module CuratorServer
+    # Running connector build. Surfaced via get_stats.server_version so the curator can
+    # confirm which server is live during validation.
+    VERSION = "1.13.0".freeze
+
     module_function
 
     # Operating guidance sent to Claude on connect (MCP `instructions`). Defines the
@@ -14,9 +18,15 @@ module Mcp
       Scope: include only genuine legal-technology companies. This is a historical academic
       record — keep companies that are no longer active. Set a company's status to reflect
       reality (e.g. acquired, defunct) and record mergers, acquisitions, and successors rather
-      than deleting entries. Record an acquisition with record_acquisition (sets status=acquired,
-      captures the acquirer by name — the buyer need not be in the index — and links a successor
-      entry when it is). Example: Clausebase acquired by LawVu.
+      than deleting entries. Record an acquisition on an EXISTING company with record_acquisition
+      (sets status=acquired, captures the acquirer by name — the buyer need not be in the index —
+      links a successor entry when it is, and stores acquired_on with its precision plus the
+      source_url). Example: Clausebase acquired by LawVu. To ADD an already-acquired/defunct
+      company, approve_proposal accepts a `status` (e.g. "acquired", "inactive") and an optional
+      `acquisition` payload so the entry publishes straight into that lifecycle state — it never
+      briefly appears active and needs no follow-up record_acquisition call. See lifecycle health
+      at a glance with get_stats companies.by_status / .acquired / .inactive, and list entries in a
+      given state with search_companies(status: "acquired"). get_stats also reports server_version.
 
       Descriptions and all public text must be encyclopedic and fit for public display:
       - Aim for a substantive 2-4 sentence description (roughly 45-90 words), grounded only in
@@ -151,7 +161,7 @@ module Mcp
       MCP::Server.new(
         name: "techindex_curator",
         title: "CodeX TechIndex Curator",
-        version: "1.12.0",
+        version: VERSION,
         instructions: INSTRUCTIONS,
         tools: Mcp::Tools.all,
         server_context: { actor: actor }

@@ -3,7 +3,7 @@ module Mcp
     class ApproveProposalTool < BaseTool
       tool_name "approve_proposal"
       title "Approve proposal"
-      description "Approve a proposal into a draft (publish=false) or publish it live (publish=true). Publish defaults to true when human_approved=true, and to false otherwise. Re-calling with publish=true on a proposal that was previously approved as an invisible draft promotes that draft to visible (no new company is created). Publish live autonomously only when you are certain: the quality gate passes, there are no duplicate signals, and you pass a high confidence (>= the server threshold). Otherwise leave it for a human, or pass human_approved=true only after a human approves in Slack."
+      description "Approve a proposal into a draft (publish=false) or publish it live (publish=true). Publish defaults to true when human_approved=true, and to false otherwise. Re-calling with publish=true on a proposal that was previously approved as an invisible draft promotes that draft to visible (no new company is created). To add a historical/already-acquired company in one step, pass status (e.g. \"acquired\", \"inactive\") so it publishes straight into that lifecycle state (never appearing as active), and/or an acquisition payload to record the acquirer at publish time. Publish live autonomously only when you are certain: the quality gate passes, there are no duplicate signals, and you pass a high confidence (>= the server threshold). Otherwise leave it for a human, or pass human_approved=true only after a human approves in Slack."
       annotations(read_only_hint: false, destructive_hint: false, idempotent_hint: false, title: "Approve proposal")
       input_schema(
         properties: {
@@ -11,12 +11,24 @@ module Mcp
           publish: { type: "boolean", description: "Publish live (visible) if true; otherwise create an invisible draft. Defaults to true when human_approved=true, else false. Calling with publish=true promotes an existing invisible draft to visible." },
           confidence: { type: "number", description: "Your honest confidence (0.0-1.0) that this action is correct and well-sourced. Required to publish/apply autonomously; when unsure, leave it low and queue for a human instead." },
           human_approved: { type: "boolean", description: "Set true only when a human has approved this in Slack; overrides the auto-publish gate, kill-switch, and confidence threshold." },
-          duplicate_override: { type: "boolean", description: "Approve despite duplicate signals (only honored together with human_approved)." }
+          duplicate_override: { type: "boolean", description: "Approve despite duplicate signals (only honored together with human_approved)." },
+          status: { type: "string", description: "Optional lifecycle status to publish into directly (e.g. \"acquired\", \"inactive\"), for adding historical entries without a transient active window. Defaults to \"acquired\" when an acquisition payload is supplied." },
+          acquisition: {
+            type: "object",
+            description: "Optional: record an acquisition at publish time (implies status=acquired). The acquirer need not be in the index.",
+            properties: {
+              acquirer_name: { type: "string", description: "Acquiring company name (free text; required within the payload)." },
+              acquirer_url: { type: "string", description: "Acquirer website (http(s))." },
+              acquired_on: { type: "string", description: "Acquisition date as YYYY or YYYY-MM-DD." },
+              successor_slug: { type: "string", description: "Slug/id of the acquirer's own TechIndex entry to link as successor." },
+              source_url: { type: "string", description: "Citation URL for the acquisition." }
+            }
+          }
         },
         required: ["id"]
       )
 
-      def self.call(server_context:, id:, publish: nil, confidence: nil, human_approved: false, duplicate_override: false)
+      def self.call(server_context:, id:, publish: nil, confidence: nil, human_approved: false, duplicate_override: false, status: nil, acquisition: nil)
         proposal = CompanyProposal.find_by(id: id)
         return not_found("Proposal #{id} not found") unless proposal
 
@@ -26,6 +38,13 @@ module Mcp
         # left proposals as invisible drafts in batch flows (an easy operator slip).
         publish = publish.nil? ? human_approved : ActiveModel::Type::Boolean.new.cast(publish)
         duplicate_override = ActiveModel::Type::Boolean.new.cast(duplicate_override)
+
+        acquisition = (acquisition || {}).transform_keys(&:to_s).presence
+        # An acquisition payload implies the entry is being published as acquired.
+        target_status = status.presence || ("acquired" if acquisition)
+        # Bake the lifecycle status into the proposal so the company is created with it
+        # from the start — a historical/defunct entry never flashes as "active".
+        proposal.final_changes = proposal.final_changes.merge("status" => target_status) if target_status.present?
 
         already = already_resolved_response(proposal, publish: publish)
         return already if already
@@ -64,22 +83,31 @@ module Mcp
           duplicate_override: human_approved && duplicate_override
         )
 
+        # The company was created already carrying target_status (baked into
+        # final_changes above), so it never appeared active. Now attach the acquirer
+        # details (name/url/date/successor/source) in the same call.
+        acquisition_applied = apply_acquisition(company, acquisition)
+
         audit!(
           action: "approve_proposal",
-          summary: "#{publish ? 'Published' : 'Drafted'} proposal #{id} -> company #{company.id}",
+          summary: "#{publish ? 'Published' : 'Drafted'} proposal #{id} -> company #{company.id}#{" as #{company.status}" if company.status.present?}",
           records_processed: 1,
-          details: { "proposal_id" => id, "company_id" => company.id, "published" => company.visible, "human_approved" => human_approved, "confidence" => confidence }
+          details: { "proposal_id" => id, "company_id" => company.id, "published" => company.visible, "company_status" => company.status, "human_approved" => human_approved, "confidence" => confidence, "acquisition" => acquisition_applied }.compact
         )
 
         json_response(
-          "result" => (company.visible ? "published" : "drafted"),
-          "published" => company.visible,
-          "proposal_id" => proposal.id,
-          "status" => proposal.reload.status,
-          "company_id" => company.id,
-          "company_slug" => company.slug,
-          "profile_url" => (profile_url(company) if company.slug.present?),
-          "admin_url" => admin_proposal_url(proposal)
+          {
+            "result" => (company.visible ? "published" : "drafted"),
+            "published" => company.visible,
+            "proposal_id" => proposal.id,
+            "status" => proposal.reload.status,
+            "company_status" => company.status,
+            "company_id" => company.id,
+            "company_slug" => company.slug,
+            "acquisition" => acquisition_applied,
+            "profile_url" => (profile_url(company) if company.slug.present?),
+            "admin_url" => admin_proposal_url(proposal)
+          }.compact
         )
       rescue ArgumentError => e
         error_response("result" => "blocked", "published" => false, "retryable" => false, "error" => e.message, "admin_url" => admin_proposal_url(proposal))
@@ -88,6 +116,26 @@ module Mcp
         # Signal the client may safely retry rather than treating it as terminal.
         Rails.logger.debug("[ApproveProposalTool] transient failure for proposal #{id}: #{e.class}: #{e.message}")
         error_response("result" => "error", "published" => false, "retryable" => true, "error" => "Transient failure (#{e.class}); safe to retry: #{e.message}", "admin_url" => admin_proposal_url(proposal))
+      end
+
+      # Attach acquirer details to a freshly-approved company when an acquisition
+      # payload was supplied. Returns the applied hash (or nil). Raises ArgumentError
+      # on invalid input so the caller reports a structured "blocked" response.
+      def self.apply_acquisition(company, acquisition)
+        return nil if acquisition.blank?
+
+        successor_slug = acquisition["successor_slug"].presence
+        successor = successor_slug ? find_company(successor_slug) : nil
+        raise ArgumentError, "Successor '#{successor_slug}' not found" if successor_slug && successor.nil?
+
+        CompanyAcquisitionService.call(
+          company: company,
+          acquirer_name: acquisition["acquirer_name"],
+          acquirer_url: acquisition["acquirer_url"],
+          acquired_on: acquisition["acquired_on"],
+          successor: successor,
+          source_url: acquisition["source_url"]
+        ).applied
       end
 
       # Idempotent guard: never mint a second company for a proposal that already

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_02_130100) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_02_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -136,6 +136,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_02_130100) do
     t.jsonb "url_health"
     t.string "acquirer_name"
     t.string "acquirer_url"
+    t.jsonb "acquisition_details"
     t.index ["business_model_id"], name: "index_companies_on_business_model_id"
     t.index ["canonical_domain"], name: "index_companies_on_canonical_domain"
     t.index ["category_id"], name: "index_companies_on_category_id"

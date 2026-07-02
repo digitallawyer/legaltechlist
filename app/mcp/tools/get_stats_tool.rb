@@ -12,6 +12,7 @@ module Mcp
         summary = (metrics[:company_summary_counts] || {})
 
         json_response(
+          "server_version" => Mcp::CuratorServer::VERSION,
           "companies" => {
             "total" => summary[:total],
             "visible" => summary[:visible],
@@ -23,6 +24,9 @@ module Mcp
             "weak_description" => summary[:weak_description],
             "unknown_taxonomy" => summary[:unknown_taxonomy],
             "broken_url" => summary[:broken_url],
+            "acquired" => summary[:acquired],
+            "inactive" => summary[:inactive],
+            "by_status" => summary[:by_status],
             "duplicate_domain_candidates" => summary[:duplicate_domain],
             "duplicate_name_candidates" => summary[:duplicate_name]
           },

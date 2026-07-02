@@ -11,17 +11,19 @@ module Mcp
           limit: { type: "integer", description: "Max results (1-25, default 10)." },
           needs_review: { type: "boolean", description: "Only return companies whose quality_status is needs_review." },
           missing_founded_date: { type: "boolean", description: "Only return companies with no founded_date set." },
-          url_broken: { type: "boolean", description: "Only return companies whose website failed the health check (url_status=broken) — a soft signal to review for inactivity." }
+          url_broken: { type: "boolean", description: "Only return companies whose website failed the health check (url_status=broken) — a soft signal to review for inactivity." },
+          status: { type: "string", description: "Only return companies with this lifecycle status (e.g. \"acquired\", \"inactive\", \"active\"). Case-insensitive." }
         },
         required: []
       )
 
-      def self.call(server_context:, query: nil, limit: 10, needs_review: false, missing_founded_date: false, url_broken: false)
+      def self.call(server_context:, query: nil, limit: 10, needs_review: false, missing_founded_date: false, url_broken: false, status: nil)
         capped = [[limit.to_i, 1].max, 25].min
         scope = Company.publicly_visible.includes(:category, :secondary_category)
         scope = scope.needs_review if needs_review
         scope = scope.missing_founded_date if missing_founded_date
         scope = scope.url_broken if url_broken
+        scope = scope.where("LOWER(status) = ?", status.to_s.strip.downcase) if status.present?
         scope = scope.text_search(query) if query.present?
         companies = scope.order(:name).limit(capped)
 
