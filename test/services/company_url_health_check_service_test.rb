@@ -58,12 +58,48 @@ class CompanyUrlHealthCheckServiceTest < ActiveSupport::TestCase
 
   test "connection errors count as failures" do
     service = CompanyUrlHealthCheckService.new(company: @company)
-    raiser = ->(_uri, _method) { raise SocketError, "getaddrinfo failed" }
+    raiser = ->(_uri, _method, **) { raise SocketError, "getaddrinfo failed" }
     service.stub(:request, raiser) { service.call }
     @company.reload
     assert_equal Company::URL_STATUS_UNKNOWN, @company.url_status
     assert_equal 1, @company.url_consecutive_failures
     assert_match(/SocketError/, @company.url_health["reason"])
+  end
+
+  test "5xx responses are inconclusive, not failures" do
+    run_check(response(Net::HTTPServiceUnavailable, "503"))
+    assert_equal Company::URL_STATUS_UNKNOWN, @company.url_status
+    assert_equal 0, @company.url_consecutive_failures
+    assert_equal 503, @company.url_status_code
+  end
+
+  test "a TLS cert error where the host still answers is treated as reachable" do
+    service = CompanyUrlHealthCheckService.new(company: @company)
+    # Verified request raises a cert error; the verify-disabled retry succeeds.
+    fake = lambda do |_uri, _method, verify: true|
+      raise OpenSSL::SSL::SSLError, "certificate verify failed" if verify
+
+      response(Net::HTTPOK, "200")
+    end
+    service.stub(:request, fake) { service.call }
+    @company.reload
+    assert_equal Company::URL_STATUS_UNKNOWN, @company.url_status
+    assert_equal 0, @company.url_consecutive_failures
+    assert_match(/TLS cert not trusted/, @company.url_health["reason"])
+  end
+
+  test "a TLS cert error on a host that is truly down counts as a failure" do
+    service = CompanyUrlHealthCheckService.new(company: @company)
+    fake = lambda do |_uri, _method, verify: true|
+      raise OpenSSL::SSL::SSLError, "certificate verify failed" if verify
+
+      raise SocketError, "getaddrinfo failed"
+    end
+    service.stub(:request, fake) { service.call }
+    @company.reload
+    assert_equal Company::URL_STATUS_UNKNOWN, @company.url_status
+    assert_equal 1, @company.url_consecutive_failures
+    assert_match(/SSLError/, @company.url_health["reason"])
   end
 
   test "does not change lifecycle status" do

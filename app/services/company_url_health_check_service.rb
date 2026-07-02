@@ -1,5 +1,6 @@
 require "net/http"
 require "uri"
+require "openssl"
 
 # Probes a company's main_url and records a coarse health verdict used as a QC/
 # maintenance signal for spotting companies that may have gone inactive. It never
@@ -85,16 +86,35 @@ class CompanyUrlHealthCheckService
       # Some servers reject HEAD (405/501) — retry once with GET before judging.
       return probe(uri, redirects_left, method: :get) if method == :head && [405, 501].include?(code)
       return inconclusive_outcome("server responded #{code} (access-restricted)", code: code, final_url: uri.to_s) if BOT_BLOCK_CODES.include?(code)
+      # 5xx (incl. Cloudflare origin errors 520-530) means the edge is reachable but the
+      # origin is erroring — frequently transient. Inconclusive, not broken, to avoid
+      # penalizing a live-but-hiccuping site.
+      return inconclusive_outcome("server responded #{code} (server error)", code: code, final_url: uri.to_s) if code >= 500
 
       failure_outcome("HTTP #{code}", code: code, final_url: uri.to_s)
     end
+  rescue OpenSSL::SSL::SSLError => e
+    tls_fallback(uri, e)
   rescue StandardError => e
     failure_outcome("#{e.class}: #{e.message}")
   end
 
-  def request(uri, method)
+  # A TLS/certificate error means verification failed, but the host is often still
+  # live (missing intermediate chain, hostname mismatch, self-signed cert). Retry once
+  # with verification disabled: if the server answers at all, the site is reachable, so
+  # treat it as inconclusive rather than broken — this prevents flagging live companies
+  # (e.g. behind a CDN with a trust-chain quirk) as dead.
+  def tls_fallback(uri, error)
+    response = request(uri, :head, verify: false)
+    inconclusive_outcome("reachable but TLS cert not trusted (HTTP #{response.code})", code: response.code.to_i, final_url: uri.to_s)
+  rescue StandardError
+    failure_outcome("#{error.class}: #{error.message}")
+  end
+
+  def request(uri, method, verify: true)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = uri.scheme == "https"
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE unless verify
     http.open_timeout = OPEN_TIMEOUT
     http.read_timeout = READ_TIMEOUT
     http.max_retries = 0
