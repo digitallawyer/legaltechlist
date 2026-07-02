@@ -86,7 +86,7 @@ class UserSubmissionTriageService
   end
 
   def llm_model
-    ENV.fetch("RUBYLLM_TRIAGE_MODEL", "gpt-4o-mini")
+    ENV.fetch("RUBYLLM_TRIAGE_MODEL", "gpt-5.4-nano")
   end
 
   def llm_timeout_seconds

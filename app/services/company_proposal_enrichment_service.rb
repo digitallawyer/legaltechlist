@@ -342,13 +342,27 @@ class CompanyProposalEnrichmentService
     )
   end
 
-  def description_prompt
+  # The description/founding-year drafting instruction, extracted so tooling (e.g.
+  # a model bake-off) can exercise the exact production prompt without drift.
+  def self.description_instruction
+    "Return JSON with keys proposed_description, founded_year, founded_year_source, and founded_year_evidence_text. proposed_description: a neutral, encyclopedic directory description of 2-4 sentences (about 45-90 words) written in the third person, grounded ONLY in the evidence above. Cover, when the evidence supports it: (1) what the company builds and its deployment/business model (e.g. cloud-based platform, marketplace, managed service); (2) its core capabilities and the legal workflows it addresses; (3) who it serves (law firms, corporate/in-house legal, specific practice areas or industries); and (4) notable named products/modules and integrations. Prefer concrete product/function facts over adjectives. Do NOT copy source descriptions verbatim, and avoid marketing language, superlatives, customer counts, source-meta phrasing, generic 'web presence' filler, and the phrase 'provides or supports'. If the evidence is thin, write a shorter factual description rather than padding with speculation. founded_year: the 4-digit founding year ONLY if a source explicitly states it (check the 'Founded' field on the company's LinkedIn/Crunchbase profile and official business registries such as OpenCorporates or national registries; prefer an official registry over a self-reported profile if they disagree), otherwise null — never guess or estimate. founded_year_source: the exact source URL (from the evidence/web_research above) that states the founded_year, otherwise null. founded_year_evidence_text: a short verbatim snippet from that source that names THIS company and states the year (used to confirm the source is about this company and not a same-named one), otherwise null."
+  end
+
+  def self.description_prompt_for(candidate:, source_evidence:, web_research: {})
     {
+      candidate: candidate,
+      source_evidence: source_evidence,
+      web_research: web_research,
+      instruction: description_instruction
+    }.to_json
+  end
+
+  def description_prompt
+    self.class.description_prompt_for(
       candidate: source_payload.slice("name", "website", "location", "industries", "operating_status", "company_type", "founded_date", "funding_amount_usd", "number_of_funding_rounds", "founders"),
       source_evidence: source_evidence,
-      web_research: research_payload,
-      instruction: "Return JSON with keys proposed_description, founded_year, founded_year_source, and founded_year_evidence_text. proposed_description: a neutral, encyclopedic directory description of 2-4 sentences (about 45-90 words) written in the third person, grounded ONLY in the evidence above. Cover, when the evidence supports it: (1) what the company builds and its deployment/business model (e.g. cloud-based platform, marketplace, managed service); (2) its core capabilities and the legal workflows it addresses; (3) who it serves (law firms, corporate/in-house legal, specific practice areas or industries); and (4) notable named products/modules and integrations. Prefer concrete product/function facts over adjectives. Do NOT copy source descriptions verbatim, and avoid marketing language, superlatives, customer counts, source-meta phrasing, generic 'web presence' filler, and the phrase 'provides or supports'. If the evidence is thin, write a shorter factual description rather than padding with speculation. founded_year: the 4-digit founding year ONLY if a source explicitly states it (check the 'Founded' field on the company's LinkedIn/Crunchbase profile and official business registries such as OpenCorporates or national registries; prefer an official registry over a self-reported profile if they disagree), otherwise null — never guess or estimate. founded_year_source: the exact source URL (from the evidence/web_research above) that states the founded_year, otherwise null. founded_year_evidence_text: a short verbatim snippet from that source that names THIS company and states the year (used to confirm the source is about this company and not a same-named one), otherwise null."
-    }.to_json
+      web_research: research_payload
+    )
   end
 
   def llm_enabled?
