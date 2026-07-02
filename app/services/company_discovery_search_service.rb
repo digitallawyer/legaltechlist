@@ -57,18 +57,8 @@ class CompanyDiscoverySearchService
     return nil unless web_search_enabled?
 
     lambda do |prompt|
-      chat = RubyLLM.chat(model: research_model, provider: :openai_responses, assume_model_exists: true).with_params(tools: [RubyLLM::ResponsesAPI::BuiltInTools.web_search(search_context_size: "medium")])
-      response = Timeout.timeout(llm_timeout_seconds) { chat.ask(prompt) }
-      output = response.raw&.body&.fetch("output", []) || []
-      citations = RubyLLM::ResponsesAPI::BuiltInTools.extract_citations(output.flat_map { |item| Array(item["content"]) })
-      search_calls = RubyLLM::ResponsesAPI::BuiltInTools.parse_web_search_results(output)
-      search_urls = extract_search_urls(citations, search_calls)
-
-      {
-        content: response.content.to_s,
-        search_urls: search_urls,
-        raw_search_call_count: search_calls.size
-      }
+      result = WebSearchAgent.search(prompt, model: research_model, timeout: llm_timeout_seconds)
+      result.slice(:content, :search_urls, :raw_search_call_count)
     end
   end
 
@@ -187,7 +177,7 @@ class CompanyDiscoverySearchService
 
       For each company also classify it using ONLY the controlled vocabulary below,
       and capture a founding year only if a source documents it:
-      #{allowed_taxonomy_guidance}
+      #{allowed_taxonomy_guidance}#{tag_guidance}
       For founded_year_source, give the exact URL from search results that explicitly
       documents the founding year (e.g. the company's LinkedIn/Crunchbase "Founded" field
       or an official registry). If you cannot find a source that states the founding year,
@@ -230,13 +220,39 @@ class CompanyDiscoverySearchService
     end
   end
 
+  # Tags + secondary category are gated by DISCOVERY_INCLUDE_TAGS so the richer
+  # discovery output can be toggled off during bake-in without touching the code path.
+  def include_taxonomy_extras?
+    ENV.fetch("DISCOVERY_INCLUDE_TAGS", "true") == "true"
+  end
+
   def taxonomy_schema_fields
+    extras = if include_taxonomy_extras?
+      <<~EXTRAS.strip
+        "secondary_category": "Optional distinct second category EXACTLY from allowed_categories (must differ from category), or null",
+              "tags": ["0-4 keywords EXACTLY from allowed_tags, or an empty list"],
+      EXTRAS
+    else
+      ""
+    end
+
     <<~FIELDS.strip
       "category": "One primary category, EXACTLY from allowed_categories, or null",
-            "business_models": ["1-2 revenue models EXACTLY from allowed_business_models"],
+            #{extras}"business_models": ["1-2 revenue models EXACTLY from allowed_business_models"],
             "target_clients": ["1-2 client types EXACTLY from allowed_target_clients"],
             "founded_year_source": "URL from search results documenting the founding year, or null"
     FIELDS
+  end
+
+  def tag_guidance
+    return "" unless include_taxonomy_extras?
+
+    "\n" + <<~GUIDANCE.strip
+      Assign a secondary_category ONLY when a clearly distinct second category also
+      applies; otherwise set it to null. For tags, choose 0-4 keywords strictly from
+      allowed_tags that add information NOT already implied by the category, business
+      model, or target client; if none fit, return an empty list. Never invent tags.
+    GUIDANCE
   end
 
   def json_output_schema
@@ -280,7 +296,7 @@ class CompanyDiscoverySearchService
     <<~GUIDANCE.strip
       allowed_categories: #{Category.order(:name).pluck(:name).join(', ')}
       allowed_business_models: #{MethodologyHelper::REVENUE_MODEL_NAMES.join(', ')}
-      allowed_target_clients: #{TaxonomyNormalizationService::CANONICAL_TARGET_CLIENTS.join(', ')}
+      allowed_target_clients: #{TaxonomyNormalizationService::CANONICAL_TARGET_CLIENTS.join(', ')}#{include_taxonomy_extras? ? "\n      allowed_tags: #{TagTaxonomyService.discoverable_canonical_names.join(', ')}" : ''}
     GUIDANCE
   end
 
@@ -321,8 +337,10 @@ class CompanyDiscoverySearchService
       "discovery_query" => search_query,
       "website_verified" => verified_website?(website, search_urls),
       "category_name" => company["category"].to_s.strip.presence,
+      "secondary_category_name" => company["secondary_category"].to_s.strip.presence,
       "business_model_names" => clean_name_list(company["business_models"]),
       "target_client_names" => clean_name_list(company["target_clients"]),
+      "tag_names" => clean_name_list(company["tags"]),
       "founded_year_source" => founded_year_source
     }
     payload.merge!(funding_hint_payload(company)) if discovery_type == "funding_year"
@@ -347,12 +365,6 @@ class CompanyDiscoverySearchService
       candidate_domain.present? && (candidate_domain == domain || candidate_domain.end_with?(".#{domain}") || domain.end_with?(".#{candidate_domain}"))
     end
     cited ? cleaned : nil
-  end
-
-  def extract_search_urls(citations, search_calls)
-    citation_urls = Array(citations).filter_map { |citation| citation["url"] }
-    call_urls = Array(search_calls).flat_map { |call| Array(call[:results] || call["results"]) }.filter_map { |result| result[:url] || result["url"] }
-    (citation_urls + call_urls).compact.uniq
   end
 
   def verified_website?(website, search_urls)

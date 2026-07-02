@@ -98,6 +98,36 @@ class CompanyDiscoverySearchServiceTest < ActiveSupport::TestCase
     assert_equal "2019", company["founded_date"], "a cited year should be kept"
   end
 
+  test "captures a secondary category and tags from the discovery payload" do
+    client = lambda do |_prompt|
+      {
+        content: {
+          "companies" => [
+            {
+              "name" => "Multi Legal Co",
+              "website" => "https://multi-legal.example",
+              "location" => "Amsterdam, Netherlands",
+              "description" => "Contract lifecycle management and analytics for corporate legal teams.",
+              "why_discovered" => "matches",
+              "category" => "Contract Management",
+              "secondary_category" => "Analytics & Insights",
+              "business_models" => ["Subscription"],
+              "target_clients" => ["Corporate Legal"],
+              "tags" => ["Redlining", "AI"]
+            }
+          ]
+        }.to_json,
+        search_urls: ["https://multi-legal.example/about"],
+        raw_search_call_count: 1
+      }
+    end
+
+    result = CompanyDiscoverySearchService.call(discovery_type: "category", context: { category: "Contract Management" }, exclusion_list: { "names" => [], "domains" => [] }, limit: 5, search_client: client)
+    company = result["companies"].first
+    assert_equal "Analytics & Insights", company["secondary_category_name"]
+    assert_equal ["Redlining", "AI"], company["tag_names"]
+  end
+
   test "drops an uncited founding-year source" do
     client = lambda do |_prompt|
       {

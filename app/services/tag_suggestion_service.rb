@@ -58,44 +58,13 @@ class TagSuggestionService
   AUTO_CONFIDENCE = 0.55
 
   def llm_suggestion
-    chat = RubyLLM.chat(model: llm_model, provider: :openai, assume_model_exists: true)
-    response = Timeout.timeout(llm_timeout_seconds) { chat.ask(llm_prompt) }
-    parsed = JSON.parse(response.content.to_s)
-    parsed.merge("mode" => "ruby_llm")
-  rescue StandardError
-    { "tag_names" => [], "confidence" => 0.0, "mode" => "ruby_llm_error" }
+    TagSuggestionAgent.call(company: company, max_tags: max_tags)
   end
 
   def llm_enabled?
     defined?(RubyLLM) &&
       ENV["OPENAI_API_KEY"].present? &&
       ENV.fetch("TAG_SUGGESTION_USE_LLM", ENV.fetch("PROPOSAL_TAXONOMY_USE_LLM", Rails.env.production? ? "true" : "false")) == "true"
-  end
-
-  def llm_model
-    ENV.fetch("RUBYLLM_TAXONOMY_MODEL", ENV.fetch("RUBYLLM_HARD_MODEL", "gpt-5.5"))
-  end
-
-  def llm_timeout_seconds
-    ENV.fetch("TAG_SUGGESTION_TIMEOUT_SECONDS", ENV.fetch("PROPOSAL_TAXONOMY_TIMEOUT_SECONDS", "45")).to_i
-  end
-
-  def llm_prompt
-    {
-      company: {
-        name: company.name,
-        website: company.main_url,
-        description: effective_description,
-        category: company.category&.name,
-        target_clients: company.audience_names
-      },
-      preferred_tag_vocabulary: TagTaxonomyService.discoverable_canonical_names,
-      instruction: "Return JSON with tag_names (array of 1-#{max_tags} lowercase technology or theme keywords for this legal-technology company) and confidence (0.0-1.0). Use only terms from preferred_tag_vocabulary. Do not repeat category, revenue model, or target client information — those are captured elsewhere."
-    }.to_json
-  end
-
-  def preferred_tag_vocabulary
-    TagTaxonomyService.discoverable_canonical_names
   end
 
   def effective_description

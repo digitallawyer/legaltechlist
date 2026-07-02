@@ -43,13 +43,14 @@ class CompanyProposalTaxonomySuggestionService
     new(**kwargs).call
   end
 
-  def initialize(source_payload:, final_changes: {})
+  def initialize(source_payload:, final_changes: {}, llm_suggestions: nil)
     @source_payload = source_payload || {}
     @final_changes = final_changes || {}
+    @injected_llm_suggestions = llm_suggestions
   end
 
   def call
-    suggestions = llm_suggestions.presence || deterministic_suggestions
+    suggestions = resolved_suggestions
     revenue_models = map_revenue_models(suggestions["revenue_model_names"], suggestions["revenue_model_confidence"])
     target_clients = map_target_clients(suggestions["target_client_names"], suggestions["target_client_confidence"])
     tags = map_tags(suggestions["tag_names"], suggestions["tags_confidence"])
@@ -74,6 +75,24 @@ class CompanyProposalTaxonomySuggestionService
 
   attr_reader :source_payload, :final_changes
 
+  # Prefer LLM suggestions supplied by an upstream single-call agent (avoids a second
+  # LLM round-trip); otherwise make our own LLM call; otherwise fall back to rules.
+  def resolved_suggestions
+    return @injected_llm_suggestions if injected_suggestions_usable?
+
+    llm_suggestions.presence || deterministic_suggestions
+  end
+
+  def injected_suggestions_usable?
+    suggestions = @injected_llm_suggestions
+    return false unless suggestions.is_a?(Hash)
+
+    suggestions["category_name"].present? ||
+      Array(suggestions["revenue_model_names"]).any? ||
+      Array(suggestions["target_client_names"]).any? ||
+      Array(suggestions["tag_names"]).any?
+  end
+
   def deterministic_suggestions
     revenue_model_names = matched_revenue_model_names
     tag_names = matched_tag_names
@@ -94,46 +113,7 @@ class CompanyProposalTaxonomySuggestionService
   end
 
   def llm_suggestions
-    return unless llm_enabled?
-
-    chat = RubyLLM.chat(model: llm_model, provider: :openai, assume_model_exists: true)
-    response = Timeout.timeout(llm_timeout_seconds) { chat.ask(llm_prompt) }
-    parsed = JSON.parse(response.content.to_s)
-    parsed["revenue_model_names"] ||= Array(parsed["business_model_name"]).compact
-    parsed["target_client_names"] ||= Array(parsed["target_client_name"]).compact
-    parsed["tag_names"] ||= []
-    parsed.merge("mode" => "ruby_llm")
-  rescue StandardError
-    nil
-  end
-
-  def llm_enabled?
-    defined?(RubyLLM) &&
-      ENV["OPENAI_API_KEY"].present? &&
-      ENV.fetch("PROPOSAL_TAXONOMY_USE_LLM", Rails.env.production? ? "true" : "false") == "true"
-  end
-
-  def llm_model
-    ENV.fetch("RUBYLLM_TAXONOMY_MODEL", ENV.fetch("RUBYLLM_HARD_MODEL", "gpt-5.5"))
-  end
-
-  def llm_timeout_seconds
-    ENV.fetch("PROPOSAL_TAXONOMY_TIMEOUT_SECONDS", "45").to_i
-  end
-
-  def llm_prompt
-    {
-      candidate: source_payload.slice("name", "industries", "source_description", "full_source_description", "website"),
-      allowed_category_names: Category.order(:name).pluck(:name),
-      allowed_revenue_model_names: MethodologyHelper::REVENUE_MODEL_NAMES,
-      allowed_target_client_names: TaxonomyNormalizationService::CANONICAL_TARGET_CLIENTS,
-      preferred_tag_vocabulary: TagTaxonomyService.discoverable_canonical_names,
-      instruction: "Return JSON with category_name, category_confidence, secondary_category_name (optional, from allowed categories, must differ from primary), secondary_category_confidence, revenue_model_names (array, 1-3 items from allowed list), revenue_model_confidence, target_client_name, target_client_confidence, target_client_names (array, 1-3 from allowed list), tag_names (array, 1-5 from preferred_tag_vocabulary only), tags_confidence. Use only allowed names for categories, revenue models, and target clients. Do not duplicate structured taxonomy in tag_names. Confidence must be 0.0-1.0."
-    }.to_json
-  end
-
-  def preferred_tag_vocabulary
-    TagTaxonomyService.discoverable_canonical_names
+    TaxonomySuggestionAgent.call(source_payload: source_payload, final_changes: final_changes)
   end
 
   def matched_name(rules)

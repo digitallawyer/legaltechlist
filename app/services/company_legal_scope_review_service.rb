@@ -70,42 +70,7 @@ class CompanyLegalScopeReviewService
   end
 
   def llm_review
-    return unless llm_enabled?
-
-    chat = RubyLLM.chat(model: llm_model, provider: :openai, assume_model_exists: true)
-    response = Timeout.timeout(llm_timeout_seconds) { chat.ask(llm_prompt) }
-    parsed = JSON.parse(response.content.to_s)
-    parsed.merge("mode" => "ruby_llm")
-  rescue StandardError
-    nil
-  end
-
-  def llm_enabled?
-    defined?(RubyLLM) &&
-      ENV["OPENAI_API_KEY"].present? &&
-      ENV.fetch("PROPOSAL_TAXONOMY_USE_LLM", Rails.env.production? ? "true" : "false") == "true"
-  end
-
-  def llm_model
-    ENV.fetch("RUBYLLM_TAXONOMY_MODEL", ENV.fetch("RUBYLLM_HARD_MODEL", "gpt-5.5"))
-  end
-
-  def llm_timeout_seconds
-    ENV.fetch("PROPOSAL_TAXONOMY_TIMEOUT_SECONDS", "45").to_i
-  end
-
-  def llm_prompt
-    {
-      company: {
-        name: company.name,
-        website: company.main_url,
-        description: effective_description,
-        target_clients: company.audience_names,
-        tags: company.tags.map(&:name)
-      },
-      allowed_category_names: Category.where.not(name: "Unknown").order(:name).pluck(:name),
-      instruction: "Decide whether this profile belongs in a legal-technology company index. Return JSON with is_legal_technology (boolean), category_name (best primary category if true, else null), category_confidence, confidence (overall 0.0-1.0), and reason (short string). A legal technology company is a market-facing vendor whose principal business is software, data, or technology-enabled services for legal work."
-    }.to_json
+    LegalScopeReviewAgent.call(company: company)
   end
 
   def effective_description

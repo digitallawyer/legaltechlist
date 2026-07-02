@@ -163,8 +163,7 @@ class CompanyProposalEnrichmentService
   end
 
   def call
-    @research_payload = CompanyProposalResearchService.call(proposal: proposal)
-    @taxonomy_suggestion = CompanyProposalTaxonomySuggestionService.call(source_payload: source_payload, final_changes: proposal.final_changes)
+    load_enrichment_inputs
     final_changes = proposal.final_changes.merge(enriched_changes).merge(taxonomy_changes)
     agent_payload = agent_details(final_changes)
     proposal.update!(
@@ -182,6 +181,31 @@ class CompanyProposalEnrichmentService
   private
 
   attr_reader :proposal, :admin_user
+
+  # Gather description + founded year + taxonomy. When the single-call path is enabled
+  # (default in production), ONE OpenAI Responses web-search call returns all of it and
+  # the taxonomy service just maps names->ids from those suggestions — replacing the
+  # former three separate LLM calls (research + taxonomy + description). Otherwise fall
+  # back to the legacy path (which itself degrades to deterministic rules without a key).
+  def load_enrichment_inputs
+    if single_call_enabled?
+      @enrichment = ProposalEnrichmentAgent.call(proposal: proposal)
+      @research_payload = @enrichment["web_research"].presence || {}
+      @llm_payload = @enrichment.slice("proposed_description", "founded_year", "founded_year_source", "founded_year_evidence_text")
+      @taxonomy_suggestion = CompanyProposalTaxonomySuggestionService.call(
+        source_payload: source_payload,
+        final_changes: proposal.final_changes,
+        llm_suggestions: @enrichment["taxonomy_llm_suggestions"]
+      )
+    else
+      @research_payload = CompanyProposalResearchService.call(proposal: proposal)
+      @taxonomy_suggestion = CompanyProposalTaxonomySuggestionService.call(source_payload: source_payload, final_changes: proposal.final_changes)
+    end
+  end
+
+  def single_call_enabled?
+    llm_enabled? && ENV.fetch("ENRICHMENT_SINGLE_CALL", "true") == "true"
+  end
 
   def enriched_changes
     @enriched_changes ||= {
@@ -266,6 +290,10 @@ class CompanyProposalEnrichmentService
     urls.compact_blank.filter_map { |url| self.class.host_for(url) }.uniq
   end
 
+  def existing_founded_date_source
+    (proposal.agent_details || {})["founded_date_source"].presence
+  end
+
   def founded_year_provenance
     return nil if @founded_year_source.blank?
 
@@ -328,7 +356,10 @@ class CompanyProposalEnrichmentService
         "confidence" => "low",
         "rationale" => description_rationale
       },
-      "founded_date_source" => founded_year_provenance,
+      # Reuse any founding-year provenance already recorded (e.g. cited at discovery
+      # time) instead of overwriting it with nil when enrichment did not re-search —
+      # the year was already found, so we must not lose its source.
+      "founded_date_source" => founded_year_provenance || existing_founded_date_source,
       "description_critic" => description_critic(final_changes["description"])
     }
   end

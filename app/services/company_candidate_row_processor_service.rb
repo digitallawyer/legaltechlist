@@ -103,15 +103,49 @@ class CompanyCandidateRowProcessorService
 
       attrs[:final_changes] = merged_final
       attrs[:agent_details] = merged_agent if merged_agent.present?
+
+      # When the discovery pass produced a complete, critic-passing prefill (a usable
+      # description + full taxonomy), treat the proposal as already enriched so the
+      # curator loop publishes it directly instead of firing the redundant 3-call
+      # enrichment that re-does discovery's work (efficiency: skip enrich round-trip).
+      if discovery_prefill_complete?(merged_final, merged_agent)
+        attrs[:enriched_at] = Time.current
+        attrs[:status] = "ready_for_review" if proposal.company_id.blank?
+      end
     end
 
     proposal.assign_attributes(attrs)
+    stamp_prefill_quality_report(proposal) if attrs[:enriched_at].present?
     proposal.save!
     proposal
   end
 
   def prefill_discovery_metadata?(proposal)
     proposal_type == "discovery_candidate" && proposal.company_id.blank?
+  end
+
+  # A discovery prefill is "complete" (enrichment-equivalent) when it carries a
+  # description that cleared the deterministic critic plus the publish-blocking
+  # taxonomy fields. Tags are intentionally NOT required (some companies legitimately
+  # get none, and tags are not publish-blocking).
+  def discovery_prefill_complete?(final_changes, agent_details)
+    return false if final_changes.blank?
+
+    final_changes["description"].present? &&
+      agent_details.is_a?(Hash) &&
+      agent_details.dig("description_critic", "verdict") == "pass" &&
+      final_changes["category_id"].present? &&
+      final_changes["business_model_id"].present? &&
+      final_changes["target_client_id"].present?
+  end
+
+  # Store the live quality report so list_review_queue and the curator loop can read
+  # publish_ready without materializing enrichment first.
+  def stamp_prefill_quality_report(proposal)
+    quality = CompanyProposalQualityService.call(proposal)
+    proposal.agent_details = (proposal.agent_details || {}).merge("quality" => quality)
+  rescue StandardError => e
+    Rails.logger.debug("[CompanyCandidateRowProcessorService] prefill quality report failed: #{e.message}")
   end
 
   # Promote the description drafted during the discovery web-search pass to the
@@ -143,21 +177,28 @@ class CompanyCandidateRowProcessorService
 
   def discovery_taxonomy_prefill
     category = Category.find_by(name: candidate["category_name"])
+    secondary_category = Category.find_by(name: candidate["secondary_category_name"])
+    secondary_category = nil if secondary_category && category && secondary_category.id == category.id
     business_models = Array(candidate["business_model_names"]).filter_map { |name| BusinessModel.find_by(name: name) }.uniq
     target_clients = Array(candidate["target_client_names"]).filter_map { |name| TargetClient.find_by(name: name) }.uniq
+    tag_names = TagTaxonomyService.filter_assignable(candidate["tag_names"]).first(5)
 
     final_changes = {
       "category_id" => category&.id,
+      "secondary_category_id" => secondary_category&.id,
       "business_model_id" => business_models.first&.id,
       "business_model_ids" => business_models.map(&:id).presence,
       "target_client_id" => target_clients.first&.id,
-      "target_client_ids" => target_clients.map(&:id).presence
+      "target_client_ids" => target_clients.map(&:id).presence,
+      "all_tags" => tag_names.join(", ").presence
     }.compact
 
     suggestion = {
       "category" => { "id" => category&.id, "name" => category&.name, "accepted" => category.present? },
+      "secondary_category" => { "id" => secondary_category&.id, "name" => secondary_category&.name, "accepted" => secondary_category.present? },
       "revenue_models" => { "ids" => business_models.map(&:id), "names" => business_models.map(&:name), "accepted" => business_models.any? },
       "target_clients" => { "ids" => target_clients.map(&:id), "names" => target_clients.map(&:name), "accepted" => target_clients.any? },
+      "tags" => { "names" => tag_names, "accepted" => tag_names.any? },
       "mode" => "discovery_search",
       "accepted" => category.present? && business_models.any? && target_clients.any?
     }
