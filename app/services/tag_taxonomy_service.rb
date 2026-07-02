@@ -7,6 +7,11 @@ class TagTaxonomyService
     "marketplace", "online platform", "practice management", "saas"
   ].freeze
 
+  # Generic, low-signal roots that add no directory value (every legal-tech company is
+  # "technology"/"innovation"). Excluded from what the LLM emitter may suggest so it
+  # picks specific capability tags instead of reaching for filler.
+  LOW_SIGNAL_CANONICAL_ROOTS = ["technology", "innovation"].freeze
+
   def self.canonical_root_names
     @canonical_root_names ||= begin
       path = Rails.root.join("config/taxonomy/tag_aliases.yml")
@@ -32,6 +37,7 @@ class TagTaxonomyService
     return false if canonical.blank?
 
     return true if REDUNDANT_CANONICAL_ROOTS.include?(canonical)
+    return true if LOW_SIGNAL_CANONICAL_ROOTS.include?(canonical)
     return true if structured_canonical_terms.include?(canonical)
 
     fuzzy_structured_overlap?(canonical)

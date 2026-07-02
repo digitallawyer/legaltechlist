@@ -16,6 +16,15 @@ class TagTaxonomyServiceTest < ActiveSupport::TestCase
     assert_includes discoverable, "e-discovery"
   end
 
+  test "discoverable names exclude generic low-signal tags" do
+    discoverable = TagTaxonomyService.discoverable_canonical_names
+
+    refute_includes discoverable, "technology"
+    refute_includes discoverable, "innovation"
+    assert TagTaxonomyService.redundant_with_taxonomy?("Technology")
+    assert_empty TagTaxonomyService.filter_assignable(["technology", "innovation"])
+  end
+
   test "redundant_with_taxonomy detects revenue model and target client overlap" do
     assert TagTaxonomyService.redundant_with_taxonomy?("SaaS")
     assert TagTaxonomyService.redundant_with_taxonomy?("Law Firms")
