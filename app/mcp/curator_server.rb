@@ -4,7 +4,7 @@ module Mcp
   module CuratorServer
     # Running connector build. Surfaced via get_stats.server_version so the curator can
     # confirm which server is live during validation.
-    VERSION = "1.14.0".freeze
+    VERSION = "1.15.0".freeze
 
     module_function
 
@@ -156,8 +156,22 @@ module Mcp
         not a genuine legal-technology company, and only publish/apply the ones you are sure of.
       - Keep Slack replies short and include the /admin/proposals/:id link so a human can review.
 
-      Use get_stats for directory size and backlog depth when planning a cadence or reporting
-      progress.
+      Planning and prioritization:
+      - Use get_stats for directory size, backlog depth, and data-quality gaps when planning a
+        cadence or reporting progress. It breaks coverage down by_category and by_country and
+        reports url_health (ok/broken/unknown/untried/last_run_at) and founded_date
+        (present/null/backfill_untried/backfill_no_source) so you can target the actionable
+        gaps (e.g. "never attempted" founded dates) rather than the genuinely hard ones. Pass
+        get_stats(fresh: true) to bypass the ~10-min cache and verify counts right after a pass.
+      - Turn a get_stats gap into an actionable id set with list_companies: filter by
+        category_id, country, review_state, founded_date_null, url_health_status, weak_description,
+        missing_url, status, or visibility, and page with offset/limit (up to 200) until has_more
+        is false. Feed the returned company_ids straight into backfill_founded_dates, check_url_health,
+        or update_company_field. It defaults to ALL companies (matching the data-quality totals);
+        pass visible:true to match the by_category/by_country public-index counts.
+      - Review and merge duplicates with list_duplicate_candidates, which returns the actual flagged
+        pairs (company_id_a/b, names, match_type name|domain|name+domain, matched_value, confidence)
+        behind the get_stats aggregate; page with offset until has_more is false.
 
       Every action is attributed to the curator account and audited. If you notice recurring
       friction, a missing capability, or an unclear rule that makes curation harder, record it

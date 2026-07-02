@@ -22,16 +22,28 @@ module Mcp
 
         if targeted.any?
           selected = Company.with_main_url.where(id: targeted).pluck(:id)
+          # Requested ids we couldn't enqueue (unknown id or no main_url) so the caller
+          # gets an honest run summary rather than assuming every id was queued.
+          skipped = targeted - selected
         else
           capped = [[limit.to_i, 1].max, 200].min
           selected = Company.url_check_due.order(Arel.sql("url_checked_at ASC NULLS FIRST")).limit(capped).pluck(:id)
+          skipped = []
         end
 
         selected.each { |id| CheckCompanyUrlHealthJob.perform_later(id) }
 
-        audit!(action: "check_url_health", summary: "Enqueued #{selected.size} URL health checks#{' (targeted)' if targeted.any?}", records_processed: selected.size, details: { "company_ids" => selected, "targeted" => targeted.any? })
+        audit!(action: "check_url_health", summary: "Enqueued #{selected.size} URL health checks#{' (targeted)' if targeted.any?}", records_processed: selected.size, details: { "company_ids" => selected, "skipped" => skipped, "targeted" => targeted.any? })
 
-        json_response("result" => "enqueued", "enqueued" => selected.size, "company_ids" => selected, "targeted" => targeted.any?)
+        json_response(
+          "result" => "enqueued",
+          "enqueued" => selected.size,
+          "skipped" => skipped.size,
+          "skipped_company_ids" => skipped,
+          "company_ids" => selected,
+          "targeted" => targeted.any?,
+          "note" => "Checks run asynchronously; read per-URL verdicts via get_company or list_companies(url_health_status: \"broken\") once jobs drain, and track totals with get_stats companies.url_health."
+        )
       end
     end
   end

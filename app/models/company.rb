@@ -267,6 +267,43 @@ class Company < ActiveRecord::Base
     grouped.values.select { |group| group.size > 1 }.flatten(1).map(&:first)
   end
 
+  # Duplicate candidate groups (for list_duplicate_candidates): each entry is
+  # { "value" => matched_value, "ids" => [company_id, ...] } for a normalized name /
+  # canonical domain shared by more than one company.
+  def self.duplicate_name_groups
+    rows = where.not(name: [nil, ""]).pluck(:id, :name)
+    rows.group_by { |_id, name| normalized_name_value(name) }
+        .select { |value, group| value.present? && group.size > 1 }
+        .map { |value, group| { "value" => value, "ids" => group.map(&:first).sort } }
+  end
+
+  def self.duplicate_domain_groups
+    has_canonical = column_names.include?("canonical_domain")
+    cols = has_canonical ? [:id, :main_url, :canonical_domain] : [:id, :main_url]
+    scope = where.not(main_url: [nil, ""])
+    scope = scope.or(where.not(canonical_domain: [nil, ""])) if has_canonical
+    rows = scope.pluck(*cols)
+
+    rows.group_by { |row| (has_canonical ? row[2].presence : nil) || canonical_domain_for(row[1]) }
+        .select { |domain, group| domain.present? && group.size > 1 }
+        .map { |domain, group| { "value" => domain, "ids" => group.map(&:first).sort } }
+  end
+
+  # Ids within `scope` whose resolved+normalized country matches `name`. Country is
+  # free text (with native-language variants), so matching is done in Ruby via the
+  # LocationCountryResolver canonicalization used across the statistics pages.
+  def self.ids_with_normalized_country(name, scope: all)
+    target = LocationCountryResolver.normalize_country_name(name)
+    return [] if target.blank?
+
+    scope.pluck(:id, :country, :location).filter_map do |id, country, location|
+      resolved = country.presence || LocationCountryResolver.country_name_for(location)
+      next if resolved.blank?
+
+      id if LocationCountryResolver.normalize_country_name(resolved) == target
+    end
+  end
+
   def self.compute_duplicate_domain_candidate_ids
     stored_ids = if column_names.include?("canonical_domain")
       duplicate_domains = where.not(canonical_domain: [nil, ""]).group(:canonical_domain).having("COUNT(*) > 1").select(:canonical_domain)

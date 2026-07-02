@@ -7,10 +7,12 @@ module Mcp
       [
         # Read / context
         SearchCompaniesTool,
+        ListCompaniesTool,
         GetCompanyTool,
         ListReviewQueueTool,
         GetProposalTool,
         DuplicateCheckTool,
+        ListDuplicateCandidatesTool,
         GetTaxonomyTool,
         GetStatsTool,
         # Discovery

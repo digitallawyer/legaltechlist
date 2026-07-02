@@ -681,7 +681,118 @@ module Mcp
       assert_equal 2, result["url_health"]["consecutive_failures"]
     end
 
+    test "get_stats exposes category/country/url_health/founded_date breakdowns" do
+      Rails.cache.clear
+      result = call(Mcp::Tools::GetStatsTool, fresh: true)
+      companies = result["companies"]
+
+      assert companies["by_category"].is_a?(Array)
+      assert companies["by_category"].any? { |row| row["name"].present? && row.key?("visible_count") }
+      assert companies["by_country"].is_a?(Array)
+      assert companies["by_country"].any? { |row| row["country"] == "United States" }
+      assert companies["url_health"].is_a?(Hash)
+      %w[ok broken unknown untried].each { |key| assert companies["url_health"].key?(key) }
+      assert companies["founded_date"].is_a?(Hash)
+      %w[present null backfill_untried backfill_no_source].each { |key| assert companies["founded_date"].key?(key) }
+    end
+
+    test "get_stats reconciles inactive with by_status and reports closed separately" do
+      companies(:one).update_columns(status: "inactive")
+      companies(:two).update_columns(status: "closed")
+      Rails.cache.clear
+      result = call(Mcp::Tools::GetStatsTool, fresh: true)
+      companies = result["companies"]
+
+      assert_equal companies["by_status"]["inactive"].to_i, companies["inactive"]
+      assert_equal companies["by_status"]["closed"].to_i, companies["closed"]
+    end
+
+    test "list_companies paginates and reports has_more" do
+      page1 = call(Mcp::Tools::ListCompaniesTool, visible: true, limit: 1, offset: 0)
+      assert_equal 1, page1["count"]
+      assert page1["total"] >= 2
+      assert page1["has_more"]
+      page2 = call(Mcp::Tools::ListCompaniesTool, visible: true, limit: 1, offset: 1)
+      assert (page1["companies"].map { |c| c["id"] } & page2["companies"].map { |c| c["id"] }).empty?
+    end
+
+    test "list_companies filters by category, missing founded_date, and country" do
+      companies(:one).update_column(:founded_date, "")
+      companies(:two).update_column(:founded_date, "2021")
+
+      by_category = call(Mcp::Tools::ListCompaniesTool, category_id: 1)
+      ids = by_category["companies"].map { |c| c["id"] }
+      assert_includes ids, 1
+      assert_not_includes ids, 2
+
+      null_founded = call(Mcp::Tools::ListCompaniesTool, founded_date_null: true)
+      assert_includes null_founded["companies"].map { |c| c["id"] }, 1
+      assert_not_includes null_founded["companies"].map { |c| c["id"] }, 2
+
+      swiss = call(Mcp::Tools::ListCompaniesTool, country: "Switzerland")
+      assert_equal 0, swiss["count"]
+      us = call(Mcp::Tools::ListCompaniesTool, country: "United States")
+      assert_operator us["count"], :>=, 2
+    end
+
+    test "list_companies filters by url_health_status untried" do
+      companies(:one).update_columns(url_status: Company::URL_STATUS_OK, url_checked_at: Time.current)
+      untried = call(Mcp::Tools::ListCompaniesTool, url_health_status: "untried")
+      ids = untried["companies"].map { |c| c["id"] }
+      assert_not_includes ids, 1
+      assert_includes ids, 2
+    end
+
+    test "list_duplicate_candidates returns flagged pairs with match type" do
+      make_company(name: "Avokati AI", url: "http://avokati.example")
+      make_company(name: "Avokati AI", url: "http://avokati.example")
+
+      result = call(Mcp::Tools::ListDuplicateCandidatesTool)
+      pair = result["pairs"].find { |p| p["name_a"] == "Avokati AI" && p["name_b"] == "Avokati AI" }
+      assert pair, result["pairs"].inspect
+      assert_equal "name+domain", pair["match_type"]
+      assert_operator pair["confidence"], :>, 0.9
+    end
+
+    test "list_duplicate_candidates filters by match_type" do
+      make_company(name: "Solo Name Co", url: "http://solo-a.example")
+      make_company(name: "Solo Name Co", url: "http://solo-b.example")
+
+      name_only = call(Mcp::Tools::ListDuplicateCandidatesTool, match_type: "name")
+      pair = name_only["pairs"].find { |p| p["name_a"] == "Solo Name Co" }
+      assert pair
+      assert_equal "name", pair["match_type"]
+
+      domain_only = call(Mcp::Tools::ListDuplicateCandidatesTool, match_type: "domain")
+      assert_nil domain_only["pairs"].find { |p| p["name_a"] == "Solo Name Co" }
+    end
+
+    test "check_url_health reports skipped ids that have no main_url" do
+      companies(:one).update_columns(main_url: "http://example.com", url_checked_at: nil)
+      companies(:two).update_columns(main_url: "")
+      result = call(Mcp::Tools::CheckUrlHealthTool, company_ids: [companies(:one).id, companies(:two).id])
+      assert_includes result["company_ids"], companies(:one).id
+      assert_includes result["skipped_company_ids"], companies(:two).id
+      assert_equal 1, result["skipped"]
+    end
+
     private
+
+    def make_company(name:, url:)
+      company = Company.new(
+        name: name,
+        location: "Boston, MA",
+        description: "A sufficiently long neutral description for testing purposes.",
+        main_url: url,
+        visible: true,
+        category: categories(:one),
+        business_model: business_models(:one),
+        target_client: target_clients(:one)
+      )
+      company.skip_geocoding = true
+      company.save!
+      company
+    end
 
     def with_env(vars)
       previous = {}
