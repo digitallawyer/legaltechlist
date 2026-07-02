@@ -249,9 +249,12 @@ class CompanyDiscoverySearchService
 
     "\n" + <<~GUIDANCE.strip
       Assign a secondary_category ONLY when a clearly distinct second category also
-      applies; otherwise set it to null. For tags, choose 0-4 keywords strictly from
-      allowed_tags that add information NOT already implied by the category, business
-      model, or target client; if none fit, return an empty list. Never invent tags.
+      applies; otherwise set it to null. For tags, include EVERY applicable keyword
+      from allowed_tags — aim for 2-4 on a feature-rich company (e.g. a case-management
+      tool that also offers e-signature should get BOTH "case management" and
+      "e-signature"). Prefer specific capability tags; avoid the generic "technology"
+      and "innovation" unless nothing more specific applies. Use only allowed_tags,
+      never invent tags, and return fewer only when the evidence genuinely supports it.
     GUIDANCE
   end
 

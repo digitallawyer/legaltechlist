@@ -61,7 +61,7 @@ class TaxonomySuggestionAgent < RubyLLM::Agent
       allowed_revenue_model_names: MethodologyHelper::REVENUE_MODEL_NAMES,
       allowed_target_client_names: TaxonomyNormalizationService::CANONICAL_TARGET_CLIENTS,
       preferred_tag_vocabulary: TagTaxonomyService.discoverable_canonical_names,
-      instruction: "Classify this legal-technology company. Use only allowed names for categories, revenue models, and target clients. secondary_category_name is optional and must differ from the primary. tag_names must come only from preferred_tag_vocabulary (1-5) and must not duplicate the structured taxonomy. All confidences are 0.0-1.0."
+      instruction: "Classify this legal-technology company. Use only allowed names for categories, revenue models, and target clients. secondary_category_name is optional and must differ from the primary. tag_names must come only from preferred_tag_vocabulary — include every applicable one (aim for 2-5 on a feature-rich company), preferring specific capability keywords and avoiding the generic 'technology'/'innovation' unless nothing more specific applies, and must not duplicate the structured taxonomy. All confidences are 0.0-1.0."
     }.to_json
   end
 

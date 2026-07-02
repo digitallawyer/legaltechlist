@@ -177,9 +177,11 @@ class ProposalEnrichmentAgent < RubyLLM::Agent
       verbatim snippet from that source naming THIS company and stating the year, else null.
       Classify using ONLY the controlled vocabulary: category and optional distinct
       secondary_category from allowed_categories; business_models (1-2) from
-      allowed_business_models; target_clients (1-2) from allowed_target_clients; tags (0-4)
-      from allowed_tags that add information not already implied by the category/business
-      model/target client (empty list if none fit). Never invent taxonomy or tag values.
+      allowed_business_models;       target_clients (1-2) from allowed_target_clients; and tags — include EVERY
+      applicable keyword from allowed_tags (aim for 2-4 on a feature-rich company; e.g.
+      a case-management tool that also offers e-signature should get both), preferring
+      specific capability tags and avoiding the generic "technology"/"innovation" unless
+      nothing more specific applies. Use only allowed_tags. Never invent taxonomy or tag values.
     TEXT
   end
 

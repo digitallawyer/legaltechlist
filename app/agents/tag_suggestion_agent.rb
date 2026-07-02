@@ -59,7 +59,7 @@ class TagSuggestionAgent < RubyLLM::Agent
         target_clients: company.audience_names
       },
       preferred_tag_vocabulary: TagTaxonomyService.discoverable_canonical_names,
-      instruction: "Suggest 1-#{max_tags} lowercase technology or theme keywords for this legal-technology company using only terms from preferred_tag_vocabulary. Do not repeat category, revenue model, or target client information — those are captured elsewhere. confidence is 0.0-1.0."
+      instruction: "Suggest every applicable lowercase technology or theme keyword for this legal-technology company (aim for 2-#{max_tags} on a feature-rich company) using only terms from preferred_tag_vocabulary. Prefer specific capability keywords; avoid the generic 'technology' and 'innovation' unless nothing more specific applies. Do not repeat category, revenue model, or target client information — those are captured elsewhere. confidence is 0.0-1.0."
     }.to_json
   end
 
