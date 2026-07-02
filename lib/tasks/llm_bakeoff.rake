@@ -89,6 +89,79 @@ namespace :llm do
     end
     puts "\nproj/1k = projected cost to draft 1,000 descriptions at this evidence size (excludes web-search tokens)."
   end
+
+  # Compare candidate models on taxonomy classification accuracy against a small
+  # labeled sample, using the real CompanyProposalTaxonomySuggestionService (so the
+  # controlled vocabulary and DB mapping match production exactly).
+  #
+  #   MODELS="gpt-5.4-nano,gpt-5.4-mini,gpt-5.4" bin/rails llm:taxonomy_bakeoff
+  desc "Bake off models on taxonomy classification accuracy"
+  task taxonomy_bakeoff: :environment do
+    models = ENV.fetch("MODELS", "gpt-5.4-nano,gpt-5.4-mini,gpt-5.4").split(",").map(&:strip).reject(&:blank?)
+    original_model = ENV["RUBYLLM_TAXONOMY_MODEL"]
+    ENV["PROPOSAL_TAXONOMY_USE_LLM"] = "true"
+
+    samples = [
+      { name: "Ironclad", industries: ["Contract Management", "SaaS", "AI"], desc: "Contract lifecycle management platform with workflow automation and embedded AI for legal, procurement, and sales teams.", website: "https://ironcladapp.com",
+        categories: ["Contract Management"], revenues: ["Subscription"], targets: ["Corporate Legal", "Law Firms"] },
+      { name: "Axiom", industries: ["Legal Services", "Alternative Legal Services"], desc: "Flexible legal talent and managed legal services for corporate legal departments.", website: "https://www.axiomlaw.com",
+        categories: ["Marketplace and ALSPs"], revenues: ["Services"], targets: ["Corporate Legal", "Legal Service Providers"] },
+      { name: "Brightflag", industries: ["Legal Operations", "Legal Spend Management"], desc: "Legal operations platform for matter management, legal spend control, AI invoice review, and vendor benchmarking.", website: "https://www.brightflag.com",
+        categories: ["Legal Operations / ELM", "Analytics & Insights"], revenues: ["Subscription"], targets: ["Corporate Legal"] },
+      { name: "Jus Mundi", industries: ["Legal Research", "Arbitration", "AI"], desc: "AI-powered legal research search engine for international law and arbitration.", website: "https://jusmundi.com",
+        categories: ["Knowledge & Research"], revenues: ["Subscription"], targets: ["Law Firms", "Corporate Legal"] },
+      { name: "Relativity", industries: ["eDiscovery", "Litigation Support"], desc: "eDiscovery platform for processing, reviewing, and analyzing electronically stored information in litigation and investigations.", website: "https://www.relativity.com",
+        categories: ["eDiscovery & Investigations"], revenues: ["Subscription"], targets: ["Law Firms", "Corporate Legal"] },
+      { name: "Rocket Lawyer", industries: ["Legal Documents", "Consumer Legal"], desc: "Online legal service offering document automation, e-signature, and on-demand attorney advice for individuals and small businesses.", website: "https://www.rocketlawyer.com",
+        categories: ["Document Management and Automation", "Practice Management", "Access to Justice & Public Sector"], revenues: ["Subscription"], targets: ["Consumers"] }
+    ]
+
+    totals = Hash.new { |h, k| h[k] = { cat: 0, rev: 0, tgt: 0, acc: 0, n: 0 } }
+
+    samples.each do |s|
+      puts "\n" + ("=" * 100)
+      puts "#{s[:name]}  |  gold cat: #{s[:categories].join(' / ')}  rev: #{s[:revenues].join(', ')}  target: #{s[:targets].join(' / ')}"
+      puts("=" * 100)
+
+      source_payload = { "name" => s[:name], "industries" => s[:industries], "source_description" => s[:desc], "website" => s[:website] }
+
+      models.each do |model|
+        ENV["RUBYLLM_TAXONOMY_MODEL"] = model
+        begin
+          result = CompanyProposalTaxonomySuggestionService.call(source_payload: source_payload, final_changes: {})
+          pred_cat = result.dig("category", "name")
+          pred_rev = Array(result.dig("revenue_models", "names"))
+          pred_tgt = ([result.dig("target_client", "name")] + Array(result.dig("target_clients", "names"))).compact.uniq
+
+          cat_ok = s[:categories].include?(pred_cat)
+          rev_ok = (pred_rev & s[:revenues]).any?
+          tgt_ok = (pred_tgt & s[:targets]).any?
+          accepted = result["accepted"] ? 1 : 0
+
+          t = totals[model]
+          t[:cat] += cat_ok ? 1 : 0; t[:rev] += rev_ok ? 1 : 0; t[:tgt] += tgt_ok ? 1 : 0; t[:acc] += accepted; t[:n] += 1
+
+          flag = [cat_ok ? "cat" : "CAT✗", rev_ok ? "rev" : "REV✗", tgt_ok ? "tgt" : "TGT✗"].join(" ")
+          puts "  #{model.ljust(14)} [#{flag}] #{result['accepted'] ? 'accepted' : 'held'}  => cat:#{pred_cat}  rev:#{pred_rev.join('/')}  tgt:#{pred_tgt.join('/')}"
+        rescue StandardError => e
+          puts "  #{model.ljust(14)} ERROR: #{e.class}: #{e.message}"
+        end
+      end
+    end
+
+    ENV["RUBYLLM_TAXONOMY_MODEL"] = original_model
+
+    puts "\n\n" + ("#" * 100)
+    puts "TAXONOMY ACCURACY (matches / #{samples.size})"
+    puts("#" * 100)
+    printf("%-16s %10s %10s %12s %10s\n", "model", "category", "revenue", "target", "accepted")
+    models.each do |model|
+      t = totals[model]
+      next if t[:n].zero?
+
+      printf("%-16s %8d/%d %8d/%d %10d/%d %8d/%d\n", model, t[:cat], t[:n], t[:rev], t[:n], t[:tgt], t[:n], t[:acc], t[:n])
+    end
+  end
 end
 
 def safe_json(content)
