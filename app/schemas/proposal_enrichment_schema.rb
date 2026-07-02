@@ -4,6 +4,8 @@
 # shape into the prompt and parses the JSON back. Keeping the contract here gives a
 # single source of truth and a version marker for the merged description + founded
 # year + taxonomy + tags payload that replaces the former 3 separate LLM calls.
+# (Documentation contract only — not passed as a strict schema, so nullable fields are
+# fine here; "no value" is expressed as null in the parsed JSON.)
 class ProposalEnrichmentSchema < RubyLLM::Schema
   SCHEMA_VERSION = "2026-07-02.1".freeze
 
