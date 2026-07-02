@@ -24,6 +24,7 @@ module Mcp
         ApproveProposalTool,
         RejectProposalTool,
         # Maintenance of existing entries
+        CreateCompanyTool,
         RunCompanyReviewTool,
         ProposeCompanyUpdateTool,
         UpdateCompanyFieldTool,

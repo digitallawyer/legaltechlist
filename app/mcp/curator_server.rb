@@ -4,7 +4,7 @@ module Mcp
   module CuratorServer
     # Running connector build. Surfaced via get_stats.server_version so the curator can
     # confirm which server is live during validation.
-    VERSION = "1.13.0".freeze
+    VERSION = "1.14.0".freeze
 
     module_function
 
@@ -79,7 +79,14 @@ module Mcp
       published unless the response says published:true.
 
       Change discipline:
-      - Add new companies via discover_companies. It is ASYNC — it returns "discovery_queued" with a
+      - Add a SPECIFIC known company (especially a historical/acquired one that won't surface via
+        web search) with create_company: pass name + main_url and any known facts/taxonomy ids. It
+        runs a duplicate check and, by default, creates a pending proposal to review; pass
+        publish=true (with human_approved or sufficient confidence) to go live in one call, plus a
+        status ("acquired"/"inactive") or acquisition payload to import it straight into that
+        lifecycle state. Use this instead of repurposing a discover_companies shell with
+        update_proposal — never cannibalize a real discovered candidate to insert a different company.
+      - Add new companies in BULK via discover_companies. It is ASYNC — it returns "discovery_queued" with a
         run_id and runs on the durable worker (Solid Queue), so it is never limited by the HTTP
         timeout. Poll get_discovery_run(run_id) until status is "succeeded" (results attached:
         summary, queued_proposal_ids, candidate preview) or "failed" (error attached). Do not treat

@@ -49,7 +49,8 @@ not been materialized yet (so freshly-committed proposals never show `publish_re
 `get_proposal` surfaces `description_critic` and `taxonomy_suggestion` so a discovery-time
 pass/verdict is observable on the proposal.
 
-Maintenance: `run_company_review`, `propose_company_update` (queue an editorial edit
+Maintenance: `create_company` (add a specific known company directly — no web
+discovery), `run_company_review`, `propose_company_update` (queue an editorial edit
 to an existing company as a `user_suggestion` proposal), `update_company_field`
 (edit safe factual fields — founded_date/location/founders/status — directly on a
 live company in one call; `founded_date` requires a 4-digit year and a `source_url`
@@ -58,6 +59,26 @@ by free-text name/URL, plus an optional in-index successor link — and exit dat
 one audited call), `check_url_health` (enqueue async website-reachability probes that
 record `url_status` = ok / unknown / broken as a soft inactivity signal), `apply_safe_fields`,
 `mark_review`, `suggest_taxonomy`.
+
+### Adding a known company (`create_company`)
+
+`discover_companies` is bulk web-search only; it can't add one specific company, and
+acquired/defunct companies rarely surface (their sites redirect to the acquirer). Use
+`create_company` for those: pass `name` + `main_url` and any known facts and taxonomy ids
+(`category_id`, `business_model_ids`, `target_client_ids`, `all_tags`, …). It normalizes the
+input, runs a duplicate check (returning existing matches instead of creating a duplicate), and
+builds a real proposal with duplicate signals + the quality gate.
+
+- Default: creates a **pending proposal** for review; returns its id and any duplicate matches.
+- `publish: true` (with `human_approved: true`, or a `confidence` above the autonomy threshold
+  and a passing quality gate) publishes live in one call — it delegates to the same
+  `approve_proposal` path, so gating and autonomy rules are identical.
+- `status` (e.g. `"acquired"`, `"inactive"`) and/or an `acquisition` payload import a
+  historical/acquired company straight into that lifecycle state (never flashing as active).
+  An `acquisition` payload requires publish.
+
+This removes the need to repurpose a `discover_companies` shell via `update_proposal` (which
+would destroy a real discovered candidate).
 
 ### Website health (`check_url_health`)
 

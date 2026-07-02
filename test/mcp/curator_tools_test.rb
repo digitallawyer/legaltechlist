@@ -602,6 +602,52 @@ module Mcp
       assert_operator result["companies"]["inactive"].to_i, :>=, 1
     end
 
+    test "create_company creates a pending proposal by default" do
+      assert_no_difference "Company.count" do
+        result = call(Mcp::Tools::CreateCompanyTool, name: "Brand New LegalCo", main_url: "https://brandnewlegalco.example")
+        assert_equal "proposal_created", result["result"]
+        assert result["created"]
+        assert_equal false, result["published"]
+        assert CompanyProposal.exists?(result["proposal_id"])
+      end
+    end
+
+    test "create_company surfaces duplicate matches for an existing company" do
+      result = call(Mcp::Tools::CreateCompanyTool, name: "Test Company One", main_url: "http://example.com")
+      assert result["duplicate_matches"]["name"].any? || result["duplicate_matches"]["domain"].any?
+    end
+
+    test "create_company publishes a live company with human approval" do
+      result = call(Mcp::Tools::CreateCompanyTool,
+                    name: "Publishable LegalCo", main_url: "https://publishablelegalco.example",
+                    location: "Boston, MA", description: "Publishable LegalCo builds cloud-based contract review and analytics software used by corporate legal teams and law firms.",
+                    category_id: categories(:one).id, business_model_ids: [business_models(:one).id], target_client_ids: [target_clients(:one).id],
+                    publish: true, human_approved: true)
+      assert result["published"], result.inspect
+      company = Company.find(result["company_id"])
+      assert company.visible?
+      assert_equal "Publishable LegalCo", company.name
+    end
+
+    test "create_company imports an acquired company in one call" do
+      result = call(Mcp::Tools::CreateCompanyTool,
+                    name: "Acquired LegalCo", main_url: "https://acquiredlegalco.example",
+                    location: "Austin, TX", description: "Acquired LegalCo built litigation analytics and case management tools used by law firms and corporate legal departments.",
+                    category_id: categories(:one).id, business_model_ids: [business_models(:one).id], target_client_ids: [target_clients(:one).id],
+                    publish: true, human_approved: true,
+                    acquisition: { "acquirer_name" => "MegaLegal", "acquired_on" => "2022" })
+      assert result["published"]
+      company = Company.find(result["company_id"])
+      assert_equal "acquired", company.status
+      assert_equal "MegaLegal", company.acquirer_name
+      assert company.visible?
+    end
+
+    test "create_company rejects an acquisition payload without publish" do
+      response = Mcp::Tools::CreateCompanyTool.call(server_context: @context, name: "Draft Acq Co", main_url: "https://draftacqco.example", acquisition: { "acquirer_name" => "X" })
+      assert response.error?
+    end
+
     test "search_companies filters by lifecycle status" do
       companies(:one).update_columns(status: "acquired")
       companies(:two).update_columns(status: "active")
