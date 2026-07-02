@@ -164,12 +164,18 @@ class CompanyDiscoverySearchService
       set BOTH founded_date and founded_year_source to null. Never guess a founding year,
       and do not use a page that does not actually show the year as its source.
 
-      For description, write ONE neutral, encyclopedic sentence of 18-32 words describing
-      what the company actually does for legal workflows, using concrete product/function
-      language grounded only in what search results show. It must be fit for an academic
-      directory: no marketing language, no superlatives, no customer counts, no "leading"
-      or "innovative", and no first-person or promotional phrasing. Do not copy a company's
-      own tagline verbatim; describe the function plainly.
+      For description, write a neutral, encyclopedic directory description of 2-4 sentences
+      (about 45-90 words) in the third person, grounded only in what search results show.
+      When the evidence supports it, cover: (1) what the company builds and its deployment or
+      business model (e.g. cloud-based platform, marketplace, managed service); (2) its core
+      capabilities and the legal workflows it addresses; (3) who it serves (law firms,
+      corporate/in-house legal teams, specific practice areas or industries); and (4) notable
+      named products/modules and integrations. Use concrete product/function facts, not
+      adjectives. It must be fit for an academic directory: no marketing language, no
+      superlatives, no customer counts, no "leading" or "innovative", no "web presence"
+      filler, and no first-person or promotional phrasing. Do not copy a company's own tagline
+      verbatim; describe the function plainly. If evidence is thin, write fewer sentences
+      rather than padding with speculation.
 
       Return JSON only with this shape:
       #{json_output_schema}
@@ -209,7 +215,7 @@ class CompanyDiscoverySearchService
             "website": "https://example.com",
             "location": "City, Country",
             "founded_date": "2018",
-            "description": "One neutral, encyclopedic sentence (18-32 words) on the company's legal-tech product/function, no marketing language.",
+            "description": "Neutral, encyclopedic directory description of 2-4 sentences (~45-90 words) covering the company's product, capabilities, who it serves, and notable products/integrations; no marketing language.",
             "why_discovered": "Short reason this company matches the discovery task.",
             #{taxonomy_schema_fields}
     FIELDS
@@ -219,7 +225,7 @@ class CompanyDiscoverySearchService
             "website": "https://example.com",
             "location": "City, Country",
             "founded_date": "2018",
-            "description": "One neutral, encyclopedic sentence (18-32 words) on the company's legal-tech product/function, no marketing language.",
+            "description": "Neutral, encyclopedic directory description of 2-4 sentences (~45-90 words) covering the company's product, capabilities, who it serves, and notable products/integrations; no marketing language.",
             "why_discovered": "Short reason this company matches the discovery task.",
             "funding_round_year": "2024",
             "funding_round_type": "Series A",

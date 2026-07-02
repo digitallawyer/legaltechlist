@@ -17,13 +17,23 @@ module Mcp
       than deleting entries.
 
       Descriptions and all public text must be encyclopedic and fit for public display:
-      - Neutral and factual. Describe what the company does, who it serves, and its role in
-        legal technology.
+      - Aim for a substantive 2-4 sentence description (roughly 45-90 words), grounded only in
+        evidence. Cover, when supported: what the company builds and its deployment/business
+        model; its core capabilities and the legal workflows it addresses; who it serves (law
+        firms, corporate/in-house legal, practice areas or industries); and notable named
+        products/modules and integrations. If evidence is thin, write fewer sentences rather
+        than padding with speculation.
+      - Neutral and factual. Prefer concrete product/function facts over adjectives.
       - No marketing or sales language, superlatives, or promotional claims (avoid words like
-        "leading", "innovative", "best-in-class", "cutting-edge", "seamless").
+        "leading", "innovative", "best-in-class", "cutting-edge", "seamless"), and no generic
+        "web presence" filler.
       - Never include internal notes, uncertainty markers, TODOs, placeholders, or remarks
         about missing information. If a detail is unknown, omit it silently.
       - Third person, complete sentences.
+      - The description critic is enforced at the publish gate: a description with a non-pass
+        verdict (too short, marketing/meta/web-presence filler, or copied source text) blocks
+        publishing on BOTH the discovery and enrich paths. Fix the text (or re-enrich) until it
+        passes rather than trying to publish around it.
 
       Classification: always call get_taxonomy first and choose categories, business models,
       target clients, and tags only from that controlled vocabulary. Never invent new ones.
@@ -124,7 +134,7 @@ module Mcp
       MCP::Server.new(
         name: "techindex_curator",
         title: "CodeX TechIndex Curator",
-        version: "1.9.0",
+        version: "1.10.0",
         instructions: INSTRUCTIONS,
         tools: Mcp::Tools.all,
         server_context: { actor: actor }

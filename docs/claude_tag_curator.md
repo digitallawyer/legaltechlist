@@ -128,8 +128,24 @@ discipline, and the approval rules below.
   cite-gated at the source: `CompanyDiscoverySearchService` keeps `founded_date` only when the
   model returned a source URL it actually saw in search; an uncited year is dropped (not stored)
   so the company becomes a clean `backfill_founded_dates` target rather than an uncited guess.
+- Description bar (house style): descriptions target a substantive 2-4 sentences (~45-90 words),
+  neutral and evidence-grounded, covering what the company builds and its deployment/business
+  model, its core capabilities and legal workflows, who it serves, and notable named
+  products/integrations. Both the discovery prompt (`CompanyDiscoverySearchService`) and the
+  enrichment prompt (`CompanyProposalEnrichmentService`) request this richer format; thin evidence
+  yields a shorter factual description rather than padded speculation.
+- Critic enforcement (consistent across paths): the deterministic critic
+  (`CompanyProposalEnrichmentService.description_critic_for`) flags too-short drafts, marketing
+  language (word-boundary matched, so names like "BestProfi" are not falsely flagged),
+  copied source text, source-metadata phrasing, and generic "web presence" filler. The publish
+  gate (`CompanyProposalQualityService`) now recomputes this verdict live on the current draft and
+  blocks publishing on a non-pass verdict — so a "revise" description can never publish regardless
+  of whether it came from discovery, enrichment, or a manual edit. The enrich path mirrors
+  discovery's promote-on-pass: it keeps the LLM draft only when it clears the critic, otherwise it
+  uses a house-style deterministic fallback that is written to pass (crisp one-liner covering what
+  it does + who it serves) rather than a generic web-presence sentence.
 - Discovery-time description drafting: the same `discover_companies` pass now also drafts a
-  neutral, encyclopedic description (18-32 words, no marketing language). At proposal creation the
+  neutral, encyclopedic description. At proposal creation the
   draft is cleaned (`CompanyProposalEnrichmentService.clean_description`) and run through the
   deterministic critic (`.description_critic_for`); only a draft that passes (and clears the
   quality gate's word-count bar) is promoted to `final_changes["description"]` with the recorded

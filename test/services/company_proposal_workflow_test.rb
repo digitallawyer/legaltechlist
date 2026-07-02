@@ -81,7 +81,7 @@ class CompanyProposalWorkflowTest < ActiveSupport::TestCase
 
     assert_equal original_company_count + 1, Company.count
     assert_equal "New Atlas Candidate", company.name
-    assert_equal "A neutral reviewed description for a new legal technology company.", company.description
+    assert_equal "A neutral reviewed description covering what this new legal technology company builds and the legal teams it serves.", company.description
     assert_not company.visible?
     assert_equal "needs_review", company.quality_status
     assert_equal "human_approved_candidate", company.verification_verdict
@@ -257,6 +257,39 @@ class CompanyProposalWorkflowTest < ActiveSupport::TestCase
     assert_not CompanyProposalEnrichmentService.entity_match?(company, "https://www.linkedin.com/company/someone-else", evidence_text: "A totally different firm")
   end
 
+  test "publish gate blocks a description that fails the critic on any path" do
+    proposal = ready_proposal
+    proposal.update!(
+      final_changes: proposal.final_changes.merge(
+        "description" => "BestProfi is an Almaty-based organization operating bestprofi.com as its primary web presence for publishing information and enabling online access to its services."
+      )
+    )
+
+    quality = CompanyProposalQualityService.call(proposal.reload)
+    assert_not quality["publish_ready"], quality["blockers"].inspect
+    assert quality["blockers"].any? { |blocker| blocker =~ /revise the description/i }, quality["blockers"].inspect
+  end
+
+  test "critic does not flag a company name that merely contains a marketing substring" do
+    critic = CompanyProposalEnrichmentService.description_critic_for(
+      "BestProfi develops legal technology for contract review and document management used by law firms and in-house legal teams."
+    )
+    assert_equal "pass", critic["verdict"], critic["issues"].inspect
+  end
+
+  test "enrich fallback description clears the critic and reads like a factual one-liner" do
+    proposal = queued_proposal
+    CompanyProposalEnrichmentService.call(proposal: proposal, admin_user: admin_users(:one))
+
+    proposal.reload
+    critic = proposal.agent_details["description_critic"]
+    assert_equal "pass", critic["verdict"], critic["issues"].inspect
+    assert_no_match(GENERIC_WEB_PRESENCE_MATCH, proposal.final_changes["description"])
+    assert_operator proposal.final_changes["description"].split.size, :>=, 12
+  end
+
+  GENERIC_WEB_PRESENCE_MATCH = /web presence|primary web|for publishing information|online access to (?:its|their) services/i
+
   test "source_tier ranks registry over profile over owned over other" do
     company = companies(:one) # example.com
     assert_equal :registry, CompanyProposalEnrichmentService.source_tier("https://opencorporates.com/companies/x")
@@ -279,7 +312,7 @@ class CompanyProposalWorkflowTest < ActiveSupport::TestCase
     proposal = queued_proposal
     proposal.update!(
       final_changes: proposal.final_changes.merge(
-        "description" => "A neutral reviewed description for a new legal technology company.",
+        "description" => "A neutral reviewed description covering what this new legal technology company builds and the legal teams it serves.",
         "category_id" => categories(:one).id,
         "business_model_id" => business_models(:one).id,
         "target_client_id" => target_clients(:one).id
