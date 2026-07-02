@@ -22,6 +22,7 @@ module Mcp
             "missing_founded_date" => summary[:missing_founded_date],
             "weak_description" => summary[:weak_description],
             "unknown_taxonomy" => summary[:unknown_taxonomy],
+            "broken_url" => summary[:broken_url],
             "duplicate_domain_candidates" => summary[:duplicate_domain],
             "duplicate_name_candidates" => summary[:duplicate_name]
           },

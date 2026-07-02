@@ -34,6 +34,7 @@ class AdminDashboardMetrics
         weak_description: Company.weak_description.count,
         duplicate_domain: duplicate_domain_ids.size,
         duplicate_name: duplicate_name_ids.size,
+        broken_url: Company.url_broken.count,
         needs_review: Company.needs_review.count,
         not_reviewed: Company.review_state_not_reviewed.count,
         unknown_taxonomy: unknown_taxonomy_count

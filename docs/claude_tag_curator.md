@@ -51,7 +51,39 @@ Maintenance: `run_company_review`, `propose_company_update` (queue an editorial 
 to an existing company as a `user_suggestion` proposal), `update_company_field`
 (edit safe factual fields — founded_date/location/founders/status — directly on a
 live company in one call; `founded_date` requires a 4-digit year and a `source_url`
-citation), `apply_safe_fields`, `mark_review`, `suggest_taxonomy`.
+citation), `record_acquisition` (mark a company acquired and capture the acquirer —
+by free-text name/URL, plus an optional in-index successor link — and exit date in
+one audited call), `check_url_health` (enqueue async website-reachability probes that
+record `url_status` = ok / unknown / broken as a soft inactivity signal), `apply_safe_fields`,
+`mark_review`, `suggest_taxonomy`.
+
+### Website health (`check_url_health`)
+
+A broken `main_url` is a *soft* indicator that a company may have gone inactive, not
+proof. `check_url_health` enqueues async jobs (`CheckCompanyUrlHealthJob`, Solid Queue)
+that fetch the URL following redirects and record on the company:
+
+- `url_status`: `ok` (2xx / redirect→2xx), `unknown` (up but access-restricted — 401/403/
+  405/406/429 bot-blocks — or a single transient failure below the flap threshold), or
+  `broken` (gone/unreachable across `FAILURE_THRESHOLD` = 2 consecutive checks).
+- `url_status_code`, `url_checked_at`, and `url_health` (`consecutive_failures`, `final_url`,
+  `reason`, `last_ok_at`).
+
+The service **never** changes lifecycle status. Curators verify a broken URL (the site may
+have merely moved/rebranded/blocked bots), then set `update_company_field(status:"inactive")`
+or `record_acquisition` as appropriate. Blind sweeps pick active companies not checked within
+a ~30-day cooldown; a weekly recurring sweep runs automatically. Find candidates with
+`search_companies(url_broken:true)`, track the gap with `get_stats.companies.broken_url`, and
+read the per-company verdict via `get_company.url_health`. Also runnable as
+`rake data_quality:check_url_health` (`INLINE=true` for small synchronous batches).
+
+### Acquisitions (`record_acquisition`)
+
+Sets `status=acquired`, stores `acquirer_name` (+ optional `acquirer_url`), records the
+`exit_date`, and links `successor_company_id` when the acquirer/successor is itself in the
+index (`successor_slug`). The acquirer need not be a TechIndex entry — e.g. Clausebase
+acquired by LawVu. The acquired company is retained as a historical record. Surfaced on the
+public profile ("Acquired by …") and in `get_company.acquisition`.
 
 Meta: `suggest_improvement` (Claude records tooling/workflow/data suggestions; logged
 to `PipelineRun` and posted to Slack).

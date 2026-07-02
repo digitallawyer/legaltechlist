@@ -1,0 +1,38 @@
+module Mcp
+  module Tools
+    # Enqueues asynchronous website health probes across companies. Each job fetches
+    # the company's main_url and records a coarse verdict (ok / unknown / broken) used
+    # as a QC/maintenance signal for spotting companies that may have gone inactive.
+    # It never changes lifecycle status — a broken URL is a soft indicator to review.
+    class CheckUrlHealthTool < BaseTool
+      tool_name "check_url_health"
+      title "Check company website health"
+      description "Enqueue asynchronous website reachability checks. Each job fetches a company's main_url (following redirects, with a bot-block/transient-failure allowance) and records url_status = ok, unknown (up but access-restricted or a single transient failure), or broken (gone/unreachable across consecutive checks). A broken URL is a SOFT signal that a company may be inactive — verify before changing status; use update_company_field(status) or record_acquisition to actually update lifecycle. A blind run (limit) selects companies believed active that have not been checked within the ~30-day cooldown; pass company_ids to target specific companies. Poll get_company for the recorded url_status, and use search_companies(url_broken:true) or get_stats.companies.broken_url to see results."
+      annotations(read_only_hint: false, destructive_hint: false, idempotent_hint: false, title: "Check company website health")
+      input_schema(
+        properties: {
+          limit: { type: "integer", description: "Blind-sweep size (1-200, default 50). Ignored when company_ids is given. Only picks active companies not checked within the ~30-day cooldown." },
+          company_ids: { type: "array", items: { type: "integer" }, description: "Optional: check these specific company ids now (bypasses the cooldown; only those with a main_url are enqueued)." }
+        },
+        required: []
+      )
+
+      def self.call(server_context:, limit: 50, company_ids: nil)
+        targeted = Array(company_ids).map(&:to_i).reject(&:zero?)
+
+        if targeted.any?
+          selected = Company.with_main_url.where(id: targeted).pluck(:id)
+        else
+          capped = [[limit.to_i, 1].max, 200].min
+          selected = Company.url_check_due.order(Arel.sql("url_checked_at ASC NULLS FIRST")).limit(capped).pluck(:id)
+        end
+
+        selected.each { |id| CheckCompanyUrlHealthJob.perform_later(id) }
+
+        audit!(action: "check_url_health", summary: "Enqueued #{selected.size} URL health checks#{' (targeted)' if targeted.any?}", records_processed: selected.size, details: { "company_ids" => selected, "targeted" => targeted.any? })
+
+        json_response("result" => "enqueued", "enqueued" => selected.size, "company_ids" => selected, "targeted" => targeted.any?)
+      end
+    end
+  end
+end

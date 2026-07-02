@@ -14,7 +14,9 @@ module Mcp
       Scope: include only genuine legal-technology companies. This is a historical academic
       record — keep companies that are no longer active. Set a company's status to reflect
       reality (e.g. acquired, defunct) and record mergers, acquisitions, and successors rather
-      than deleting entries.
+      than deleting entries. Record an acquisition with record_acquisition (sets status=acquired,
+      captures the acquirer by name — the buyer need not be in the index — and links a successor
+      entry when it is). Example: Clausebase acquired by LawVu.
 
       Descriptions and all public text must be encyclopedic and fit for public display:
       - Aim for a substantive 2-4 sentence description (roughly 45-90 words), grounded only in
@@ -101,6 +103,16 @@ module Mcp
         the citation), "no_source"/"error" (attempted, nothing sourced), or "untried".
       - enrich_proposal is skipped when a proposal is already publishable or was enriched in the
         last few days (it rarely adds facts); pass force=true to override intentionally.
+      - Website health is a maintenance signal for spotting companies that may have gone
+        inactive. check_url_health enqueues async reachability probes (blind sweep by cooldown,
+        or targeted company_ids) that record url_status = ok, unknown (site is up but access-
+        restricted, or a single transient failure), or broken (gone/unreachable across
+        consecutive checks). A broken URL is a SOFT indicator, not proof: verify (the site may
+        have merely moved, rebranded, or blocked bots) before acting. When you confirm a company
+        is defunct, set status via update_company_field(status: "inactive"); if it was acquired,
+        use record_acquisition instead. Find candidates with search_companies(url_broken: true),
+        track the gap with get_stats companies.broken_url, and read the per-company verdict
+        (status/consecutive_failures/checked_at) via get_company. A weekly sweep runs automatically.
       - Always run duplicate_check before creating a company. If a likely duplicate exists,
         note it instead of adding a new entry.
 
@@ -139,7 +151,7 @@ module Mcp
       MCP::Server.new(
         name: "techindex_curator",
         title: "CodeX TechIndex Curator",
-        version: "1.11.0",
+        version: "1.12.0",
         instructions: INSTRUCTIONS,
         tools: Mcp::Tools.all,
         server_context: { actor: actor }

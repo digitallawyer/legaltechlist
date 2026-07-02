@@ -3,3 +3,8 @@ production:
   clear_solid_queue_finished_jobs:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12
+  # Weekly maintenance sweep: probe the least-recently-checked active company URLs so
+  # broken links surface as a QC signal without hammering the whole directory at once.
+  check_company_url_health:
+    command: "CompanyUrlHealthCheckService.enqueue_due(limit: 500)"
+    schedule: "0 4 * * 0"

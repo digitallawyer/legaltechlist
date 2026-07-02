@@ -50,6 +50,7 @@ module MethodologyHelper
         { name: "founded_date", type: "Year (YYYY)", description: "Year founded." },
         { name: "status", type: "Text", description: "Active, inactive, acquired, merged, or rebranded. Acquired entries remain in the index." },
         { name: "successor_company", type: "Reference", description: "Link to the successor record after acquisition or rebrand." },
+        { name: "acquirer_name / acquirer_url", type: "Text", description: "Acquiring company (name and website) when the buyer is not itself a TechIndex entry." },
         { name: "founders", type: "Text", description: "Named founders when reported." }
       ]
     },

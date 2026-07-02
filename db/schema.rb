@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_02_090000) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_02_130100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -130,6 +130,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_02_090000) do
     t.string "legaltech_atlas_url"
     t.string "slug"
     t.jsonb "founded_year_provenance"
+    t.string "url_status"
+    t.integer "url_status_code"
+    t.datetime "url_checked_at"
+    t.jsonb "url_health"
+    t.string "acquirer_name"
+    t.string "acquirer_url"
     t.index ["business_model_id"], name: "index_companies_on_business_model_id"
     t.index ["canonical_domain"], name: "index_companies_on_canonical_domain"
     t.index ["category_id"], name: "index_companies_on_category_id"
@@ -146,6 +152,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_02_090000) do
     t.index ["sub_category_id"], name: "index_companies_on_sub_category_id"
     t.index ["successor_company_id"], name: "index_companies_on_successor_company_id"
     t.index ["target_client_id"], name: "index_companies_on_target_client_id"
+    t.index ["url_checked_at"], name: "index_companies_on_url_checked_at"
+    t.index ["url_status"], name: "index_companies_on_url_status"
     t.index ["verification_verdict"], name: "index_companies_on_verification_verdict"
     t.index ["verified_at"], name: "index_companies_on_verified_at"
     t.index ["visible", "created_at"], name: "index_companies_on_visible_and_created_at", order: { created_at: :desc }

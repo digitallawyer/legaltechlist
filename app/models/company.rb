@@ -9,6 +9,16 @@ class Company < ActiveRecord::Base
 
   EARLIEST_PLAUSIBLE_FOUNDING_YEAR = 1970
 
+  # URL-health verdicts recorded by CompanyUrlHealthCheckService. A broken URL is a
+  # soft signal that a company may have gone inactive — it is surfaced for curator
+  # review and never auto-flips the lifecycle status.
+  URL_STATUS_OK = "ok".freeze
+  URL_STATUS_BROKEN = "broken".freeze
+  URL_STATUS_UNKNOWN = "unknown".freeze
+  # Statuses we consider already-resolved: no point re-checking a URL we've already
+  # decided is dead/acquired.
+  URL_CHECK_SKIP_STATUSES = %w[inactive closed acquired].freeze
+
   before_update :publish_tweet, :if => :visible_changed?
   before_update :publish_to_list, :if => :visible_changed?
   after_commit :sync_legaltech_atlas_link, on: :update, if: :should_sync_legaltech_atlas_link?
@@ -48,8 +58,20 @@ class Company < ActiveRecord::Base
   validate :must_have_at_least_one_revenue_model
   validates :target_client, presence: true
   validates :description, presence: true, length: {minimum: 5}
+  validates :acquirer_url, format: {with: %r{\Ahttps?://}, message: "must be an http(s) URL."}, allow_blank: true
 
   scope :publicly_visible, -> { where(visible: true) }
+  # URL-health scopes for the maintenance sweep and curator review.
+  scope :url_broken, -> { where(url_status: URL_STATUS_BROKEN) }
+  scope :with_main_url, -> { where.not(main_url: [nil, ""]) }
+  # Companies believed active (excludes already-resolved lifecycle states) whose URL
+  # has not been checked within the cooldown window. ISO-8601 UTC strings compare
+  # correctly, but url_checked_at is a real datetime so a plain time comparison works.
+  scope :url_check_due, ->(cooldown = 30.days) {
+    with_main_url
+      .where("status IS NULL OR LOWER(status) NOT IN (?)", URL_CHECK_SKIP_STATUSES)
+      .where("url_checked_at IS NULL OR url_checked_at < ?", cooldown.ago)
+  }
   scope :missing_main_url, -> { where(main_url: [nil, ""]) }
   scope :missing_founded_date, -> { where(founded_date: [nil, ""]) }
   # Companies still missing a founded_date that have NOT had a server-side backfill
@@ -309,6 +331,29 @@ class Company < ActiveRecord::Base
     self.status = status.to_s.strip.downcase.presence
   end
 
+  def url_broken?
+    url_status == URL_STATUS_BROKEN
+  end
+
+  def url_consecutive_failures
+    url_health&.dig("consecutive_failures").to_i
+  end
+
+  # Acquisition display data, preferring an in-DB successor link (canonical) and
+  # falling back to the free-text acquirer captured when the acquirer is not in the
+  # index (e.g. a non-legal-tech buyer). Returns nil when nothing is recorded.
+  def acquirer_display
+    if successor_company.present?
+      { name: successor_company.name, url: nil, company: successor_company }
+    elsif acquirer_name.present?
+      { name: acquirer_name, url: acquirer_url.presence, company: nil }
+    end
+  end
+
+  def acquired?
+    status.to_s.downcase == "acquired"
+  end
+
   def sync_structured_location_fields
     if will_save_change_to_country? || will_save_change_to_city?
       composed = compose_location(city, country)
@@ -482,7 +527,7 @@ class Company < ActiveRecord::Base
        latitude longitude created_at updated_at
        quality_status verification_verdict quality_score verified_at enriched_at
        quality_reviewed_at human_reviewed_at fingerprint canonical_domain source source_url
-       legaltech_atlas_url]
+       legaltech_atlas_url acquirer_name acquirer_url url_status url_status_code url_checked_at]
   end
 
   def self.ransackable_associations(auth_object = nil)

@@ -75,6 +75,7 @@ module Mcp
             "category" => company.category&.name,
             "secondary_category" => company.secondary_category&.name,
             "status" => company.status,
+            "url_status" => company.url_status,
             "visible" => company.visible,
             "quality_status" => company.quality_status,
             "verification_verdict" => company.verification_verdict,

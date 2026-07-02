@@ -525,6 +525,63 @@ module Mcp
       end
     end
 
+    test "record_acquisition sets status, acquirer, and exit date" do
+      result = call(Mcp::Tools::RecordAcquisitionTool, slug: "test-company-one", acquirer_name: "LawVu", acquirer_url: "https://lawvu.com", acquired_on: "2025")
+      assert_equal "recorded", result["result"]
+      company = companies(:one).reload
+      assert_equal "acquired", company.status
+      assert_equal "LawVu", company.acquirer_name
+      assert_equal "https://lawvu.com", company.acquirer_url
+      assert_equal "2025-01-01", company.exit_date.iso8601
+      assert_equal "LawVu", result["acquirer"]["name"]
+    end
+
+    test "record_acquisition links an in-index successor company" do
+      result = call(Mcp::Tools::RecordAcquisitionTool, slug: "test-company-one", acquirer_name: "Test Company Two", successor_slug: "test-company-two")
+      assert_equal "recorded", result["result"]
+      assert_equal companies(:two).id, companies(:one).reload.successor_company_id
+      assert_equal companies(:two).id, result["acquirer"]["successor_company_id"]
+    end
+
+    test "record_acquisition rejects a blank acquirer and self-succession" do
+      blank = Mcp::Tools::RecordAcquisitionTool.call(server_context: @context, slug: "test-company-one", acquirer_name: "  ")
+      assert blank.error?
+
+      self_ref = Mcp::Tools::RecordAcquisitionTool.call(server_context: @context, slug: "test-company-one", acquirer_name: "X", successor_slug: "test-company-one")
+      assert self_ref.error?
+    end
+
+    test "record_acquisition surfaces in get_company acquisition block" do
+      call(Mcp::Tools::RecordAcquisitionTool, slug: "test-company-one", acquirer_name: "LawVu", acquirer_url: "https://lawvu.com")
+      result = call(Mcp::Tools::GetCompanyTool, slug: "test-company-one")
+      assert_equal "LawVu", result["acquisition"]["acquirer_name"]
+      assert_equal "https://lawvu.com", result["acquisition"]["acquirer_url"]
+    end
+
+    test "check_url_health enqueues jobs for due companies" do
+      companies(:one).update_columns(status: "active", main_url: "http://example.com", url_checked_at: nil)
+      assert_enqueued_with(job: CheckCompanyUrlHealthJob) do
+        result = call(Mcp::Tools::CheckUrlHealthTool, company_ids: [companies(:one).id])
+        assert_equal "enqueued", result["result"]
+        assert_includes result["company_ids"], companies(:one).id
+      end
+    end
+
+    test "search_companies filters to broken urls" do
+      companies(:one).update_columns(url_status: Company::URL_STATUS_BROKEN)
+      result = call(Mcp::Tools::SearchCompaniesTool, url_broken: true)
+      ids = result["companies"].map { |c| c["id"] }
+      assert_includes ids, companies(:one).id
+      assert_not_includes ids, companies(:two).id
+    end
+
+    test "get_company reports url_health status" do
+      companies(:one).update_columns(url_status: Company::URL_STATUS_BROKEN, url_status_code: 404, url_checked_at: Time.current, url_health: { "consecutive_failures" => 2 })
+      result = call(Mcp::Tools::GetCompanyTool, slug: "test-company-one")
+      assert_equal Company::URL_STATUS_BROKEN, result["url_health"]["status"]
+      assert_equal 2, result["url_health"]["consecutive_failures"]
+    end
+
     private
 
     def with_env(vars)
