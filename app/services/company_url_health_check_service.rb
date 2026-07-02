@@ -29,8 +29,58 @@ class CompanyUrlHealthCheckService
   # inconclusive, never as broken.
   BOT_BLOCK_CODES = [401, 403, 405, 406, 429].freeze
 
+  # Machine-readable reason_code taxonomy stored on Company#url_health["reason_code"].
+  # Lets a curator separate "up but blocks crawlers" (fine) from "actually dead" (fix)
+  # instead of leaving every "unknown" verdict in limbo.
+  #   ok               – responded 2xx
+  #   bot_blocked      – 401/403/405/406/429 (WAF/Cloudflare; almost always live)
+  #   server_error     – 5xx (origin erroring; often transient)
+  #   tls_untrusted    – reachable, but TLS cert not trusted (usually live behind a CDN)
+  #   timeout          – open/read timeout
+  #   dns_failure      – host does not resolve (strong "dead" signal)
+  #   connection_refused / connection_reset / host_unreachable – transport failures
+  #   ssl_error        – TLS handshake failed even without verification
+  #   redirect_error   – redirect loop or missing Location
+  #   http_4xx         – other client errors (e.g. http_404, http_410 = strong "dead")
+  #   invalid_url      – no usable main_url on the record
+  #   connection_error – unclassified transport error
+
   def self.call(**kwargs)
     new(**kwargs).call
+  end
+
+  # Best-effort classifier for pre-existing url_health rows that predate reason_code
+  # (derives the code from the stored free-text reason + status_code, no network).
+  def self.derive_reason_code(url_status:, status_code:, reason:)
+    return Company::URL_STATUS_OK if url_status == Company::URL_STATUS_OK
+
+    code = status_code.to_i
+    text = reason.to_s.downcase
+    return "invalid_url" if text.include?("no usable main_url")
+    return "bot_blocked" if BOT_BLOCK_CODES.include?(code) || text.include?("access-restricted")
+    return "tls_untrusted" if text.include?("tls cert not trusted")
+    return "server_error" if code >= 500 || text.include?("server error")
+    return "timeout" if text.include?("timeout")
+    return "dns_failure" if text.include?("socketerror") || text.include?("getaddrinfo") || text.include?("failed to open tcp")
+    return "connection_refused" if text.include?("econnrefused") || text.include?("connection refused")
+    return "connection_reset" if text.include?("econnreset") || text.include?("connection reset")
+    return "host_unreachable" if text.include?("ehostunreach") || text.include?("enetunreach") || text.include?("no route to host")
+    return "ssl_error" if text.include?("ssl")
+    return "redirect_error" if text.include?("redirect")
+    return "http_#{code}" if code.between?(400, 499)
+
+    "connection_error"
+  end
+
+  # reason_code for a company, preferring the stored value and falling back to a
+  # derivation for historical rows.
+  def self.reason_code_for(company)
+    health = company.url_health.is_a?(Hash) ? company.url_health : {}
+    health["reason_code"].presence || derive_reason_code(
+      url_status: company.url_status,
+      status_code: company.url_status_code,
+      reason: health["reason"]
+    )
   end
 
   # Convenience for the recurring sweep / rake task: enqueue up to `limit` due checks.
@@ -76,7 +126,7 @@ class CompanyUrlHealthCheckService
     case response
     when Net::HTTPRedirection
       location = redirect_target(uri, response["location"])
-      return failure_outcome("redirect loop or missing Location", code: response.code.to_i) if location.nil? || redirects_left.zero?
+      return failure_outcome("redirect loop or missing Location", code: response.code.to_i, reason_code: "redirect_error") if location.nil? || redirects_left.zero?
 
       probe(location, redirects_left - 1, method: :head)
     when Net::HTTPSuccess
@@ -85,18 +135,30 @@ class CompanyUrlHealthCheckService
       code = response.code.to_i
       # Some servers reject HEAD (405/501) — retry once with GET before judging.
       return probe(uri, redirects_left, method: :get) if method == :head && [405, 501].include?(code)
-      return inconclusive_outcome("server responded #{code} (access-restricted)", code: code, final_url: uri.to_s) if BOT_BLOCK_CODES.include?(code)
+      return inconclusive_outcome("server responded #{code} (access-restricted)", code: code, final_url: uri.to_s, reason_code: "bot_blocked") if BOT_BLOCK_CODES.include?(code)
       # 5xx (incl. Cloudflare origin errors 520-530) means the edge is reachable but the
       # origin is erroring — frequently transient. Inconclusive, not broken, to avoid
       # penalizing a live-but-hiccuping site.
-      return inconclusive_outcome("server responded #{code} (server error)", code: code, final_url: uri.to_s) if code >= 500
+      return inconclusive_outcome("server responded #{code} (server error)", code: code, final_url: uri.to_s, reason_code: "server_error") if code >= 500
 
-      failure_outcome("HTTP #{code}", code: code, final_url: uri.to_s)
+      failure_outcome("HTTP #{code}", code: code, final_url: uri.to_s, reason_code: "http_#{code}")
     end
   rescue OpenSSL::SSL::SSLError => e
     tls_fallback(uri, e)
   rescue StandardError => e
-    failure_outcome("#{e.class}: #{e.message}")
+    failure_outcome("#{e.class}: #{e.message}", reason_code: classify_error(e))
+  end
+
+  def classify_error(error)
+    case error
+    when Net::OpenTimeout, Net::ReadTimeout, Timeout::Error then "timeout"
+    when SocketError then "dns_failure"
+    when Errno::ECONNREFUSED then "connection_refused"
+    when Errno::ECONNRESET then "connection_reset"
+    when Errno::EHOSTUNREACH, Errno::ENETUNREACH then "host_unreachable"
+    when OpenSSL::SSL::SSLError then "ssl_error"
+    else "connection_error"
+    end
   end
 
   # A TLS/certificate error means verification failed, but the host is often still
@@ -106,9 +168,9 @@ class CompanyUrlHealthCheckService
   # (e.g. behind a CDN with a trust-chain quirk) as dead.
   def tls_fallback(uri, error)
     response = request(uri, :head, verify: false)
-    inconclusive_outcome("reachable but TLS cert not trusted (HTTP #{response.code})", code: response.code.to_i, final_url: uri.to_s)
+    inconclusive_outcome("reachable but TLS cert not trusted (HTTP #{response.code})", code: response.code.to_i, final_url: uri.to_s, reason_code: "tls_untrusted")
   rescue StandardError
-    failure_outcome("#{error.class}: #{error.message}")
+    failure_outcome("#{error.class}: #{error.message}", reason_code: "ssl_error")
   end
 
   def request(uri, method, verify: true)
@@ -136,19 +198,19 @@ class CompanyUrlHealthCheckService
   end
 
   def success_outcome(code:, final_url:)
-    { "result" => Company::URL_STATUS_OK, "status_code" => code, "final_url" => final_url }
+    { "result" => Company::URL_STATUS_OK, "status_code" => code, "final_url" => final_url, "reason_code" => Company::URL_STATUS_OK }
   end
 
-  def inconclusive_outcome(reason, code: nil, final_url: nil)
-    { "result" => Company::URL_STATUS_UNKNOWN, "status_code" => code, "final_url" => final_url, "reason" => reason }
+  def inconclusive_outcome(reason, code: nil, final_url: nil, reason_code: "connection_error")
+    { "result" => Company::URL_STATUS_UNKNOWN, "status_code" => code, "final_url" => final_url, "reason" => reason, "reason_code" => reason_code }
   end
 
-  def failure_outcome(reason, code: nil, final_url: nil)
-    { "result" => "failure", "status_code" => code, "final_url" => final_url, "reason" => reason }
+  def failure_outcome(reason, code: nil, final_url: nil, reason_code: "connection_error")
+    { "result" => "failure", "status_code" => code, "final_url" => final_url, "reason" => reason, "reason_code" => reason_code }
   end
 
   def record_invalid!
-    persist!(inconclusive_outcome("no usable main_url"))
+    persist!(inconclusive_outcome("no usable main_url", reason_code: "invalid_url"))
     { "company_id" => company.id, "url_status" => company.url_status, "result" => "invalid_url" }
   end
 
@@ -169,6 +231,7 @@ class CompanyUrlHealthCheckService
       "consecutive_failures" => consecutive,
       "final_url" => outcome["final_url"],
       "reason" => outcome["reason"],
+      "reason_code" => outcome["reason_code"],
       "checked_at" => Time.current.utc.iso8601
     }
     health["last_ok_at"] = Time.current.utc.iso8601 if url_status == Company::URL_STATUS_OK

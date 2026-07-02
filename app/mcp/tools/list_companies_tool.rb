@@ -24,6 +24,7 @@ module Mcp
           review_state: { type: "string", enum: %w[not_reviewed in_review verified rejected needs_review], description: "Review state filter: not_reviewed | in_review | verified | rejected. \"needs_review\" is accepted as an alias for in_review (the get_stats term). An unrecognized value returns an error rather than the unfiltered set." },
           founded_date_null: { type: "boolean", description: "Only companies with no founded_date set." },
           url_health_status: { type: "string", enum: %w[ok broken unknown untried], description: "URL-health verdict filter: ok | broken | unknown | untried (never checked). An unrecognized value returns an error." },
+          url_reason: { type: "string", description: "Filter by url_health reason_code (see get_stats.companies.url_health.by_reason), e.g. bot_blocked, dns_failure, timeout, http_404, tls_untrusted. Combine with url_health_status:\"unknown\" to separate \"blocks crawlers\" from \"actually dead\"." },
           weak_description: { type: "boolean", description: "Only companies with a weak/too-short description." },
           missing_url: { type: "boolean", description: "Only companies with no main_url." },
           status: { type: "string", description: "Lifecycle status filter (e.g. active, acquired, inactive, closed). Case-insensitive." },
@@ -36,7 +37,7 @@ module Mcp
       )
 
       def self.call(server_context:, category_id: nil, country: nil, review_state: nil, founded_date_null: false,
-                    url_health_status: nil, weak_description: false, missing_url: false, status: nil,
+                    url_health_status: nil, url_reason: nil, weak_description: false, missing_url: false, status: nil,
                     visible: nil, query: nil, limit: DEFAULT_LIMIT, offset: 0)
         capped = [[limit.to_i, 1].max, MAX_LIMIT].min
         skip = [offset.to_i, 0].max
@@ -58,6 +59,7 @@ module Mcp
         scope = scope.missing_main_url if missing_url
         scope = scope.where("LOWER(status) = ?", status.to_s.strip.downcase) if status.present?
         scope = apply_url_health(scope, url_health_status)
+        scope = scope.url_reason(url_reason) if url_reason.present?
         scope = scope.text_search(query) if query.present?
 
         if country.present?
@@ -76,8 +78,8 @@ module Mcp
           "has_more" => (skip + companies.size) < total,
           "filters" => applied_filters(category_id: category_id, country: country, review_state: review_state,
                                         founded_date_null: founded_date_null, url_health_status: url_health_status,
-                                        weak_description: weak_description, missing_url: missing_url, status: status,
-                                        visible: visible, query: query),
+                                        url_reason: url_reason, weak_description: weak_description, missing_url: missing_url,
+                                        status: status, visible: visible, query: query),
           "companies" => companies.map { |company| company_row(company) }
         )
       end
@@ -96,6 +98,7 @@ module Mcp
         company_summary(company).merge(
           "review_state" => company.review_state,
           "url_health_status" => company.url_checked_at.blank? ? "untried" : company.url_status,
+          "url_reason_code" => (company.url_checked_at.present? ? CompanyUrlHealthCheckService.reason_code_for(company) : nil),
           "founded_date_backfill_status" => GetCompanyTool.founded_date_backfill_status(company),
           "weak_description" => company.description.to_s.strip.length < 40,
           "country" => company.resolved_country

@@ -4,7 +4,7 @@ module Mcp
   module CuratorServer
     # Running connector build. Surfaced via get_stats.server_version so the curator can
     # confirm which server is live during validation.
-    VERSION = "1.15.1".freeze
+    VERSION = "1.16.0".freeze
 
     module_function
 
@@ -125,11 +125,17 @@ module Mcp
         or targeted company_ids) that record url_status = ok, unknown (site is up but access-
         restricted, or a single transient failure), or broken (gone/unreachable across
         consecutive checks). A broken URL is a SOFT indicator, not proof: verify (the site may
-        have merely moved, rebranded, or blocked bots) before acting. When you confirm a company
-        is defunct, set status via update_company_field(status: "inactive"); if it was acquired,
-        use record_acquisition instead. Find candidates with search_companies(url_broken: true),
-        track the gap with get_stats companies.broken_url, and read the per-company verdict
-        (status/consecutive_failures/checked_at) via get_company. A weekly sweep runs automatically.
+        have merely moved, rebranded, or blocked bots) before acting. Each result also carries a
+        machine-readable reason_code (bot_blocked / server_error / tls_untrusted / timeout /
+        dns_failure / connection_refused / http_404 / ...) so you can triage an "unknown"/"broken"
+        verdict: bot_blocked and tls_untrusted almost always mean the site is live (leave it);
+        dns_failure, http_404/410, and connection_refused are strong "actually dead" signals worth
+        acting on. When you confirm a company is defunct, set status via
+        update_company_field(status: "inactive"); if it was acquired, use record_acquisition instead.
+        See the mix with get_stats companies.url_health.by_reason, list a specific cause with
+        list_companies(url_health_status: "unknown", url_reason: "dns_failure"), and read the
+        per-company verdict (status/reason_code/consecutive_failures/checked_at) via get_company.
+        A weekly sweep runs automatically.
       - Always run duplicate_check before creating a company. If a likely duplicate exists,
         note it instead of adding a new entry.
 

@@ -76,6 +76,9 @@ module Mcp
         {
           "status" => company.url_status,
           "status_code" => company.url_status_code,
+          # Machine-readable cause (bot_blocked / dns_failure / timeout / http_404 / ...)
+          # so an "unknown" verdict can be triaged as "blocks crawlers" vs "actually dead".
+          "reason_code" => CompanyUrlHealthCheckService.reason_code_for(company),
           "checked_at" => company.url_checked_at&.iso8601,
           "consecutive_failures" => company.url_consecutive_failures,
           "final_url" => company.url_health&.dig("final_url"),

@@ -93,10 +93,29 @@ class AdminDashboardMetrics
       "broken" => by_status[Company::URL_STATUS_BROKEN].to_i,
       "unknown" => by_status[Company::URL_STATUS_UNKNOWN].to_i,
       "untried" => Company.where(url_checked_at: nil).count,
-      "last_run_at" => Company.maximum(:url_checked_at)&.utc&.iso8601
+      "last_run_at" => Company.maximum(:url_checked_at)&.utc&.iso8601,
+      # Classified causes for the non-ok checked companies, so "unknown"/"broken" can be
+      # triaged (bot_blocked = fine, dns_failure/http_404/timeout = likely dead). Derived
+      # from the stored reason_code, falling back to the free-text reason for old rows.
+      "by_reason" => url_health_reason_breakdown
     }
   end
   private_class_method :url_health_breakdown
+
+  def self.url_health_reason_breakdown
+    tally = Hash.new(0)
+    Company.where.not(url_checked_at: nil)
+           .where.not(url_status: Company::URL_STATUS_OK)
+           .pluck(:url_status, :url_status_code, :url_health)
+           .each do |url_status, status_code, health|
+      health = {} unless health.is_a?(Hash)
+      code = health["reason_code"].presence ||
+             CompanyUrlHealthCheckService.derive_reason_code(url_status: url_status, status_code: status_code, reason: health["reason"])
+      tally[code] += 1
+    end
+    tally.sort_by { |_code, count| -count }.to_h
+  end
+  private_class_method :url_health_reason_breakdown
 
   # Founded-date coverage across the whole directory, distinguishing "never
   # attempted" (immediately actionable) from "attempted, no source found".

@@ -33,6 +33,31 @@ class CompanyUrlHealthCheckServiceTest < ActiveSupport::TestCase
     run_check(response(Net::HTTPForbidden, "403"))
     assert_equal Company::URL_STATUS_UNKNOWN, @company.url_status
     assert_equal 0, @company.url_consecutive_failures
+    assert_equal "bot_blocked", @company.url_health["reason_code"]
+  end
+
+  test "classifies reason_code by cause (dns, timeout, http status, tls, server error)" do
+    run_check(response(Net::HTTPServiceUnavailable, "503"))
+    assert_equal "server_error", @company.url_health["reason_code"]
+
+    run_check(response(Net::HTTPNotFound, "404"))
+    assert_equal "http_404", @company.url_health["reason_code"]
+
+    service = CompanyUrlHealthCheckService.new(company: @company)
+    service.stub(:request, ->(_uri, _method, **) { raise SocketError, "getaddrinfo failed" }) { service.call }
+    assert_equal "dns_failure", @company.reload.url_health["reason_code"]
+
+    service = CompanyUrlHealthCheckService.new(company: @company)
+    service.stub(:request, ->(_uri, _method, **) { raise Net::OpenTimeout, "timed out" }) { service.call }
+    assert_equal "timeout", @company.reload.url_health["reason_code"]
+  end
+
+  test "derive_reason_code classifies historical free-text rows without a stored code" do
+    assert_equal "bot_blocked", CompanyUrlHealthCheckService.derive_reason_code(url_status: "unknown", status_code: 403, reason: "server responded 403 (access-restricted)")
+    assert_equal "dns_failure", CompanyUrlHealthCheckService.derive_reason_code(url_status: "broken", status_code: nil, reason: "SocketError: getaddrinfo failed")
+    assert_equal "tls_untrusted", CompanyUrlHealthCheckService.derive_reason_code(url_status: "unknown", status_code: 200, reason: "reachable but TLS cert not trusted (HTTP 200)")
+    assert_equal "http_410", CompanyUrlHealthCheckService.derive_reason_code(url_status: "broken", status_code: 410, reason: "HTTP 410")
+    assert_equal "ok", CompanyUrlHealthCheckService.derive_reason_code(url_status: "ok", status_code: 200, reason: nil)
   end
 
   test "only escalates to broken after consecutive failures" do

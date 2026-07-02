@@ -764,6 +764,29 @@ module Mcp
       assert_includes ids, 2
     end
 
+    test "list_companies filters by url_reason and surfaces reason_code" do
+      companies(:one).update_columns(url_status: Company::URL_STATUS_UNKNOWN, url_checked_at: Time.current, url_health: { "reason_code" => "dns_failure", "reason" => "SocketError" })
+      companies(:two).update_columns(url_status: Company::URL_STATUS_UNKNOWN, url_checked_at: Time.current, url_health: { "reason_code" => "bot_blocked" })
+
+      result = call(Mcp::Tools::ListCompaniesTool, url_reason: "dns_failure")
+      ids = result["companies"].map { |c| c["id"] }
+      assert_includes ids, 1
+      assert_not_includes ids, 2
+      row = result["companies"].find { |c| c["id"] == 1 }
+      assert_equal "dns_failure", row["url_reason_code"]
+    end
+
+    test "get_stats url_health.by_reason classifies non-ok verdicts" do
+      companies(:one).update_columns(url_status: Company::URL_STATUS_BROKEN, url_checked_at: Time.current, url_health: { "reason_code" => "http_404" })
+      companies(:two).update_columns(url_status: Company::URL_STATUS_UNKNOWN, url_checked_at: Time.current, url_health: { "reason" => "server responded 403 (access-restricted)" })
+      Rails.cache.clear
+      result = call(Mcp::Tools::GetStatsTool, fresh: true)
+      by_reason = result["companies"]["url_health"]["by_reason"]
+      assert_operator by_reason["http_404"].to_i, :>=, 1
+      # derived from free-text on the row that has no stored reason_code
+      assert_operator by_reason["bot_blocked"].to_i, :>=, 1
+    end
+
     test "list_duplicate_candidates returns flagged pairs with match type" do
       make_company(name: "Avokati AI", url: "http://avokati.example")
       make_company(name: "Avokati AI", url: "http://avokati.example")

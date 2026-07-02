@@ -63,6 +63,9 @@ class Company < ActiveRecord::Base
   scope :publicly_visible, -> { where(visible: true) }
   # URL-health scopes for the maintenance sweep and curator review.
   scope :url_broken, -> { where(url_status: URL_STATUS_BROKEN) }
+  # Filter by the machine-readable url_health reason_code (bot_blocked / dns_failure /
+  # timeout / http_404 / ...) so "unknown" verdicts can be triaged.
+  scope :url_reason, ->(code) { where("url_health ->> 'reason_code' = ?", code.to_s) }
   scope :with_main_url, -> { where.not(main_url: [nil, ""]) }
   # Companies believed active (excludes already-resolved lifecycle states) whose URL
   # has not been checked within the cooldown window. ISO-8601 UTC strings compare
