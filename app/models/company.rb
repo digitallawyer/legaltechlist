@@ -99,6 +99,11 @@ class Company < ActiveRecord::Base
   scope :unknown_target_client, -> { left_joins(:target_client).where(target_clients: { name: "Unknown" }) }
   scope :duplicate_name_candidates, -> { where(id: duplicate_name_candidate_ids) }
   scope :duplicate_domain_candidates, -> { where(id: duplicate_domain_candidate_ids) }
+  # Rows the duplicate detector should compare. Curator-resolved duplicates are hidden
+  # (visible:false) or rejected-quality; excluding them means hiding/rejecting the loser of
+  # a pair drops it from the dup queue instead of re-surfacing forever. IS DISTINCT FROM
+  # keeps NULL quality_status rows (they are not "rejected").
+  scope :dedup_candidates, -> { where(visible: true).where("companies.quality_status IS DISTINCT FROM ?", "rejected") }
   scope :with_normalized_name, ->(normalized_name) {
     return none if normalized_name.blank?
 
@@ -265,7 +270,7 @@ class Company < ActiveRecord::Base
   end
 
   def self.compute_duplicate_name_candidate_ids
-    rows = where.not(name: [nil, ""]).pluck(:id, :name)
+    rows = dedup_candidates.where.not(name: [nil, ""]).pluck(:id, :name)
     grouped = rows.group_by { |_id, name| normalized_name_value(name) }
     grouped.values.select { |group| group.size > 1 }.flatten(1).map(&:first)
   end
@@ -274,7 +279,7 @@ class Company < ActiveRecord::Base
   # { "value" => matched_value, "ids" => [company_id, ...] } for a normalized name /
   # canonical domain shared by more than one company.
   def self.duplicate_name_groups
-    rows = where.not(name: [nil, ""]).pluck(:id, :name)
+    rows = dedup_candidates.where.not(name: [nil, ""]).pluck(:id, :name)
     rows.group_by { |_id, name| normalized_name_value(name) }
         .select { |value, group| value.present? && group.size > 1 }
         .map { |value, group| { "value" => value, "ids" => group.map(&:first).sort } }
@@ -283,8 +288,8 @@ class Company < ActiveRecord::Base
   def self.duplicate_domain_groups
     has_canonical = column_names.include?("canonical_domain")
     cols = has_canonical ? [:id, :main_url, :canonical_domain] : [:id, :main_url]
-    scope = where.not(main_url: [nil, ""])
-    scope = scope.or(where.not(canonical_domain: [nil, ""])) if has_canonical
+    scope = dedup_candidates.where.not(main_url: [nil, ""])
+    scope = scope.or(dedup_candidates.where.not(canonical_domain: [nil, ""])) if has_canonical
     rows = scope.pluck(*cols)
 
     rows.group_by { |row| (has_canonical ? row[2].presence : nil) || canonical_domain_for(row[1]) }
@@ -309,13 +314,13 @@ class Company < ActiveRecord::Base
 
   def self.compute_duplicate_domain_candidate_ids
     stored_ids = if column_names.include?("canonical_domain")
-      duplicate_domains = where.not(canonical_domain: [nil, ""]).group(:canonical_domain).having("COUNT(*) > 1").select(:canonical_domain)
-      where(canonical_domain: duplicate_domains).pluck(:id)
+      duplicate_domains = dedup_candidates.where.not(canonical_domain: [nil, ""]).group(:canonical_domain).having("COUNT(*) > 1").select(:canonical_domain)
+      dedup_candidates.where(canonical_domain: duplicate_domains).pluck(:id)
     else
       []
     end
 
-    rows = where.not(main_url: [nil, ""]).pluck(:id, :main_url)
+    rows = dedup_candidates.where.not(main_url: [nil, ""]).pluck(:id, :main_url)
     grouped = rows.group_by { |_id, main_url| canonical_domain_for(main_url) }
     fallback_ids = grouped.except(nil).values.select { |group| group.size > 1 }.flatten(1).map(&:first)
 

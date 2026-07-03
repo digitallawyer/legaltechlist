@@ -31,6 +31,7 @@ module Mcp
         ProposeCompanyUpdateTool,
         UpdateCompanyFieldTool,
         RecordAcquisitionTool,
+        MergeCompaniesTool,
         BackfillFoundedDatesTool,
         GetBackfillRunTool,
         CheckUrlHealthTool,

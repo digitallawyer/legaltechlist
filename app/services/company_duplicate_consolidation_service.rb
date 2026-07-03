@@ -1,5 +1,6 @@
 class CompanyDuplicateConsolidationService
   RUN_TYPE = "duplicate_domain_consolidation".freeze
+  MERGE_RUN_TYPE = "duplicate_merge".freeze
   AGENT_NAME = "DuplicateConsolidationAgent".freeze
   MERGE_FIELDS = %w[
     main_url
@@ -23,6 +24,62 @@ class CompanyDuplicateConsolidationService
 
   def self.call(**kwargs)
     new(**kwargs).call
+  end
+
+  # Curator-driven explicit merge: fold the given duplicate(s) into a caller-chosen
+  # keeper (from list_duplicate_candidates), rather than auto-selecting a survivor by
+  # domain group. Fills only blank keeper fields from the duplicates (keeper stays
+  # canonical, gaps like funding data get filled), transfers all associations
+  # (taggings, business models, target clients, proposals, import rows, attachments),
+  # redirects any successor references, then deletes the duplicates. Refuses to delete
+  # a duplicate that itself carries acquisition/successor lifecycle (that data would be
+  # lost) — set the keeper to that record instead, or record the acquisition first.
+  def self.merge_into(keep_id:, merge_ids:, reviewer: nil, dry_run: false)
+    new(reviewer: reviewer, dry_run: dry_run).merge_into(keep_id: keep_id, merge_ids: merge_ids)
+  end
+
+  def merge_into(keep_id:, merge_ids:)
+    keeper = Company.find_by(id: keep_id)
+    return { "result" => "blocked", "reason" => "keeper_not_found", "keep_id" => keep_id } unless keeper
+
+    duplicate_ids = Array(merge_ids).map(&:to_i).uniq - [keeper.id]
+    duplicates = Company.includes(:category, :secondary_category, :business_model, :target_client, :successor_company, :taggings, :tags).where(id: duplicate_ids).to_a
+    return { "result" => "blocked", "reason" => "no_valid_duplicates", "keeper_id" => keeper.id } if duplicates.empty?
+
+    if (reason = explicit_merge_block_reason(duplicates))
+      return { "result" => "blocked", "reason" => reason, "keeper_id" => keeper.id, "duplicate_ids" => duplicates.map(&:id) }
+    end
+
+    filled = {}
+    duplicates.each do |duplicate|
+      fills = blank_fills(keeper, duplicate)
+      keeper.assign_attributes(fills) if fills.any?
+      filled[duplicate.id] = fills
+    end
+    transferred = duplicates.each_with_object({}) { |duplicate, memo| memo[duplicate.id] = association_counts(duplicate) }
+
+    unless dry_run
+      Company.transaction do
+        save_keeper!(keeper)
+        duplicates.each do |duplicate|
+          redirect_successor_references!(duplicate, keeper)
+          delete_duplicate!(duplicate, keeper)
+        end
+      end
+      record_merge_run!(keeper, duplicates, filled, transferred)
+    end
+
+    {
+      "result" => (dry_run ? "preview" : "merged"),
+      "keeper_id" => keeper.id,
+      "keeper_name" => keeper.name,
+      "keeper_slug" => keeper.slug,
+      "duplicate_ids" => duplicates.map(&:id),
+      "deleted_company_ids" => (dry_run ? [] : duplicates.map(&:id)),
+      "filled_fields" => filled,
+      "transferred_associations" => transferred,
+      "dry_run" => dry_run
+    }
   end
 
   def initialize(domains: nil, reviewer: nil, notes: nil, dry_run: false)
@@ -90,6 +147,51 @@ class CompanyDuplicateConsolidationService
       "transferred_associations" => transferred_associations,
       "dry_run" => dry_run
     }
+  end
+
+  # Explicit merges only delete the given duplicates, so block deleting one that
+  # carries lifecycle data we cannot fold (acquisition/successor). The curator should
+  # keep that record instead, or record the acquisition first.
+  def explicit_merge_block_reason(duplicates)
+    return "acquired_duplicate" if duplicates.any? { |company| company.status.to_s == "acquired" }
+    return "duplicate_has_successor_link" if duplicates.any? { |company| company.successor_company_id.present? }
+
+    nil
+  end
+
+  # Blank-only field fills, returning {field => value} so a dry_run preview can show
+  # exactly what the keeper will gain (mirrors merge_fields but keeps the values).
+  def blank_fills(keeper, duplicate)
+    MERGE_FIELDS.each_with_object({}) do |field, attrs|
+      next unless keeper.respond_to?(field) && duplicate.respond_to?(field)
+      next if duplicate.public_send(field).blank?
+      next unless merge_field_blank?(keeper, field)
+
+      attrs[field] = duplicate.public_send(field)
+    end
+  end
+
+  # A third company pointing at the duplicate as its successor must be repointed at the
+  # keeper before the duplicate is deleted, so acquisition/successor chains survive.
+  def redirect_successor_references!(duplicate, keeper)
+    Company.where(successor_company_id: duplicate.id).where.not(id: keeper.id)
+           .update_all(successor_company_id: keeper.id, updated_at: Time.current)
+  end
+
+  def record_merge_run!(keeper, duplicates, filled, transferred)
+    PipelineRun.create!(
+      name: "Duplicate merge",
+      run_type: MERGE_RUN_TYPE,
+      status: "succeeded",
+      agent_name: AGENT_NAME,
+      records_processed: duplicates.size,
+      started_at: Time.current,
+      finished_at: Time.current,
+      details: { "reviewer" => reviewer, "keeper_id" => keeper.id, "deleted_company_ids" => duplicates.map(&:id), "filled_fields" => filled, "transferred_associations" => transferred }
+    )
+  rescue StandardError => e
+    Rails.logger.debug("[CompanyDuplicateConsolidationService] merge run audit failed: #{e.message}")
+    nil
   end
 
   def merge_fields(keeper, duplicate)

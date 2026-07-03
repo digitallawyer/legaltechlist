@@ -11,7 +11,7 @@ module Mcp
 
       tool_name "list_duplicate_candidates"
       title "List duplicate candidates"
-      description "Return the flagged duplicate-candidate pairs (paginated) so they can be reviewed and merged: each pair is {company_id_a, company_id_b, name_a, name_b, match_type ('name'|'domain'|'name+domain'), matched_value, confidence}. get_stats only reports the aggregate; this lists the actual pairs. Filter by match_type ('name' or 'domain') to focus a pass. Page with offset until has_more is false."
+      description "Return the flagged duplicate-candidate pairs (paginated) so they can be reviewed and merged: each pair is {company_id_a, company_id_b, name_a, name_b, match_type ('name'|'domain'|'name+domain'), matched_value, confidence}. get_stats only reports the aggregate; this lists the actual pairs. The detector only compares live rows (visible, non-rejected), so once you resolve a pair with merge_companies (or by hiding the loser) it drops out of this queue instead of re-surfacing. Filter by match_type ('name' or 'domain') to focus a pass. Page with offset until has_more is false. Resolve a pair with merge_companies(keep_id, merge_ids) to fold fields into the survivor and delete the duplicate."
       annotations(read_only_hint: true, destructive_hint: false, idempotent_hint: true, title: "List duplicate candidates")
       input_schema(
         properties: {

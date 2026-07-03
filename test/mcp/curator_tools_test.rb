@@ -848,6 +848,83 @@ module Mcp
       assert_nil domain_only["pairs"].find { |p| p["name_a"] == "Solo Name Co" }
     end
 
+    test "duplicate detector excludes hidden rows so resolved pairs drop out of the queue" do
+      a = make_company(name: "DupDetector Co", url: "http://dupdetector.example")
+      b = make_company(name: "DupDetector Co", url: "http://dupdetector.example")
+      pair = ->(result) { result["pairs"].find { |p| [p["company_id_a"], p["company_id_b"]].sort == [a.id, b.id].sort } }
+
+      assert pair.call(call(Mcp::Tools::ListDuplicateCandidatesTool)), "pair should surface while both are visible"
+
+      b.update!(visible: false)
+      assert_nil pair.call(call(Mcp::Tools::ListDuplicateCandidatesTool)), "hiding the loser should drop the pair"
+    end
+
+    test "duplicate detector excludes rejected-quality rows" do
+      a = make_company(name: "RejDetector Co", url: "http://rejdetector.example")
+      b = make_company(name: "RejDetector Co", url: "http://rejdetector.example")
+      b.update!(quality_status: "rejected")
+
+      result = call(Mcp::Tools::ListDuplicateCandidatesTool)
+      assert_nil result["pairs"].find { |p| [p["company_id_a"], p["company_id_b"]].sort == [a.id, b.id].sort }
+    end
+
+    test "merge_companies previews without deleting when unauthorized" do
+      keeper = make_company(name: "Avvoka", url: "http://avvoka.example")
+      dup = make_company(name: "Avvoka", url: "http://avvoka.example")
+      keeper.update_columns(total_funding_amount_usd: nil)
+      dup.update_columns(total_funding_amount_usd: 5_000_000)
+
+      result = nil
+      assert_no_difference "Company.count" do
+        result = call(Mcp::Tools::MergeCompaniesTool, keep_id: keeper.id, merge_ids: [dup.id])
+      end
+      assert_equal "preview", result["result"]
+      assert result["requires_confirmation"]
+      assert_equal [dup.id], result["duplicate_ids"]
+      assert_equal 5_000_000, result["filled_fields"][dup.id.to_s]["total_funding_amount_usd"].to_i
+      assert Company.exists?(dup.id)
+    end
+
+    test "merge_companies folds blank fields and deletes the duplicate when authorized" do
+      keeper = make_company(name: "Avvoka", url: "http://avvoka.example")
+      dup = make_company(name: "Avvoka", url: "http://avvoka.example")
+      keeper.update_columns(total_funding_amount_usd: nil, founders: nil)
+      dup.update_columns(total_funding_amount_usd: 5_000_000, founders: "Jane Doe")
+
+      result = nil
+      assert_difference "Company.count", -1 do
+        result = call(Mcp::Tools::MergeCompaniesTool, keep_id: keeper.id, merge_ids: [dup.id], human_approved: true)
+      end
+      assert_equal "merged", result["result"]
+      assert_equal [dup.id], result["deleted_company_ids"]
+      assert_not Company.exists?(dup.id)
+      keeper.reload
+      assert_equal 5_000_000, keeper.total_funding_amount_usd.to_i
+      assert_equal "Jane Doe", keeper.founders
+    end
+
+    test "merge_companies refuses to delete an acquired duplicate" do
+      keeper = make_company(name: "MergeAcq Co", url: "http://mergeacq.example")
+      dup = make_company(name: "MergeAcq Co", url: "http://mergeacq.example")
+      dup.update_columns(status: "acquired")
+
+      response = Mcp::Tools::MergeCompaniesTool.call(server_context: @context, keep_id: keeper.id, merge_ids: [dup.id], human_approved: true)
+      assert response.error?
+      assert Company.exists?(dup.id)
+    end
+
+    test "merge_companies executes autonomously with sufficient confidence" do
+      keeper = make_company(name: "ConfMerge Co", url: "http://confmerge.example")
+      dup = make_company(name: "ConfMerge Co", url: "http://confmerge.example")
+
+      with_env("MCP_CURATOR_MIN_CONFIDENCE" => "0.8") do
+        assert_difference "Company.count", -1 do
+          result = call(Mcp::Tools::MergeCompaniesTool, keep_id: keeper.id, merge_ids: [dup.id], confidence: 0.95)
+          assert_equal "merged", result["result"]
+        end
+      end
+    end
+
     test "check_url_health reports skipped ids that have no main_url" do
       companies(:one).update_columns(main_url: "http://example.com", url_checked_at: nil)
       companies(:two).update_columns(main_url: "")

@@ -4,7 +4,7 @@ module Mcp
   module CuratorServer
     # Running connector build. Surfaced via get_stats.server_version so the curator can
     # confirm which server is live during validation.
-    VERSION = "1.17.0".freeze
+    VERSION = "1.18.0".freeze
 
     module_function
 
@@ -183,7 +183,15 @@ module Mcp
         pass visible:true to match the by_category/by_country public-index counts.
       - Review and merge duplicates with list_duplicate_candidates, which returns the actual flagged
         pairs (company_id_a/b, names, match_type name|domain|name+domain, matched_value, confidence)
-        behind the get_stats aggregate; page with offset until has_more is false.
+        behind the get_stats aggregate; page with offset until has_more is false. The detector only
+        compares live rows (visible + non-rejected), so resolving a pair clears it from the queue for
+        good. Resolve a real duplicate with merge_companies(keep_id, merge_ids): choose the clean
+        canonical record as keep_id, and the duplicate(s) are folded in (blank keeper fields filled
+        from them — e.g. funding data — all tags/models/clients/proposals/attachments transferred,
+        successor links repointed) and deleted. Merging is DESTRUCTIVE: it returns a preview
+        (filled_fields + transferred_associations, nothing deleted) unless you pass human_approved=true
+        or a confidence at/above the threshold. It refuses to delete a duplicate that is itself
+        acquired or has a successor link — keep that record instead, or record the acquisition first.
 
       Every action is attributed to the curator account and audited. If you notice recurring
       friction, a missing capability, or an unclear rule that makes curation harder, record it
