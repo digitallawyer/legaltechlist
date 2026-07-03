@@ -38,12 +38,15 @@ class CompanyUrlHealthCheckService
   #   tls_untrusted    – reachable, but TLS cert not trusted (usually live behind a CDN)
   #   timeout          – open/read timeout
   #   dns_failure      – host does not resolve (strong "dead" signal)
-  #   connection_refused / connection_reset / host_unreachable – transport failures
   #   ssl_error        – TLS handshake failed even without verification
   #   redirect_error   – redirect loop or missing Location
-  #   http_4xx         – other client errors (e.g. http_404, http_410 = strong "dead")
-  #   invalid_url      – no usable main_url on the record
-  #   connection_error – unclassified transport error
+  #   http_<status>    – any other client error, one code per status (e.g. http_404,
+  #                      http_410 = strong "dead"; http_400/402/409 also seen)
+  #   connection_reset – peer reset the connection mid-request
+  #   connection_error – unclassified transport error (default fallback)
+  # Additional codes emitted only under specific OS-level conditions (so they may not
+  # appear in a given sample): connection_refused (Errno::ECONNREFUSED),
+  # host_unreachable (Errno::EHOSTUNREACH/ENETUNREACH), invalid_url (no usable main_url).
 
   def self.call(**kwargs)
     new(**kwargs).call

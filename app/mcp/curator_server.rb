@@ -4,7 +4,7 @@ module Mcp
   module CuratorServer
     # Running connector build. Surfaced via get_stats.server_version so the curator can
     # confirm which server is live during validation.
-    VERSION = "1.16.0".freeze
+    VERSION = "1.16.1".freeze
 
     module_function
 
@@ -127,10 +127,11 @@ module Mcp
         consecutive checks). A broken URL is a SOFT indicator, not proof: verify (the site may
         have merely moved, rebranded, or blocked bots) before acting. Each result also carries a
         machine-readable reason_code (bot_blocked / server_error / tls_untrusted / timeout /
-        dns_failure / connection_refused / http_404 / ...) so you can triage an "unknown"/"broken"
-        verdict: bot_blocked and tls_untrusted almost always mean the site is live (leave it);
-        dns_failure, http_404/410, and connection_refused are strong "actually dead" signals worth
-        acting on. When you confirm a company is defunct, set status via
+        dns_failure / http_404 / ...; HTTP client errors use one code per status such as http_404
+        or http_410) so you can triage an "unknown"/"broken" verdict: bot_blocked and tls_untrusted
+        almost always mean the site is live (leave it); dns_failure, http_404/410, and
+        connection_reset are strong "actually dead" signals worth acting on. Read the live set of
+        codes from get_stats companies.url_health.by_reason. When you confirm a company is defunct, set status via
         update_company_field(status: "inactive"); if it was acquired, use record_acquisition instead.
         See the mix with get_stats companies.url_health.by_reason, list a specific cause with
         list_companies(url_health_status: "unknown", url_reason: "dns_failure"), and read the
