@@ -32,6 +32,7 @@ module Mcp
         UpdateCompanyFieldTool,
         RecordAcquisitionTool,
         BackfillFoundedDatesTool,
+        GetBackfillRunTool,
         CheckUrlHealthTool,
         ApplySafeFieldsTool,
         MarkReviewTool,

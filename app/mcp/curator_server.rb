@@ -4,7 +4,7 @@ module Mcp
   module CuratorServer
     # Running connector build. Surfaced via get_stats.server_version so the curator can
     # confirm which server is live during validation.
-    VERSION = "1.16.1".freeze
+    VERSION = "1.17.0".freeze
 
     module_function
 
@@ -118,6 +118,9 @@ module Mcp
         true), track the gap with get_stats companies.missing_founded_date, and poll get_company —
         which reports founded_year_provenance and a founded_date_backfill_status of "filled" (with
         the citation), "no_source"/"error" (attempted, nothing sourced), or "untried".
+        backfill_founded_dates returns a run_id; poll get_backfill_run(run_id) for a verifiable
+        per-run summary (filled / no_source / no_year / error / pending counts, status running until
+        every targeted company has been attempted) instead of inferring it from get_stats deltas.
       - enrich_proposal is skipped when a proposal is already publishable or was enriched in the
         last few days (it rarely adds facts); pass force=true to override intentionally.
       - Website health is a maintenance signal for spotting companies that may have gone
@@ -130,10 +133,12 @@ module Mcp
         dns_failure / http_404 / ...; HTTP client errors use one code per status such as http_404
         or http_410) so you can triage an "unknown"/"broken" verdict: bot_blocked and tls_untrusted
         almost always mean the site is live (leave it); dns_failure, http_404/410, and
-        connection_reset are strong "actually dead" signals worth acting on. Read the live set of
-        codes from get_stats companies.url_health.by_reason. When you confirm a company is defunct, set status via
+        connection_reset are strong "actually dead" signals worth acting on. get_stats reports the
+        cause mix as by_reason (all non-ok) plus by_reason_broken and by_reason_unknown, so
+        "how many confirmed dead, by cause" is a one-call read of url_health.by_reason_broken.
+        When you confirm a company is defunct, set status via
         update_company_field(status: "inactive"); if it was acquired, use record_acquisition instead.
-        See the mix with get_stats companies.url_health.by_reason, list a specific cause with
+        List a specific cause with
         list_companies(url_health_status: "unknown", url_reason: "dns_failure"), and read the
         per-company verdict (status/reason_code/consecutive_failures/checked_at) via get_company.
         A weekly sweep runs automatically.

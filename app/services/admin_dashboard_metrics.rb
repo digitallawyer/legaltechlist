@@ -88,6 +88,7 @@ class AdminDashboardMetrics
   # checked; last_run_at is the most recent check timestamp.
   def self.url_health_breakdown
     by_status = Company.group(:url_status).count
+    reasons = url_health_reason_breakdown
     {
       "ok" => by_status[Company::URL_STATUS_OK].to_i,
       "broken" => by_status[Company::URL_STATUS_BROKEN].to_i,
@@ -97,13 +98,19 @@ class AdminDashboardMetrics
       # Classified causes for the non-ok checked companies, so "unknown"/"broken" can be
       # triaged (bot_blocked = fine, dns_failure/http_404/timeout = likely dead). Derived
       # from the stored reason_code, falling back to the free-text reason for old rows.
-      "by_reason" => url_health_reason_breakdown
+      # by_reason is all non-ok; by_reason_broken/by_reason_unknown split it by verdict so
+      # "how many confirmed dead, by cause" (by_reason_broken) is a one-call answer.
+      "by_reason" => reasons[:combined],
+      "by_reason_broken" => reasons[:broken],
+      "by_reason_unknown" => reasons[:unknown]
     }
   end
   private_class_method :url_health_breakdown
 
   def self.url_health_reason_breakdown
-    tally = Hash.new(0)
+    combined = Hash.new(0)
+    broken = Hash.new(0)
+    unknown = Hash.new(0)
     Company.where.not(url_checked_at: nil)
            .where.not(url_status: Company::URL_STATUS_OK)
            .pluck(:url_status, :url_status_code, :url_health)
@@ -111,11 +118,18 @@ class AdminDashboardMetrics
       health = {} unless health.is_a?(Hash)
       code = health["reason_code"].presence ||
              CompanyUrlHealthCheckService.derive_reason_code(url_status: url_status, status_code: status_code, reason: health["reason"])
-      tally[code] += 1
+      combined[code] += 1
+      broken[code] += 1 if url_status == Company::URL_STATUS_BROKEN
+      unknown[code] += 1 if url_status == Company::URL_STATUS_UNKNOWN
     end
-    tally.sort_by { |_code, count| -count }.to_h
+    { combined: sort_desc(combined), broken: sort_desc(broken), unknown: sort_desc(unknown) }
   end
   private_class_method :url_health_reason_breakdown
+
+  def self.sort_desc(tally)
+    tally.sort_by { |_code, count| -count }.to_h
+  end
+  private_class_method :sort_desc
 
   # Founded-date coverage across the whole directory, distinguishing "never
   # attempted" (immediately actionable) from "attempted, no source found".

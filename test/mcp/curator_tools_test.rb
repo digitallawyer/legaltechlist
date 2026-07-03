@@ -787,6 +787,43 @@ module Mcp
       assert_operator by_reason["bot_blocked"].to_i, :>=, 1
     end
 
+    test "get_stats url_health scopes by_reason_broken and by_reason_unknown by verdict" do
+      companies(:one).update_columns(url_status: Company::URL_STATUS_BROKEN, url_checked_at: Time.current, url_health: { "reason_code" => "http_404" })
+      companies(:two).update_columns(url_status: Company::URL_STATUS_UNKNOWN, url_checked_at: Time.current, url_health: { "reason_code" => "bot_blocked" })
+      Rails.cache.clear
+      url_health = call(Mcp::Tools::GetStatsTool, fresh: true)["companies"]["url_health"]
+
+      # http_404 is a broken-only cause; bot_blocked is an unknown-only cause here.
+      assert_operator url_health["by_reason_broken"]["http_404"].to_i, :>=, 1
+      assert_nil url_health["by_reason_broken"]["bot_blocked"]
+      assert_operator url_health["by_reason_unknown"]["bot_blocked"].to_i, :>=, 1
+      assert_nil url_health["by_reason_unknown"]["http_404"]
+    end
+
+    test "get_backfill_run summarizes filled, no_source and pending outcomes for a run" do
+      started = Time.current
+      run = PipelineRun.create!(name: "Founded-date backfill batch", run_type: Mcp::Tools::BackfillFoundedDatesTool::RUN_TYPE, status: "running", started_at: started, records_processed: 3, details: { "company_ids" => [companies(:one).id, companies(:two).id, 999_999], "enqueued" => 3, "targeted" => true })
+      companies(:one).update_columns(founded_date: "2015-01-01", founded_year_provenance: { "status" => "filled", "attempted_at" => (started + 1.second).utc.iso8601 })
+      companies(:two).update_columns(founded_date: "", founded_year_provenance: { "status" => "no_source", "attempted_at" => (started + 1.second).utc.iso8601 })
+
+      result = call(Mcp::Tools::GetBackfillRunTool, run_id: run.id)
+      assert_equal "succeeded", result["status"]
+      assert_equal 1, result["filled"]
+      assert_equal 1, result["no_source"]
+      assert_equal 1, result["missing"]
+      assert_equal 0, result["pending"]
+    end
+
+    test "get_backfill_run marks companies not yet attempted as pending" do
+      started = Time.current
+      run = PipelineRun.create!(name: "Founded-date backfill batch", run_type: Mcp::Tools::BackfillFoundedDatesTool::RUN_TYPE, status: "running", started_at: started, records_processed: 1, details: { "company_ids" => [companies(:one).id], "enqueued" => 1, "targeted" => false })
+      companies(:one).update_columns(founded_date: "", founded_year_provenance: nil)
+
+      result = call(Mcp::Tools::GetBackfillRunTool, run_id: run.id)
+      assert_equal "running", result["status"]
+      assert_equal 1, result["pending"]
+    end
+
     test "list_duplicate_candidates returns flagged pairs with match type" do
       make_company(name: "Avokati AI", url: "http://avokati.example")
       make_company(name: "Avokati AI", url: "http://avokati.example")
