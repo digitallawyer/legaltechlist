@@ -227,6 +227,33 @@ namespace :data_quality do
     puts "Normalize locations complete mode=#{mode} category_id=#{category_id || 'all'} changed=#{changed} still_missing_flag=#{still_missing_flag}"
   end
 
+  desc "Canonicalize the stored country column to its normalized name (folds spelling/native variants like Brasil->Brazil, Schweiz->Switzerland). Defaults to dry-run; set DRY_RUN=false to write."
+  task normalize_countries: :environment do
+    dry_run = ENV.fetch("DRY_RUN", "true") != "false"
+    verbose = ENV.fetch("VERBOSE", "false") == "true"
+    changed = 0
+    examples = []
+
+    Company.where.not(country: [nil, ""]).find_each do |company|
+      canonical = LocationCountryResolver.normalize_country_name(company.country)
+      next if canonical.blank? || canonical == company.country
+
+      changed += 1
+      if dry_run
+        line = "DRY RUN company_id=#{company.id} #{company.country.inspect} -> #{canonical.inspect}"
+        verbose ? puts(line) : (examples << line if examples.size < 30)
+      else
+        # update_columns skips validations/callbacks so we don't retrigger geocoding or
+        # location recomposition — we only canonicalize the country value in place.
+        company.update_columns(country: canonical, updated_at: Time.current)
+      end
+    end
+
+    mode = dry_run ? "dry-run" : "write"
+    puts examples if dry_run && !verbose
+    puts "Normalize countries complete mode=#{mode} changed=#{changed}"
+  end
+
   desc "Backfill structured country and city fields from location text. Defaults to dry-run; set DRY_RUN=false to write."
   task backfill_location_fields: :environment do
     dry_run = ENV.fetch("DRY_RUN", "true") != "false"

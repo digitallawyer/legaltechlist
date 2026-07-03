@@ -62,6 +62,16 @@ class LocationCountryResolverTest < ActiveSupport::TestCase
     assert_equal "Ivory Coast", LocationCountryResolver.normalize_country_name("Côte d'Ivoire")
   end
 
+  test "normalize_country_name converges Ivory Coast variants without an alias cycle" do
+    # Both spellings must fold to the same canonical (previously each aliased to the
+    # other and never converged, splitting the country in by_country).
+    assert_equal "Ivory Coast", LocationCountryResolver.normalize_country_name("Ivory Coast")
+    assert_equal "Ivory Coast", LocationCountryResolver.normalize_country_name("Côte d'Ivoire")
+    assert_equal "Ivory Coast", LocationCountryResolver.normalize_country_name("Cote d'Ivoire")
+    # And the canonical must resolve to a valid ISO code for the geochart.
+    assert_equal "CI", LocationCountryResolver.country_iso_code("Ivory Coast")
+  end
+
   test "normalize_country_name collapses native-language and variant country names" do
     assert_equal "Switzerland", LocationCountryResolver.normalize_country_name("Schweiz")
     assert_equal "Switzerland", LocationCountryResolver.normalize_country_name("Suisse")
