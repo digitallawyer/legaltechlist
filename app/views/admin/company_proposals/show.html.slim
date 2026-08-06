@@ -1,0 +1,211 @@
+- content_for :title, "#{@company_proposal.display_name} Proposal"
+- suggestion_diffs = @company_proposal.user_suggestion? ? proposal_suggestion_diffs(@company_proposal) : []
+
+.mb-3
+    .d-flex.flex-wrap.align-items-center.gap-2.mb-2
+        h1.h3.mb-0= @company_proposal.display_name
+        span.admin-status-pill.text-bg-light= @company_proposal.status.humanize
+        - if @company_proposal.user_submission?
+            span.admin-status-pill.text-bg-primary User submission
+        span.admin-status-pill.text-bg-secondary= @company_proposal.proposal_type.humanize
+
+- if @company_proposal.company
+    - banner_class = @company_proposal.company.visible? ? "" : " is-draft"
+    .admin-proposal-status-banner.mb-3(class=banner_class)
+        - if @company_proposal.company.visible?
+            i.fas.fa-check-circle
+            span.fw-semibold Published:
+        - else
+            i.fas.fa-file-alt
+            span.fw-semibold Draft:
+        = link_to @company_proposal.company.name, custom_admin_company_review_path(@company_proposal.company.id), class: "fw-semibold"
+        - if @company_proposal.company.visible?
+            span.text-muted.small is visible on the public site.
+        - else
+            span.text-muted.small is invisible until you explicitly publish it.
+
+.admin-proposal-toolbar.mb-3
+    .admin-proposal-toolbar-secondary
+        - if @company_proposal.company&.slug.present?
+            = link_to company_path(@company_proposal.company), class: "btn btn-outline-secondary", target: "_blank", rel: "noopener" do
+                i.fas.fa-arrow-up-right-from-square.me-1
+                | View on site
+        = button_to enrich_custom_admin_company_proposal_path(@company_proposal), method: :post, class: "btn btn-outline-secondary", form: { data: { turbo_confirm: "Generate proposal-only enrichment without changing company records?" } } do
+            i.fas.fa-wand-magic-sparkles.me-1
+            | Enrich
+        = link_to edit_custom_admin_company_proposal_path(@company_proposal), class: "btn btn-outline-secondary" do
+            i.fas.fa-pen.me-1
+            | Edit
+    .admin-proposal-toolbar-primary
+        button.btn.btn-outline-danger type="button" data-bs-toggle="collapse" data-bs-target="#proposalRejectPanel" aria-expanded="false" aria-controls="proposalRejectPanel" Reject
+        - if @company_proposal.user_suggestion?
+            = form_with url: approve_custom_admin_company_proposal_path(@company_proposal), method: :post, local: true, class: "d-inline" do
+                = button_tag "Apply to Company", type: "submit", name: "publish", value: "0", class: "btn btn-success", data: { turbo_confirm: "Apply this suggestion to #{@company_proposal.company&.name}?" }
+        - elsif !@company_proposal.duplicate_blocking?
+            = form_with url: approve_custom_admin_company_proposal_path(@company_proposal), method: :post, local: true, class: "d-inline" do
+                = button_tag "Approve Draft", type: "submit", name: "publish", value: "0", class: "btn btn-outline-success", data: { turbo_confirm: "Approve this proposal as an invisible draft?" }, disabled: @company_proposal.company_id.present?
+                = button_tag "Publish", type: "submit", name: "publish", value: "1", class: "btn btn-success", data: { turbo_confirm: "Publish this proposal to the public site?" }, disabled: @company_proposal.company_id.present? || !@quality_report["publish_ready"]
+
+- if !@company_proposal.user_suggestion? && @company_proposal.duplicate_blocking?
+    .card.border-0.shadow-sm.mb-3
+        .card-body.py-2
+            = form_with url: approve_custom_admin_company_proposal_path(@company_proposal), method: :post, local: true do
+                .d-flex.flex-wrap.align-items-center.gap-3
+                    .text-warning.small.fw-semibold Duplicate signals found — approval requires override.
+                    .form-check.mb-0
+                        = check_box_tag :duplicate_override, "1", false, class: "form-check-input", id: "duplicate_override"
+                        = label_tag :duplicate_override, "I reviewed duplicates and still want to approve", class: "form-check-label small"
+                    .d-flex.gap-2
+                        = button_tag "Approve Draft", type: "submit", name: "publish", value: "0", class: "btn btn-sm btn-outline-success", data: { turbo_confirm: "Approve this proposal as an invisible draft?" }, disabled: @company_proposal.company_id.present?
+                        = button_tag "Publish", type: "submit", name: "publish", value: "1", class: "btn btn-sm btn-success", data: { turbo_confirm: "Publish this proposal to the public site?" }, disabled: @company_proposal.company_id.present? || !@quality_report["publish_ready"]
+
+#proposalRejectPanel.collapse.mb-3
+    .card.border-0.shadow-sm.border-danger
+        .card-body.py-3
+            = form_with url: reject_custom_admin_company_proposal_path(@company_proposal), method: :post, local: true do
+                .mb-2
+                    = label_tag :rejection_reason, "Rejection reason", class: "form-label small mb-1"
+                    = text_area_tag :rejection_reason, @company_proposal.rejection_reason, class: "form-control form-control-sm", rows: 2
+                = submit_tag "Confirm Rejection", class: "btn btn-sm btn-danger", data: { turbo_confirm: "Reject this proposal without changing company data?" }
+
+.row.g-3
+    .col-lg-8
+        - if @company_proposal.user_submission?
+            .card.border-0.shadow-sm.mb-3.admin-proposal-user-card
+                .card-header.bg-white.py-2
+                    h2.h6.mb-0 User submission
+                .card-body.py-3
+                    .d-flex.flex-wrap.justify-content-between.align-items-start.gap-2.mb-2
+                        - if @company_proposal.issue_type.present?
+                            span.badge.text-bg-light= @company_proposal.issue_type.humanize
+                        - if @company_proposal.submitter_email.present?
+                            span.text-muted.small= @company_proposal.submitter_email
+                    - if @company_proposal.user_message.present?
+                        .admin-proposal-user-message= @company_proposal.user_message
+
+        - if suggestion_diffs.any?
+            .card.border-0.shadow-sm.mb-3
+                .card-header.bg-white.py-2
+                    h2.h6.mb-0 Suggested changes
+                .card-body.py-3
+                    - suggestion_diffs.each do |diff|
+                        .mb-3
+                            .small.fw-semibold.text-muted.mb-1= diff[:label]
+                            .admin-proposal-diff-old= diff[:old_value].presence || "(blank)"
+                            .admin-proposal-diff-new.mt-1= diff[:new_value].presence || "(blank)"
+
+        .card.border-0.shadow-sm.mb-3
+            .card-header.bg-white.py-2.d-flex.justify-content-between.align-items-center
+                h2.h6.mb-0 Final editable fields
+                = link_to edit_custom_admin_company_proposal_path(@company_proposal), class: "btn btn-outline-secondary btn-sm" do
+                    i.fas.fa-pen.me-1
+                    | Edit
+            .card-body.py-3
+                dl.row.mb-0.small
+                    - proposal_changes_for_display(@final_changes).each do |label, value|
+                        dt.col-sm-4.text-muted= label
+                        dd.col-sm-8= value
+
+        .card.border-0.shadow-sm.mb-3
+            .card-header.bg-white.py-2
+                h2.h6.mb-0 Agent enrichment
+            .card-body.py-3
+                - if @agent_details.present?
+                    - description_draft = @agent_details["description_draft"] || {}
+                    - description_critic = @agent_details["description_critic"] || {}
+                    - web_research = @agent_details["web_research"] || {}
+                    - founded_date_source = @agent_details["founded_date_source"] || {}
+                    - if description_draft.present?
+                        .admin-kicker.mb-1 Proposed description
+                        p.small.fw-semibold.mb-1= description_draft["proposed_description"]
+                        p.text-muted.small.mb-2= description_draft["rationale"]
+                    - if founded_date_source["source_url"].present?
+                        .admin-kicker.mb-1 Founding year source
+                        p.small.mb-2
+                            = link_to founded_date_source["source_url"], founded_date_source["source_url"], target: "_blank", rel: "noopener"
+                            span.text-muted.ms-1 (cited by enrichment)
+                    - if web_research.present?
+                        .admin-kicker.mb-1 Research basis
+                        p.text-muted.small.mb-2= web_research["note"].presence || web_research["summary"].presence || "Web research mode: #{web_research['mode']}"
+                        - if Array(web_research["results"]).any?
+                            ul.small.mb-2
+                                - Array(web_research["results"]).each do |result|
+                                    li
+                                        - if result["url"].present?
+                                            = link_to result["title"].presence || result["url"], result["url"], target: "_blank", rel: "noopener"
+                                        - else
+                                            = result["title"]
+                                        - if result["snippet"].present?
+                                            .text-muted= result["snippet"]
+                    - if description_critic.present?
+                        .admin-kicker.mb-1 Critic verdict
+                        p.small.mb-1= description_critic["verdict"].to_s.humanize
+                        - if Array(description_critic["issues"]).any?
+                            ul.small.mb-0
+                                - Array(description_critic["issues"]).each do |issue|
+                                    li= issue
+                        - else
+                            p.text-muted.small.mb-0 No deterministic critic issues recorded.
+                - else
+                    p.text-muted.small.mb-0 No enrichment has been run yet.
+
+        .card.border-0.shadow-sm
+            .card-header.bg-white.py-2
+                button.btn.btn-link.btn-sm.text-decoration-none.text-dark.p-0.fw-semibold type="button" data-bs-toggle="collapse" data-bs-target="#proposalSourcePayload" aria-expanded="false" aria-controls="proposalSourcePayload"
+                    i.fas.fa-chevron-right.me-1
+                    | Source payload
+            #proposalSourcePayload.collapse
+                .card-body.py-3.border-top
+                    .alert.alert-warning.py-2.small.mb-2 Source descriptions are evidence only. Do not copy them into public TechIndex text.
+                    pre.bg-light.border.rounded.p-2.small.mb-0= JSON.pretty_generate(@source_payload)
+
+    .col-lg-4
+        .card.border-0.shadow-sm.mb-3
+            .card-header.bg-white.py-2.d-flex.justify-content-between.align-items-center
+                h2.h6.mb-0 Required before publish
+                span.badge(class=(@quality_report["publish_ready"] ? "text-bg-success" : "text-bg-warning"))= @quality_report["publish_ready"] ? "Ready" : "Blocked"
+            .card-body.py-3
+                p.text-muted.small.mb-2= "#{@quality_report['score']}% complete"
+                .admin-proposal-completeness
+                    - CompanyProposalQualityService::REQUIRED_FIELDS.each do |field|
+                        - present = @final_changes[field].present?
+                        .admin-proposal-field-check(class=(present ? "is-complete" : "is-missing"))
+                            span= field.humanize
+                            - if present
+                                i.fas.fa-check.text-success
+                            - else
+                                i.fas.fa-exclamation-triangle
+                - if Array(@quality_report["blockers"]).any?
+                    .alert.alert-warning.py-2.mt-2.mb-0
+                        .small.fw-semibold.mb-1 Publish blockers
+                        ul.small.mb-0.ps-3
+                            - Array(@quality_report["blockers"]).each do |blocker|
+                                li= blocker
+                - elsif Array(@quality_report["warnings"]).any?
+                    .alert.alert-info.py-2.mt-2.mb-0
+                        .small.fw-semibold.mb-1 Review warnings
+                        ul.small.mb-0.ps-3
+                            - Array(@quality_report["warnings"]).each do |warning|
+                                li= warning
+
+        .card.border-0.shadow-sm
+            .card-header.bg-white.py-2
+                h2.h6.mb-0 Duplicate signals
+            .card-body.py-3
+                - if @company_proposal.duplicate_blocking?
+                    .admin-kicker.mb-1 Name matches
+                    - if Array(@duplicate_signals["name_matches"]).any?
+                        ul.small.mb-2
+                            - Array(@duplicate_signals["name_matches"]).each do |match|
+                                li= "#{match['name']} (#{match['canonical_domain'] || match['main_url']})"
+                    - else
+                        p.text-muted.small.mb-2 None
+                    .admin-kicker.mb-1 Domain matches
+                    - if Array(@duplicate_signals["domain_matches"]).any?
+                        ul.small.mb-0
+                            - Array(@duplicate_signals["domain_matches"]).each do |match|
+                                li= "#{match['name']} (#{match['canonical_domain'] || match['main_url']})"
+                    - else
+                        p.text-muted.small.mb-0 None
+                - else
+                    p.text-muted.small.mb-0 No duplicate signals recorded.

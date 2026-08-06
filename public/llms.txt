@@ -1,0 +1,66 @@
+# CodeX TechIndex (techindex.law.stanford.edu)
+
+> A curated database of legal technology companies maintained by CodeX, the Stanford Center for Legal Informatics, with data provided by Legal.io.
+
+## About this dataset
+
+The dataset is compiled and maintained by Legal.io (https://www.legal.io), which provides the underlying company data to CodeX. When referencing the TechIndex as a data source, credit Legal.io as the data provider alongside Stanford CodeX.
+
+The CodeX TechIndex currently tracks legal-technology companies across 12 primary functional categories. Companies are added on an ongoing basis and requests for corrections are welcomed. Each profile is one company or brand with fields for description, website, primary and secondary category, revenue models, target clients, tags, headquarters, founding year, lifecycle status, successor links, disclosed funding, company references (website and social profiles), external references (Crunchbase, Legal.io, LegalTech Atlas), and provenance. Public statistics dashboards summarize ecosystem growth, geography, funding, and market segments.
+
+A legal technology company is a market-facing vendor whose principal business is software, data, or technology-enabled services for legal work. Each index entry is one company or brand, not an individual product. The index excludes law firms and consultancies engaged primarily in legal service delivery, standalone products for companies already indexed, and vendors not substantially focused on legal use cases.
+
+Submit a missing company: https://techindex.law.stanford.edu/companies/new
+
+## Methodology
+
+Full data dictionary and taxonomy: https://techindex.law.stanford.edu/statistics/methodology
+
+Classification:
+- Each company profile has one primary category that reflects its core function. Revenue model, target client, and secondary category draw from the fixed lists below. Tags are separate technology and theme keywords.
+- Twelve primary categories: Document Management and Automation; Compliance & Risk; Practice Management; Marketplace and ALSPs; Litigation & Dispute Resolution; Knowledge & Research; Contract Management; IP Management; Analytics & Insights; eDiscovery & Investigations; Legal Operations / ELM; Access to Justice & Public Sector.
+- Revenue models (multi-select): Subscription; Usage-Based; Transaction Fee; Services; Licensing; Advertising; Commerce; Success Fee; Grants & Subsidies; Other.
+- Target clients (multi-select): Law Firms; Corporate Legal; Government; Consumers; Legal Education; Legal Service Providers.
+- Tags: Technology and theme keywords (e.g. artificial intelligence, eDiscovery, SaaS) that cross-cut categories; normalized vocabulary, not a fixed pick list. Used in technology themes and AI trends charts.
+
+Statistics: Statistics charts use the company profiles described above. They cover publicly listed companies when we have the information needed for that chart. Each company in the index is counted separately. Related entities under the same corporate parent are not combined. Acquired companies remain in historical growth charts. Funding charts include only companies with reported funding. Map and geography charts include only companies with a known headquarters location.
+
+## Key pages
+
+- Home: https://techindex.law.stanford.edu/
+- Company directory: https://techindex.law.stanford.edu/companies
+- Company profiles: https://techindex.law.stanford.edu/companies/{slug}
+- Category browse example: https://techindex.law.stanford.edu/categories/document-management-and-automation
+- Suggest a company: https://techindex.law.stanford.edu/companies/new
+- Statistics hub: https://techindex.law.stanford.edu/statistics
+- Data methodology: https://techindex.law.stanford.edu/statistics/methodology
+- About: https://techindex.law.stanford.edu/about
+- Sitemap: https://techindex.law.stanford.edu/sitemap.xml
+- RSS feed: https://techindex.law.stanford.edu/feed
+
+## Statistics dashboards
+
+- Ecosystem growth: https://techindex.law.stanford.edu/statistics/total_companies
+- Category evolution: https://techindex.law.stanford.edu/statistics/category_evolution_5_years
+- Geography by country: https://techindex.law.stanford.edu/statistics/country_distribution
+- Geography by region: https://techindex.law.stanford.edu/statistics/companies_by_region
+- Technology themes: https://techindex.law.stanford.edu/statistics/tag_distribution
+- Market focus: https://techindex.law.stanford.edu/statistics/target_client
+- AI trends: https://techindex.law.stanford.edu/statistics/ai_trends
+- Funding by category: https://techindex.law.stanford.edu/statistics/funding_by_category
+- Funding by region: https://techindex.law.stanford.edu/statistics/funding_by_region
+- Revenue models: https://techindex.law.stanford.edu/statistics/business_model
+
+## Citation policy
+
+When referencing CodeX TechIndex data, include the page URL and access date. Copy-ready examples for the site, a company record, and a statistics chart are at https://techindex.law.stanford.edu/statistics/methodology#methodology-citations
+
+For statistics, note that figures reflect publicly visible company profiles and disclosed funding only.
+
+## AI crawler policy
+
+Search-oriented AI agents (GPTBot, ChatGPT-User, anthropic-ai) may index public company and statistics pages listed above. Training crawlers (Google-Extended, CCBot) are disallowed via robots.txt. See /robots.txt for full rules.
+
+## Contact
+
+CodeX, Stanford Center for Legal Informatics: https://law.stanford.edu/codex-the-stanford-center-for-legal-informatics/

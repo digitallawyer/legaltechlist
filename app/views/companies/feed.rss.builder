@@ -5,7 +5,7 @@ xml.rss :version => "2.0" do
   xml.channel do
     xml.title "Legal Tech List"
     xml.author "Legal Tech List"
-    xml.description "Explore a curated list of 400+ companies changing the way legal is done"
+    xml.description "Explore a curated list of #{number_with_delimiter(visible_company_count)} companies changing the way legal is done"
     xml.link root_url
     xml.language "en"
 
@@ -17,13 +17,13 @@ xml.rss :version => "2.0" do
           xml.title ""
         end
         xml.author "Legal Tech List"
-        xml.pubDate company.created_at.to_s(:rfc822)
+        xml.pubDate company.created_at.rfc822
 
-        xml.link "#{request.protocol}#{request.host}:#{request.port}/companies/" + company.id.to_s # + "-" + company.name
-        xml.guid company.id
-        xml.category company.category
+        xml.link company_url(company)
+        xml.guid company_url(company), isPermaLink: "true"
+        xml.category company.category&.name.to_s
 
-        text = company.description
+        text = company.description.to_s
 		# if you like, do something with your content text here e.g. insert image tags.
 		# Optional. I'm doing this on my website.
         # if company.image.exists?

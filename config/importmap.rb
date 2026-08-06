@@ -1,17 +1,8 @@
 # Pin npm packages by running ./bin/importmap
+#
+# The public layout loads JavaScript from CDN (jQuery, Bootstrap, Chart.js).
+# Importmap pins are kept minimal until the app adopts javascript_importmap_tags.
 
-pin "application", preload: true
-pin "jquery", to: "https://ga.jspm.io/npm:jquery@3.7.1/dist/jquery.js"
-pin "bootstrap", to: "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.esm.min.js"
-
-# Pin all controllers
-pin "controllers/application", to: "controllers/application.js", preload: true
-pin "controllers/index", to: "controllers/index.js", preload: true
-pin "controllers/form_controller", to: "controllers/form_controller.js"
-pin "controllers/sort_controller", to: "controllers/sort_controller.js"
-pin "controllers/view_toggle_controller", to: "controllers/view_toggle_controller.js"
-
-# Pin stimulus-loading
-pin "@hotwired/stimulus-loading", to: "stimulus-loading.js"
-pin "chartkick", to: "chartkick.js"
-pin "Chart.bundle", to: "Chart.bundle.js"
+pin "@hotwired/turbo-rails", to: "turbo.min.js", preload: true
+pin "@hotwired/stimulus", to: "stimulus.min.js", preload: true
+pin "@hotwired/stimulus-loading", to: "stimulus-loading.js", preload: true

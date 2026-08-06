@@ -1,0 +1,140 @@
+- form_url = @company.persisted? ? custom_admin_company_path(@company.id) : custom_admin_companies_path
+- form_method = @company.persisted? ? :patch : :post
+
+- form_html = @company.new_record? ? { id: "new_company_form" } : {}
+= form_with model: @company, url: form_url, method: form_method, local: true, html: form_html do |f|
+    - if @company.errors.any?
+        .alert.alert-danger
+            h2.h6= "#{pluralize(@company.errors.count, 'error')} prevented this company from saving:"
+            ul.mb-0
+                - @company.errors.full_messages.each do |message|
+                    li= message
+
+    .card.border-0.shadow-sm.mb-3
+        .card-header.bg-white
+            h2.h5.mb-0 Core Details
+        .card-body
+            .row.g-3
+                .col-md-6
+                    = f.label :name, class: "form-label"
+                    = f.text_field :name, class: "form-control", required: @company.new_record?
+                - if @company.persisted?
+                    .col-md-6
+                        = f.label :slug, "Public URL slug", class: "form-label"
+                        = f.text_field :slug, class: "form-control", placeholder: "auto-generated on create"
+                .col-md-6
+                    = f.label :main_url, class: "form-label"
+                    = f.text_field :main_url, class: "form-control", required: @company.new_record?
+                - if @company.new_record?
+                    .col-12
+                        p.text-muted.small.mb-2 Enter a company name and website, then enrich from the URL before saving.
+                        = f.submit "Fill from URL", formaction: fill_from_url_custom_admin_company_path, formmethod: "post", class: "btn btn-outline-primary", data: { turbo_submits_with: "Enriching…" }
+                .col-md-4
+                    = f.label :city, class: "form-label"
+                    = f.text_field :city, class: "form-control", placeholder: "City"
+                .col-md-4
+                    = f.label :country, class: "form-label"
+                    = f.text_field :country, class: "form-control", placeholder: "Country"
+                .col-md-4
+                    = f.label :location, "Display location", class: "form-label"
+                    = f.text_field :location, class: "form-control", placeholder: "Auto-synced from city and country"
+                .col-md-3
+                    = f.label :founded_date, class: "form-label"
+                    = f.text_field :founded_date, class: "form-control"
+                .col-md-3
+                    = f.label :status, class: "form-label"
+                    = f.select :status, ["active", "inactive", "acquired"], { include_blank: true }, { class: "form-select" }
+                .col-12
+                    = f.label :description, class: "form-label"
+                    = f.text_area :description, class: "form-control", rows: 5
+                .col-md-4
+                    = f.label :category_id, "Category", class: "form-label"
+                    = f.collection_select :category_id, Category.order(:name), :id, :name, { include_blank: true }, { class: "form-select" }
+                .col-md-4
+                    = f.label :secondary_category_id, "Secondary category", class: "form-label"
+                    = f.collection_select :secondary_category_id, Category.order(:name), :id, :name, { include_blank: true }, { class: "form-select" }
+                .col-md-4
+                    = f.label :successor_company_id, "Successor company ID", class: "form-label"
+                    = f.number_field :successor_company_id, class: "form-control", placeholder: "Company ID after acquisition/rebrand"
+                .col-12
+                    = f.label :business_model_ids, "Revenue models", class: "form-label"
+                    .d-flex.flex-wrap.gap-3
+                        - BusinessModel.canonical.order(:name).each do |model|
+                            .form-check
+                                = check_box_tag "company[business_model_ids][]", model.id, @company.business_model_ids.include?(model.id), class: "form-check-input", id: "company_business_model_ids_#{model.id}"
+                                = label_tag "company_business_model_ids_#{model.id}", model.name, class: "form-check-label"
+                    = hidden_field_tag "company[business_model_ids][]", ""
+                .col-md-4
+                    = f.label :target_client_id, "Primary target client", class: "form-label"
+                    = f.collection_select :target_client_id, TargetClient.canonical.order(:name), :id, :name, { include_blank: true }, { class: "form-select" }
+                .col-12
+                    = f.label :target_client_ids, "Target clients (multi)", class: "form-label"
+                    .d-flex.flex-wrap.gap-3
+                        - TargetClient.canonical.order(:name).each do |client|
+                            .form-check
+                                = check_box_tag "company[target_client_ids][]", client.id, @company.target_client_ids.include?(client.id), class: "form-check-input", id: "company_target_client_ids_#{client.id}"
+                                = label_tag "company_target_client_ids_#{client.id}", client.name, class: "form-check-label"
+                    = hidden_field_tag "company[target_client_ids][]", ""
+                .col-md-4
+                    = f.label :all_tags, "Tags", class: "form-label"
+                    = f.text_field :all_tags, class: "form-control"
+                .col-md-4
+                    .form-check.mt-4
+                        = f.check_box :visible, class: "form-check-input"
+                        = f.label :visible, class: "form-check-label"
+
+    .card.border-0.shadow-sm.mb-3
+        .card-header.bg-white
+            h2.h5.mb-0 Links And Metadata
+        .card-body
+            .row.g-3
+                - [:twitter_url, :crunchbase_url, :linkedin_url, :facebook_url, :legalio_url].each do |field|
+                    .col-md-6
+                        = f.label field, class: "form-label"
+                        = f.text_field field, class: "form-control"
+                .col-md-6
+                    = f.label :legaltech_atlas_url, "LegalTech Atlas URL", class: "form-label"
+                    = f.text_field :legaltech_atlas_url, class: "form-control", placeholder: "https://legaltechatlas.com/companies/harvey"
+                - [:logo_url, :contact_name, :contact_email, :founders, :headquarters_region, :source, :source_url].each do |field|
+                    .col-md-6
+                        = f.label field, class: "form-label"
+                        = f.text_field field, class: "form-control"
+                .col-md-6
+                    .form-check.mt-4
+                        = f.check_box :codex_presenter, class: "form-check-input"
+                        = f.label :codex_presenter, "CodeX presenter", class: "form-check-label"
+                .col-md-6
+                    = f.label :codex_presentation_date, "CodeX presentation date", class: "form-label"
+                    = f.date_field :codex_presentation_date, class: "form-control"
+                .col-md-4
+                    = f.label :funding_status, class: "form-label"
+                    = f.select :funding_status, ["Operating", "Seed", "Early Stage Venture", "Late Stage Venture", "Private Equity", "M&A"], { include_blank: true }, { class: "form-select" }
+                .col-md-4
+                    = f.label :total_funding_amount_usd, class: "form-label"
+                    = f.text_field :total_funding_amount_usd, class: "form-control"
+                .col-md-4
+                    = f.label :number_of_funding_rounds, class: "form-label"
+                    = f.number_field :number_of_funding_rounds, class: "form-control"
+
+    .card.border-0.shadow-sm.mb-3
+        .card-header.bg-white
+            h2.h5.mb-0 Quality Fields
+        .card-body
+            .row.g-3
+                .col-md-4
+                    = f.label :quality_status, "Quality status", class: "form-label"
+                    = f.select :quality_status, options_for_select(Company.quality_status_options_for(f.object).map { |value, label| [label, value] }, f.object.quality_status.to_s), {}, class: "form-select"
+                .col-md-4
+                    = f.label :verification_verdict, "Verification verdict", class: "form-label"
+                    = f.select :verification_verdict, options_for_select(Company.verification_verdict_options_for(f.object).map { |value, label| [label, value] }, f.object.verification_verdict.to_s), {}, class: "form-select"
+                .col-md-4
+                    = f.label :quality_score, class: "form-label"
+                    = f.number_field :quality_score, class: "form-control"
+                - [:verified_at, :enriched_at, :quality_reviewed_at, :human_reviewed_at].each do |field|
+                    .col-md-6
+                        = f.label field, class: "form-label"
+                        = f.datetime_field field, class: "form-control"
+
+    .d-flex.gap-2
+        = f.submit "Save Company", class: "btn btn-primary"
+        = link_to "Cancel", custom_admin_companies_path, class: "btn btn-outline-secondary"

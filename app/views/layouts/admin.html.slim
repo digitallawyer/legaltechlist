@@ -1,0 +1,201 @@
+doctype html
+html
+    head
+        title= content_for?(:title) ? yield(:title) : "TechIndex Admin"
+        meta name="viewport" content="width=device-width, initial-scale=1.0"
+        = csrf_meta_tags
+        = csp_meta_tag
+        link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        = render "shared/pagination_styles"
+        style
+            | .admin-main { width: 100%; }
+            | .admin-navbar { min-height: 2.5rem; }
+            | .admin-navbar .navbar-brand { font-size: 0.92rem; padding-bottom: 0.2rem; padding-top: 0.2rem; }
+            | .admin-navbar .nav-link { font-size: 0.78rem; padding: 0.35rem 0.55rem; }
+            | .admin-navbar .btn-sm { --bs-btn-font-size: 0.72rem; --bs-btn-padding-y: 0.15rem; --bs-btn-padding-x: 0.45rem; }
+            | .admin-navbar .navbar-text, .admin-navbar .small { font-size: 0.72rem; }
+            | .admin-main .card { border-radius: 0.85rem; }
+            | .admin-main .card-header { border-bottom-color: #e8edf3; padding: 1rem 1.25rem; }
+            | .admin-main .admin-compact-card .card-header { padding: 0.45rem 0.75rem; }
+            | .admin-main .admin-compact-card .card-body { padding: 0.45rem 0.75rem; }
+            | .admin-main .admin-compact-card .admin-tabs-row { padding-bottom: 0; }
+            | .admin-main .admin-compact-card h1.h4 { font-size: 1.05rem; font-weight: 700; line-height: 1.2; }
+            | .admin-main .table-responsive { border-radius: 0; }
+            | .admin-main .admin-compact-card > .table-responsive:last-child { border-radius: 0 0 0.85rem 0.85rem; }
+            | .admin-table { min-width: 1280px; font-size: 0.9rem; }
+            | .admin-table thead th { position: sticky; top: 0; z-index: 1; background: #f8fafc; color: #475569; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; padding: 0.85rem 1rem; text-transform: uppercase; white-space: nowrap; }
+            | .admin-table tbody td { border-top-color: #edf2f7; padding: 0.9rem 1rem; }
+            | .admin-table.is-compact { font-size: 0.82rem; }
+            | .admin-table.is-compact thead th { padding: 0.55rem 0.8rem; }
+            | .admin-table.is-compact tbody td { padding: 0.72rem 0.8rem; }
+            | .admin-table tbody tr:nth-child(even) { background: #fcfdff; }
+            | .admin-table tbody tr:hover { background: #f5f9ff; }
+            | .admin-table td, .admin-table th { vertical-align: middle; }
+            | .admin-table a:not(.btn) { text-decoration: none; overflow-wrap: anywhere; }
+            | .admin-table .admin-actions, .admin-table .admin-nowrap { white-space: nowrap; }
+            | .admin-table .admin-table-checkbox-col { max-width: 2.5rem; padding-left: 0.55rem; padding-right: 0.35rem; width: 2.5rem; }
+            | .admin-table .admin-description { min-width: 360px; max-width: 680px; width: 38%; }
+            | .admin-table .admin-description .fw-semibold { color: #111827; font-size: 0.9rem; margin-bottom: 0.15rem; }
+            | .admin-table .admin-description .text-muted { color: #64748b !important; line-height: 1.35; }
+            | .admin-table.is-company-list { table-layout: fixed; width: 100%; }
+            | .admin-table.is-company-list col.admin-col-company { width: 30%; }
+            | .admin-table.is-company-list col.admin-col-url { width: 14%; }
+            | .admin-table.is-company-list col.admin-col-category { width: 10%; }
+            | .admin-table.is-company-list col.admin-col-revenue { width: 17%; }
+            | .admin-table.is-company-list col.admin-col-quality { width: 10%; }
+            | .admin-table.is-company-list .admin-category, .admin-table.is-company-list .admin-revenue { max-width: 0; overflow: hidden; white-space: normal; word-break: break-word; }
+            | .admin-table.is-company-list .admin-quality-cell { max-width: 0; overflow: hidden; }
+            | .admin-table.is-company-list .admin-quality { overflow: hidden; text-overflow: ellipsis; }
+            | .admin-table.is-company-list col.admin-col-visible { width: 7%; }
+            | .admin-table.is-company-list col.admin-col-updated { width: 8%; }
+            | .admin-table.is-company-list col.admin-col-actions { width: 4%; }
+            | .admin-table .admin-url { max-width: 14rem; min-width: 9rem; overflow: hidden; overflow-wrap: normal; text-overflow: ellipsis; white-space: nowrap; word-break: normal; }
+            | .admin-table .admin-url a { display: block; max-width: 100%; overflow: hidden; overflow-wrap: normal; text-overflow: ellipsis; white-space: nowrap; word-break: normal; }
+            | .admin-table .admin-actions .btn { min-width: 4.5rem; }
+            | .admin-table .admin-actions .btn-icon { min-width: 2.35rem; }
+            | .admin-table .admin-primary-link { color: inherit; display: block; text-decoration: none !important; }
+            | .admin-table .admin-primary-link:hover .fw-semibold { color: #0d6efd; text-decoration: underline; }
+            | .admin-company-cell { align-items: center; display: flex; gap: 0.6rem; min-width: 0; }
+            | .admin-company-logo { background: #fff; border: 1px solid #e2e8f0; border-radius: 0.45rem; flex: 0 0 auto; height: 2.25rem; object-fit: contain; padding: 0.18rem; width: 2.25rem; }
+            | .admin-company-review-hero-main { align-items: flex-start; display: flex; flex: 1; gap: 1rem; min-width: 0; }
+            | .admin-company-review-logo-frame { align-items: center; background: #fce8e8; border: 1px solid rgba(140, 21, 21, 0.12); border-radius: 0.75rem; display: flex; flex: 0 0 4rem; height: 4rem; justify-content: center; overflow: hidden; width: 4rem; }
+            | .admin-company-review-logo-placeholder { color: #8c1515; font-size: 1.5rem; font-weight: 700; }
+            | .admin-company-review-logo { background: #fff; border: 1px solid #e2e8f0; border-radius: 0.75rem; display: block; flex: 0 0 4rem; height: 4rem; object-fit: contain; padding: 0.35rem; width: 4rem; }
+            | .admin-company-review-heading { min-width: 0; }
+            | .admin-company-review-website { color: #64748b; font-size: 0.82rem; text-decoration: none; }
+            | .admin-company-review-website:hover { color: #0d6efd; }
+            | .admin-key-facts-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            | .admin-key-fact-card { align-items: flex-start; background: #f8fafc; border: 1px solid #edf2f7; border-radius: 0.65rem; display: flex; gap: 0.65rem; padding: 0.75rem; }
+            | .admin-key-fact-icon { align-items: center; background: #fff; border: 1px solid #e2e8f0; border-radius: 0.45rem; color: #64748b; display: flex; flex: 0 0 1.75rem; height: 1.75rem; justify-content: center; width: 1.75rem; }
+            | .admin-key-fact-label { color: #64748b; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+            | .admin-key-fact-value { color: #0f172a; font-size: 0.9rem; font-weight: 600; }
+            | @media (max-width: 767.98px) { .admin-key-facts-grid { grid-template-columns: 1fr; } }
+            | .admin-metadata-details { width: 100%; }
+            | .admin-metadata-summary { cursor: pointer; list-style: none; }
+            | .admin-metadata-summary::-webkit-details-marker { display: none; }
+            | .admin-about-description { color: #0f172a; font-size: 0.92rem; line-height: 1.55; margin-bottom: 0; white-space: pre-wrap; }
+            | .admin-about-tags { align-items: center; display: flex; flex-wrap: wrap; gap: 0.55rem 0.85rem; margin-top: 1rem; }
+            | .admin-about-category { align-items: center; background: #f3e2e2; border-radius: 999px; color: #8c1515; display: inline-flex; font-size: 0.78rem; font-weight: 600; gap: 0.45rem; padding: 0.42rem 0.75rem; }
+            | .admin-about-category-dot { background: #8c1515; border-radius: 999px; flex: 0 0 0.4rem; height: 0.4rem; width: 0.4rem; }
+            | .admin-about-keyword { background: #ece7da; border-radius: 999px; color: #8a857a; display: inline-flex; font-size: 0.78rem; font-weight: 400; padding: 0.38rem 0.7rem; }
+            | .admin-company-copy { min-width: 0; }
+            | .admin-table .admin-cell-primary { color: #0f172a; font-weight: 500; }
+            | .admin-table .admin-cell-secondary { color: #64748b; font-size: 0.72rem; }
+            | .admin-status-pill { border-radius: 999px; font-size: 0.68rem; font-weight: 700; padding: 0.18rem 0.42rem; }
+            | .admin-table .admin-status-pill { border-radius: 999px; font-size: 0.68rem; font-weight: 700; padding: 0.18rem 0.42rem; }
+            | .admin-table .admin-quality { color: #0f172a; font-size: 0.72rem; font-weight: 700; }
+            | .admin-workflow-card { border-left: 0.25rem solid #cbd5e1; }
+            | .admin-workflow-card.is-urgent { border-left-color: #dc3545; }
+            | .admin-workflow-card.is-warning { border-left-color: #ffc107; }
+            | .admin-workflow-card.is-good { border-left-color: #198754; }
+            | .admin-kicker { color: #64748b; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+            | .admin-compact-pills { gap: 0.2rem; }
+            | .admin-compact-pills .nav-link { border: 1px solid transparent; border-radius: 999px; color: #475569; font-size: 0.7rem; padding: 0.18rem 0.55rem; }
+            | .admin-compact-pills .nav-link.active { background: #f1f5f9; border-color: #dbe4ee; color: #0f172a; font-weight: 700; }
+            | .admin-compact-pills .nav-link:hover { background: #f8fafc; border-color: #e2e8f0; color: #0f172a; }
+            | .admin-section-tabs { align-items: stretch; display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: -1px; }
+            | .admin-section-tabs .nav-link { align-items: center; border-bottom: 2px solid transparent; border-radius: 0; color: #64748b; display: flex; font-size: 0.72rem; font-weight: 600; padding: 0 0 0.43rem; }
+            | .admin-section-tabs .nav-link.active { background: transparent; border-bottom-color: #4f46e5; color: #0f172a; }
+            | .admin-section-tabs .nav-link:hover { color: #0f172a; }
+            | .admin-dashboard-section { margin-bottom: 1rem; }
+            | .admin-metric-strip { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); }
+            | .admin-metric { background: #fff; border: 1px solid #edf2f7; border-radius: 0.65rem; padding: 0.55rem 0.7rem; }
+            | .admin-metric-label { color: #64748b; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
+            | .admin-metric-value { color: #0f172a; font-size: 1.05rem; font-weight: 700; line-height: 1.2; }
+            | .admin-metrics-table { font-size: 0.82rem; table-layout: fixed; width: 100%; }
+            | .admin-metrics-table col.admin-metrics-col-value { width: 7.5rem; }
+            | .admin-metrics-table col.admin-metrics-col-action { width: 5rem; }
+            | .admin-metrics-table thead th { background: #f8fafc; color: #475569; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; padding: 0.55rem 0.8rem; text-transform: uppercase; white-space: nowrap; }
+            | .admin-metrics-table thead th.admin-metrics-col-value { text-align: right; }
+            | .admin-metrics-table thead th.admin-metrics-col-action { text-align: left; }
+            | .admin-metrics-table tbody td { border-top-color: #edf2f7; padding: 0.55rem 0.8rem; vertical-align: middle; }
+            | .admin-metrics-table tbody td.admin-metrics-value { font-variant-numeric: tabular-nums; text-align: right; }
+            | .admin-metrics-table tbody td.admin-metrics-action { text-align: left; }
+            | .admin-metrics-table tbody tr:nth-child(even) { background: #fcfdff; }
+            | .admin-metrics-table tbody tr:hover { background: #f5f9ff; }
+            | .admin-metrics-table .admin-quality-label { color: #0f172a; font-size: 0.82rem; font-weight: 500; letter-spacing: normal; text-transform: none; }
+            | .admin-filter-toolbar { align-items: center; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+            | .admin-proposal-batch-actions { align-items: center; border-left: 1px solid #e2e8f0; display: flex; flex-wrap: wrap; gap: 0.3rem; margin-left: auto; padding-left: 0.55rem; }
+            | .admin-filter-toolbar .btn { --bs-btn-font-size: 0.68rem; --bs-btn-padding-y: 0.12rem; --bs-btn-padding-x: 0.48rem; }
+            | .admin-filter-toolbar .btn-primary { --bs-btn-bg: #f1f5f9; --bs-btn-border-color: #dbe4ee; --bs-btn-color: #0f172a; --bs-btn-hover-bg: #e8eef6; --bs-btn-hover-border-color: #cbd5e1; --bs-btn-hover-color: #0f172a; --bs-btn-active-bg: #e2e8f0; --bs-btn-active-border-color: #cbd5e1; --bs-btn-active-color: #0f172a; font-weight: 700; }
+            | .admin-filter-toolbar .form-control, .admin-filter-toolbar .form-select { border-color: #e2e8f0; border-radius: 999px; font-size: 0.72rem; min-height: 1.75rem; padding-bottom: 0.18rem; padding-top: 0.18rem; }
+            | .admin-filter-search { flex: 1 1 12rem; max-width: 16rem; min-width: 10rem; }
+            | .admin-filter-select { flex: 1 1 8.5rem; max-width: 12rem; min-width: 7.5rem; }
+            | .admin-filter-select.is-wide { flex-basis: 10rem; max-width: 13rem; }
+            | .admin-table-summary { align-items: center; display: flex; flex-wrap: wrap; gap: 0.85rem; }
+            | .admin-table-summary-item { color: #64748b; font-size: 0.75rem; white-space: nowrap; }
+            | .admin-table-summary-item strong { color: #0f172a; font-size: 0.82rem; }
+            | .admin-table-summary-item a { color: #0f172a; font-size: 0.82rem; font-weight: 700; text-decoration: none; }
+            | .admin-table-summary-item a:hover { color: #0d6efd; text-decoration: underline; }
+            | .admin-issue-chip { border-radius: 999px; display: inline-flex; font-size: 0.66rem; font-weight: 600; line-height: 1; padding: 0.14rem 0.35rem; }
+            | .admin-issue-chip.is-warning { background: transparent; color: #c2410c; padding-left: 0; }
+            | .admin-issue-chip.is-danger { background: transparent; color: #b91c1c; padding-left: 0; }
+            | .admin-issue-chip.is-muted { background: transparent; color: #64748b; padding-left: 0; }
+            | .dropdown-menu form { margin: 0; }
+            | .admin-actions .dropdown-menu form { margin: 0; }
+            | .admin-actions .dropdown-item { font-size: 0.82rem; text-align: left; width: 100%; }
+            | .admin-navbar .admin-user-dropdown .dropdown-toggle { color: rgba(255, 255, 255, 0.72); font-size: 0.72rem; padding: 0.35rem 0.55rem; text-decoration: none; }
+            | .admin-navbar .admin-user-dropdown .dropdown-toggle:hover, .admin-navbar .admin-user-dropdown .dropdown-toggle:focus, .admin-navbar .admin-user-dropdown.show .dropdown-toggle { color: #fff; }
+            | .admin-navbar .admin-user-dropdown .dropdown-menu { font-size: 0.78rem; min-width: 11rem; }
+            | .admin-navbar .admin-user-dropdown .dropdown-item { font-size: 0.78rem; }
+            | .admin-navbar .admin-user-dropdown .dropdown-item form { width: 100%; }
+            | .admin-navbar .admin-user-dropdown .dropdown-item button { text-align: left; width: 100%; }
+            | .admin-proposal-toolbar { align-items: center; display: flex; flex-wrap: wrap; gap: 0.45rem; justify-content: space-between; width: 100%; }
+            | .admin-proposal-toolbar form { margin: 0; }
+            | .admin-proposal-toolbar .btn { --bs-btn-font-size: 0.78rem; --bs-btn-padding-y: 0.28rem; --bs-btn-padding-x: 0.65rem; }
+            | .admin-proposal-toolbar-secondary, .admin-proposal-toolbar-primary { align-items: center; display: flex; flex-wrap: wrap; gap: 0.45rem; }
+            | .admin-proposal-toolbar-primary { margin-left: auto; }
+            | .admin-proposal-status-banner { align-items: center; background: #ecfdf5; border: 1px solid #bbf7d0; border-radius: 0.65rem; color: #166534; display: flex; flex-wrap: wrap; font-size: 0.85rem; gap: 0.4rem; padding: 0.65rem 1rem; width: 100%; }
+            | .admin-proposal-status-banner.is-draft { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+            | .admin-proposal-status-banner .text-muted { color: #15803d !important; opacity: 0.85; }
+            | .admin-proposal-status-banner.is-draft .text-muted { color: #1e40af !important; opacity: 0.85; }
+            | .admin-proposal-user-card { border-left: 0.25rem solid #4f46e5; }
+            | .admin-proposal-user-message { color: #0f172a; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; }
+            | .admin-proposal-completeness { display: grid; gap: 0.35rem; }
+            | .admin-proposal-field-check { align-items: center; border-radius: 0.45rem; display: flex; font-size: 0.75rem; gap: 0.4rem; justify-content: space-between; padding: 0.28rem 0.45rem; }
+            | .admin-proposal-field-check.is-complete { background: #f8fafc; color: #166534; }
+            | .admin-proposal-field-check.is-missing { background: #fffbeb; color: #a16207; }
+            | .admin-proposal-diff-old { background: #fef2f2; border-radius: 0.45rem; color: #7f1d1d; font-size: 0.82rem; padding: 0.45rem 0.6rem; text-decoration: line-through; white-space: pre-wrap; }
+            | .admin-proposal-diff-new { background: #ecfdf5; border-radius: 0.45rem; color: #14532d; font-size: 0.82rem; padding: 0.45rem 0.6rem; white-space: pre-wrap; }
+    body.bg-light
+        nav.navbar.navbar-expand-lg.navbar-dark.bg-dark.admin-navbar.py-1
+            .container-fluid
+                = link_to "TechIndex Admin", custom_admin_companies_path, class: "navbar-brand"
+                button.navbar-toggler type="button" data-bs-toggle="collapse" data-bs-target="#customAdminNav" aria-controls="customAdminNav" aria-expanded="false" aria-label="Toggle navigation"
+                    span.navbar-toggler-icon
+                #customAdminNav.collapse.navbar-collapse
+                    - admin_nav_items = [{ label: "Companies", path: custom_admin_companies_path, active_prefixes: ["/admin/app/companies", "/admin/review/companies"] }, { label: "Review", path: custom_admin_company_proposals_path, active_prefixes: ["/admin/proposals"] }, { label: "Discover", path: new_custom_admin_discovery_path, active_prefixes: ["/admin/discoveries"] }, { label: "Activity", path: custom_admin_pipeline_runs_path, active_prefixes: ["/admin/pipeline-runs", "/admin/agent-reviews"] }, { label: "Taxonomy", path: custom_admin_resources_path(resource: "categories"), active_prefixes: ["/admin/app/resources"] }, { label: "Quality", path: custom_admin_quality_path, active_paths: [custom_admin_quality_path] }]
+                    ul.navbar-nav.me-auto.mb-2.mb-lg-0
+                        - admin_nav_items.each do |item|
+                            - active = Array(item[:active_paths]).include?(request.path) || Array(item[:active_prefixes]).any? { |prefix| request.path.start_with?(prefix) }
+                            li.nav-item
+                                = link_to item[:label], item[:path], class: "nav-link #{active ? 'active fw-semibold' : ''}", aria: { current: active ? "page" : nil }
+                    .d-flex.align-items-center.gap-2.ms-lg-auto.mb-2.mb-lg-0
+                        - if current_admin_user
+                            - on_new_company = request.path == new_custom_admin_company_path
+                            = link_to new_custom_admin_company_path, class: "btn btn-primary btn-sm #{'active' if on_new_company}", title: "Add a company and enrich from its website URL" do
+                                i.fas.fa-plus.me-1
+                                | Add Company
+                            .dropdown.admin-user-dropdown
+                                button.btn.btn-link.dropdown-toggle.text-decoration-none type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu"= current_admin_user.email
+                                ul.dropdown-menu.dropdown-menu-end
+                                    li
+                                        = link_to root_path, class: "dropdown-item" do
+                                            i.fas.fa-external-link-alt.me-2
+                                            | Public Site
+                                    li
+                                        hr.dropdown-divider
+                                    li
+                                        = button_to "Log out", destroy_admin_user_session_path, method: :delete, class: "dropdown-item", form: { class: "d-block" }
+
+        main.container-fluid.admin-main.py-3.px-3.px-xl-4
+            - if notice.present?
+                .alert.alert-success= notice
+            - if flash[:warning].present?
+                .alert.alert-warning= flash[:warning]
+            - if alert.present?
+                .alert.alert-danger= alert
+            = yield
+
+        script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"

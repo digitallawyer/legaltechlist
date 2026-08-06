@@ -1,0 +1,112 @@
+- content_for :title, "Quality Dashboard"
+
+- metric_value_class = ->(tone) { (case tone when "warning" then "text-warning fw-semibold" when "danger" then "text-danger fw-semibold" when "success" then "text-success fw-semibold" when "info" then "text-info fw-semibold" else "fw-semibold" end) }
+- company_metric_path = ->(label) { (case label when "Total companies" then custom_admin_companies_path when "Public companies" then custom_admin_companies_path(visibility: "visible") when "Missing URLs" then custom_admin_companies_path(review_signal: "missing_url") when "Weak descriptions" then custom_admin_companies_path(review_signal: "weak_description") when "Duplicate-name candidates" then custom_admin_companies_path(review_signal: "duplicate_name") when "Duplicate-domain candidates" then custom_admin_companies_path(review_signal: "duplicate_domain") when "Unknown category", "Unknown revenue model", "Unknown target client" then custom_admin_companies_path(review_signal: "unknown_taxonomy") end) }
+- review_metric_path = ->(label) { (case label when "Needs review" then custom_admin_companies_path(review_state: "in_review") when "Verified" then custom_admin_companies_path(review_state: "verified") when "Rejected" then custom_admin_companies_path(review_state: "rejected") when "Not reviewed" then custom_admin_companies_path(review_state: "not_reviewed") end) }
+- pipeline_metric_path = ->(label) { (case label when "Pipeline runs" then custom_admin_pipeline_runs_path when "Running" then custom_admin_pipeline_runs_path(status: "running") when "Failed" then custom_admin_pipeline_runs_path(activity: "failed") end) }
+
+.card.border-0.shadow-sm.admin-compact-card
+    .card-header.bg-white
+        .d-flex.flex-wrap.justify-content-between.align-items-center.gap-2
+            h1.h4.mb-0 Quality Dashboard
+            .admin-table-summary
+                - total_metric = @company_metrics.find { |metric| metric[:label] == "Total companies" }
+                - public_metric = @company_metrics.find { |metric| metric[:label] == "Public companies" }
+                - missing_url_metric = @company_metrics.find { |metric| metric[:label] == "Missing URLs" }
+                - failed_metric = @pipeline_metrics.find { |metric| metric[:label] == "Failed" }
+                span.admin-table-summary-item
+                    | Companies 
+                    = link_to number_with_delimiter(total_metric[:value]), custom_admin_companies_path, aria: { label: "Show all companies" }
+                span.admin-table-summary-item
+                    | Visible 
+                    = link_to number_with_delimiter(public_metric[:value]), custom_admin_companies_path(visibility: "visible"), aria: { label: "Show visible companies" }
+                span.admin-table-summary-item
+                    | Missing URLs 
+                    = link_to number_with_delimiter(missing_url_metric[:value]), custom_admin_companies_path(review_signal: "missing_url"), aria: { label: "Show companies missing URLs" }
+                span.admin-table-summary-item
+                    | Failed runs 
+                    = link_to number_with_delimiter(failed_metric[:value]), custom_admin_pipeline_runs_path(activity: "failed"), aria: { label: "Show failed pipeline runs" }
+    .card-body
+        .admin-dashboard-section
+            .d-flex.flex-wrap.justify-content-between.align-items-center.gap-2.mb-2
+                h2.h6.mb-0 Company Data
+                span.text-muted.small Canonical records, taxonomy, visibility, and data quality
+            .table-responsive
+                table.table.table-hover.align-middle.mb-0.w-100.admin-metrics-table
+                    colgroup
+                        col.admin-metrics-col-metric
+                        col.admin-metrics-col-value
+                        col.admin-metrics-col-action
+                    thead
+                        tr
+                            th Metric
+                            th.admin-metrics-col-value Value
+                            th.admin-metrics-col-action.admin-nowrap Action
+                    tbody
+                        - @company_metrics.each do |metric|
+                            tr
+                                td.admin-quality-label= metric[:label]
+                                td.admin-metrics-value
+                                    - value_class = metric_value_class.call(metric[:tone])
+                                    span class=value_class
+                                        = number_with_delimiter(metric[:value])
+                                td.admin-metrics-action.admin-nowrap
+                                    - path = company_metric_path.call(metric[:label])
+                                    - if path.present?
+                                        = link_to "View", path, class: "small text-decoration-none", aria: { label: "Review #{metric[:label].downcase}" }
+                                    - else
+                                        span.text-muted.small —
+        .admin-dashboard-section
+            .d-flex.flex-wrap.justify-content-between.align-items-center.gap-2.mb-2
+                h2.h6.mb-0 Review Status
+                span.text-muted.small Human and automated review coverage
+            .table-responsive
+                table.table.table-hover.align-middle.mb-0.w-100.admin-metrics-table
+                    colgroup
+                        col.admin-metrics-col-metric
+                        col.admin-metrics-col-value
+                        col.admin-metrics-col-action
+                    thead
+                        tr
+                            th Metric
+                            th.admin-metrics-col-value Value
+                            th.admin-metrics-col-action.admin-nowrap Action
+                    tbody
+                        - @review_metrics.each do |metric|
+                            tr
+                                td.admin-quality-label= metric[:label]
+                                td.admin-metrics-value
+                                    - value_class = metric_value_class.call(metric[:tone])
+                                    span class=value_class
+                                        = number_with_delimiter(metric[:value])
+                                td.admin-metrics-action.admin-nowrap
+                                    - path = review_metric_path.call(metric[:label])
+                                    - if path.present?
+                                        = link_to "View", path, class: "small text-decoration-none", aria: { label: "Review #{metric[:label].downcase}" }
+                                    - else
+                                        span.text-muted.small —
+        .admin-dashboard-section.mb-0
+            .d-flex.flex-wrap.justify-content-between.align-items-center.gap-2.mb-2
+                h2.h6.mb-0 Pipeline Runs
+                span.text-muted.small Import, enrichment, and agent activity
+            .table-responsive
+                table.table.table-hover.align-middle.mb-0.w-100.admin-metrics-table
+                    colgroup
+                        col.admin-metrics-col-metric
+                        col.admin-metrics-col-value
+                        col.admin-metrics-col-action
+                    thead
+                        tr
+                            th Metric
+                            th.admin-metrics-col-value Value
+                            th.admin-metrics-col-action.admin-nowrap Action
+                    tbody
+                        - @pipeline_metrics.each do |metric|
+                            tr
+                                td.admin-quality-label= metric[:label]
+                                td.admin-metrics-value
+                                    - value_class = metric_value_class.call(metric[:tone])
+                                    span class=value_class
+                                        = number_with_delimiter(metric[:value])
+                                td.admin-metrics-action.admin-nowrap
+                                    = link_to "View", pipeline_metric_path.call(metric[:label]), class: "small text-decoration-none", aria: { label: "Review #{metric[:label].downcase}" }

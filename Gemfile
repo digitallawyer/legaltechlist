@@ -1,15 +1,15 @@
 source 'https://rubygems.org'
 
-ruby '3.2.6'
+ruby '3.3.10'
 
 # Core
-gem 'rails', '~> 7.0.8'
+gem 'rails', '~> 8.0.0'
 gem 'pg', '~> 1.5.4'
 gem 'puma'
-gem 'webpacker', '~> 5.4'
+gem 'redis', '~> 5.0'
+gem 'sprockets-rails'
 
 # Admin and Authentication
-gem 'activeadmin', '~> 3.0'
 gem 'devise', '~> 4.9'
 gem 'kaminari', '~> 1.2.1'
 
@@ -20,6 +20,14 @@ gem 'uglifier', '>= 4.2.0'
 gem 'jquery-rails', '~> 4.5'
 gem 'turbolinks', '~> 5.2.1'
 gem 'slim-rails'
+
+# Charts and Data Visualization
+gem 'chartkick'
+gem 'groupdate'
+
+# Data Export
+gem 'caxlsx'
+gem 'caxlsx_rails'
 
 # API and Data
 gem 'jbuilder', '~> 2.0'
@@ -42,22 +50,21 @@ gem 'google-analytics-rails', '1.1.0'
 
 # Twitter integration
 gem 'twitter', '~> 7.0'
-gem 'arbre', '~> 1.7.0'
 gem 'ffi', '~> 1.17.0'
-
-gem 'recaptcha', require: 'recaptcha/rails'
 
 group :development, :test do
   gem 'byebug', '~> 11.1.3'
-  gem 'web-console', '~> 4.2'
-  gem 'spring', '2.0.2'
+  gem 'minitest', '~> 5.25'
+  gem 'rails-controller-testing'
 end
 
 group :development do
   gem 'listen', '~> 3.2'
+  gem 'web-console', '~> 4.2'
 end
 
 gem 'json', '~> 2.6'
+gem 'csv'
 
 gem 'bootsnap', '>= 1.4.4', require: false
 
@@ -75,5 +82,21 @@ gem 'importmap-rails'
 # Add if not already present
 gem "turbo-rails"
 
-gem 'chartkick'
-gem 'groupdate'
+gem 'httparty'
+gem 'aws-sdk-s3', '~> 1.141'
+
+# For company validation script
+gem 'ruby-openai'
+gem 'parallel'
+
+gem 'dotenv'
+
+gem "ruby_llm", "~> 1.16"
+
+gem "ruby_llm-responses_api", "~> 0.5.4"
+
+# MCP server for the Claude Tag curator connector
+gem "mcp", "~> 0.4"
+gem "jwt", "~> 2.9"
+
+gem "solid_queue", "~> 1.4"

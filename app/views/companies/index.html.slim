@@ -1,141 +1,292 @@
-.bg-body-tertiary.border-bottom.min-vh-100
-    .container.py-3
-        .mb-0
-            .fs-2 Companies
-        p.text-secondary = "#{@companies.total_count} legal technology companies"
-    
-		= form_tag companies_path, method: :get, class: "card mb-4" do
-			.card-body
-				.d-flex.gap-3
-					div style="flex: 1"
-						.input-group
-							= text_field_tag :query, params[:query], class: "form-control", placeholder: "Search companies..."
-							button.btn.btn-primary type="submit"
-								i.fa.fa-search
-					
-					div style="flex: 0 0 200px"
-						.d-flex.gap-2
-							.dropdown
-								button.btn.btn-light.d-flex.align-items-center type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
-									i.fa.fa-sliders.me-2
-									| Filters
-								.dropdown-menu.dropdown-menu-end.p-3 style="min-width: 300px"
-									.mb-3
-										label.form-label Category
-										= select_tag :category, options_from_collection_for_select(Category.all, :id, :name, params[:category]), prompt: "All Categories", class: "form-select", data: { form_target: "input" }
-									.mb-3
-										label.form-label Location
-										= text_field_tag :location, params[:location], class: "form-control", placeholder: "Filter by location", data: { form_target: "input" }
-									.d-grid
-										button.btn.btn-primary type="submit"
-											i.fa.fa-filter.me-2
-											| Apply Filters
-							
-							.btn-group
-								= hidden_field_tag :view, params[:view] || "grid", id: "view-input"
-								button.btn.btn-light#grid-view.rounded-start class=("active" if params[:view] != "list") type="button" data-view="grid"
-									i.fa.fa-th
-								button.btn.btn-light#list-view.rounded-end class=("active" if params[:view] == "list") type="button" data-view="list"
-									i.fa.fa-list
-		
-		//.mb-4
-			.d-flex.gap-2
-				= hidden_field_tag :sort, params[:sort]
-				button.btn.btn-outline-primary.btn-sm.d-flex.align-items-center type="button" data-controller="sort" data-action="click->sort#toggle"
-					| Name
-					i.fa.fa-arrow-down-up.ms-1
-				= link_to "Categories", companies_path(category: params[:category]), class: "btn btn-light btn-sm #{"active" if params[:category].present?}"
-				= link_to "Location", companies_path(location: params[:location]), class: "btn btn-light btn-sm #{"active" if params[:location].present?}"
-		
-		- if @view == 'list'
-			.list-view
-				- @companies.each do |company|
-					= link_to company_path(company), class: "text-decoration-none text-dark" do
-						.card.mb-3
-							.card-body
-								.d-flex.gap-3
-									.flex-grow-1
-										h3.h5.mb-1= company.name
-										p.text-secondary.small.mb-0= truncate(company.description, length: 200)
-		- else
-			.row.g-4
-				- @companies.each do |company|
-					.col-md-6.col-lg-4
-						= link_to company_path(company), class: "text-decoration-none text-dark" do
-							.card.h-100.border
-								.card-body
-									.d-flex.gap-3.mb-3
-										= image_tag company.logo, 
-											class: "rounded bg-light", 
-											style: "width: 48px; height: 48px; object-fit: contain;",
-											alt: "#{company.name} logo"
-										.flex-grow-1
-											h3.h5.mb-1= company.name
-											p.text-secondary.small.mb-0= truncate(company.description, length: 100)
-									
-									.d-flex.gap-3.small.text-secondary.mb-3
-										- if company.location.present? && company.location != "Nowhere"
-											.d-flex.align-items-center
-												i.fa.fa-location-dot.me-1
-												= company.location
-										- if company.main_url.present?
-											.d-flex.align-items-center
-												i.fa.fa-globe.me-1
-												| Website
-									
-									- if company.tags.any?
-										.d-flex.flex-wrap.gap-2
-											- company.tags.each do |tag|
-												- unless tag.name.downcase == 'n/a'
-													span.badge.rounded-pill.bg-light.text-secondary= tag.name
+css:
+    .public-company-index { width: 100%; }
+    .company-shell { }
+    .company-main { padding: 0.7rem 1rem 1rem; }
+    .company-index-title { color: #2a2723; font-family: edict, "edict Fallback", Georgia, Cambria, "Times New Roman", Times, serif; font-size: clamp(1.35rem, 2.2vw, 1.65rem); font-weight: 500; letter-spacing: -0.01em; line-height: 1.2; margin: 0 0 0.75rem; }
+    .company-toolbar { margin-bottom: 0.6rem; }
+    .company-filter-bar { align-items: center; display: flex; flex-wrap: wrap; gap: 0.55rem; }
+    .company-filter-bar form { margin: 0; }
+    .company-search { flex: 0 1 17.5rem; max-width: 17.5rem; min-width: 0; width: 100%; }
+    .company-search-field { position: relative; }
+    .company-search-icon { color: #9ca3af; font-size: 0.82rem; left: 0.95rem; position: absolute; top: 50%; transform: translateY(-50%); }
+    .company-search .form-control { background: rgba(255, 255, 255, 0.86); border-color: #ded7ca; border-radius: 0.55rem; font-size: 0.9rem; min-height: 2.55rem; padding-left: 2.3rem; }
+    .company-search .form-control:focus { border-color: #cbbfae; box-shadow: 0 0 0 0.15rem rgba(140, 21, 21, 0.08); }
+    .company-filter-controls { align-items: center; display: flex; flex: 1 1 auto; flex-wrap: wrap; gap: 0.45rem; }
+    .company-filter-btn { align-items: center; background: #fff; border: 1px solid #ded7ca; border-radius: 0.55rem; color: #4b5563; display: inline-flex; font-size: 0.84rem; font-weight: 600; gap: 0.35rem; min-height: 2.55rem; padding: 0.4rem 0.85rem; white-space: nowrap; }
+    .company-filter-btn:hover, .company-filter-btn:focus { background: #faf8f3; border-color: #cbbfae; color: #2a2723; }
+    .company-filter-btn.dropdown-toggle::after { margin-left: 0.2rem; vertical-align: 0.12em; }
+    .company-filter-menu { border-color: #e5dfd5; border-radius: 0.65rem; box-shadow: 0 10px 28px rgba(17, 24, 39, 0.1); min-width: 14rem; padding: 0.55rem; width: min(20rem, 92vw); }
+    .company-filter-search { margin-bottom: 0.45rem; }
+    .company-filter-search .form-control { border-color: #ded7ca; border-radius: 0.45rem; font-size: 0.82rem; }
+    .company-filter-list { max-height: 16rem; overflow-y: auto; padding-right: 0.1rem; }
+    .company-filter-btn-active { background: #f6e5e5; border-color: #8c1515; color: #8c1515; }
+    .company-filter-btn-active:hover, .company-filter-btn-active:focus { background: #f0dede; border-color: #6f1111; color: #6f1111; }
+    .company-filter-checkbox-form { padding: 0.15rem 0.1rem 0; }
+    .company-filter-master { border-bottom: 1px solid #f0ebe3; font-weight: 700; margin-bottom: 0.2rem; padding-bottom: 0.48rem; }
+    .company-filter-checkbox-option { align-items: center; border-radius: 0.45rem; cursor: pointer; display: flex; font-size: 0.82rem; gap: 0.55rem; margin: 0; padding: 0.42rem 0.45rem; user-select: none; }
+    .company-filter-checkbox-option:hover { background: #faf8f3; }
+    .company-filter-checkbox-option input[type="checkbox"] { accent-color: #8c1515; flex: 0 0 auto; height: 1rem; margin: 0; width: 1rem; }
+    .company-filter-checkbox-label { flex: 1 1 auto; min-width: 0; }
+    .company-filter-count { color: #a3a09a; flex: 0 0 auto; font-size: 0.74rem; font-weight: 600; }
+    .company-filter-apply { border-color: #ded7ca; font-weight: 700; min-height: 2.15rem; }
+    .company-filter-apply:hover { background: #faf8f3; border-color: #cbbfae; color: #2a2723; }
+    .company-filter-location-menu { min-width: 15rem; }
+    .company-filter-location-form { padding: 0.15rem 0.1rem 0; }
+    .company-filter-reset { color: #8c1515; flex: 0 0 auto; font-size: 0.82rem; font-weight: 800; text-decoration: none; white-space: nowrap; }
+    .company-filter-reset:hover { color: #6f1111; text-decoration: underline; }
+    .company-sort-form { flex: 0 0 auto; margin-left: auto; }
+    .company-sort { border-color: #ded7ca; border-radius: 0.55rem; font-size: 0.9rem; min-height: 2.55rem; min-width: 10.25rem; }
+    .company-table-card { background: #fff; border: 1px solid #e5dfd5; border-radius: 0.6rem; overflow: hidden; }
+    .company-table { font-size: 0.82rem; margin-bottom: 0; min-width: 860px; }
+    .company-hq-cell { align-items: center; display: inline-flex; gap: 0.35rem; }
+    .company-hq-flag { flex: 0 0 auto; font-size: 1rem; line-height: 1; }
+    .company-table thead th { background: #faf8f3; border-bottom: 1px solid #e5dfd5; color: #6b7280; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.05em; padding: 0.58rem 0.75rem; text-transform: uppercase; white-space: nowrap; }
+    .company-table tbody td { border-top-color: #f0ebe3; padding: 0.58rem 0.75rem; vertical-align: middle; }
+    .company-table tbody tr:hover { background: #fffdf8; }
+    .company-name-cell { align-items: center; display: flex; gap: 0.6rem; min-width: 0; }
+    .company-logo { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 0.25rem; flex: 0 0 auto; height: 1.75rem; object-fit: contain; padding: 0.12rem; width: 1.75rem; }
+    .company-name-link { color: #111827; display: block; font-weight: 700; text-decoration: none; }
+    .company-name-link:hover { color: #8c1515; text-decoration: underline; }
+    .company-description { color: #6b7280; font-size: 0.72rem; line-height: 1.25; max-width: 36rem; }
+    .company-pill { background: #f6f1e7; border: 1px solid #e6ddce; border-radius: 999px; color: #6b6258; display: inline-flex; font-size: 0.68rem; font-weight: 700; padding: 0.12rem 0.45rem; white-space: nowrap; }
+    .company-status { background: #e8f5ef; color: #047857; }
+    .company-muted { color: #9ca3af; }
+    @media (max-width: 900px) { .company-sort-form { margin-left: 0; width: 100%; } .company-sort { width: 100%; } }
+    @media (max-width: 640px) { .company-main { padding: 0.45rem 0.65rem 0.9rem; } .company-toolbar { margin-bottom: 0.55rem; } .company-filter-bar { gap: 0.45rem; } .company-search { flex-basis: 100%; max-width: none; } .company-filter-controls { flex-basis: 100%; } .company-filter-btn { flex: 1 1 calc(50% - 0.25rem); justify-content: space-between; min-width: 0; } .company-filter-reset { flex-basis: 100%; } .company-search .form-control, .company-sort, .company-filter-btn { font-size: 0.86rem; min-height: 2.45rem; } .company-search .form-control { padding-left: 2.15rem; } .company-search-icon { left: 0.85rem; } .company-table-card { background: transparent; border: 0; border-radius: 0; overflow: visible; } .company-table { border-collapse: collapse; border-spacing: 0; min-width: 0; } .company-table thead { display: none; } .company-table tbody, .company-table tr, .company-table td { display: block; width: 100%; } .company-table tbody tr { background: #fff; border: 1px solid #e5dfd5; border-radius: 0.75rem; box-shadow: 0 1px 4px rgba(17, 24, 39, 0.04); margin-bottom: 0.85rem; overflow: hidden; } .company-table tbody td { align-items: center; border-top: 1px solid #f3eee6; display: flex; gap: 0.75rem; justify-content: space-between; padding: 0.58rem 0.75rem; } .company-table tbody td:first-child { border-top: 0; display: block; padding: 0.72rem 0.75rem; } .company-table tbody td:not(:first-child)::before { color: #8b8379; content: attr(data-label); flex: 0 0 auto; font-size: 0.62rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; } .company-name-cell { align-items: flex-start; } .company-logo { height: 2rem; width: 2rem; } .company-description { max-width: none; } }
 
-		.container.py-4
-			= paginate @companies
+= render "shared/pagination_styles"
+
+- if @taxonomy_facet.present?
+    - content_for :title, "#{@taxonomy_facet[:label]} Companies"
+    - content_for :description, "Browse #{number_with_delimiter(@total_count)} legal technology companies tagged with #{@taxonomy_facet[:label]} in the CodeX TechIndex."
+    - content_for :canonical, "#{site_url}#{taxonomy_facet_path(@taxonomy_facet)}"
+- else
+    - content_for :title, "Legal Tech Companies"
+    - content_for :description, "Browse and search #{number_with_delimiter(@total_count)} legal technology companies in the CodeX TechIndex — filter by category, location, status, and funding."
+- active_params = request.query_parameters.symbolize_keys
+- clear_params = active_params.except(:category, :status, :country, :city, :query, :page)
+- selected_category_ids = company_filter_category_ids
+- selected_statuses = company_filter_statuses
+.public-company-index
+    .company-shell
+        main.company-main
+            h1.company-index-title= @taxonomy_facet.present? ? "#{@taxonomy_facet[:label]} Companies" : "Legal Tech Companies"
+            .company-toolbar
+                = render "filter_bar", clear_params: clear_params, selected_category_ids: selected_category_ids, selected_statuses: selected_statuses
+
+            .company-table-card
+                .table-responsive
+                    table.table.company-table.align-middle
+                        thead
+                            tr
+                                th Company
+                                th Category
+                                th Founded
+                                th HQ
+                                th Status
+                        tbody
+                            - @companies.each do |company|
+                                tr
+                                    td
+                                        .company-name-cell
+                                            = image_tag company.logo, class: "company-logo", alt: "#{company.name} logo", loading: "lazy"
+                                            div
+                                                = link_to company.name, company_path(company, companies_nav_context_params), class: "company-name-link"
+                                                .company-description= truncate(company.description.to_s, length: 105)
+                                    td data-label="Category"
+                                        span.company-pill= company.category&.name || "Uncategorized"
+                                    td data-label="Founded"= company.founded_date.presence || "N/A"
+                                    td data-label="HQ"
+                                        - if company.display_location.present?
+                                            - formatted_location = company_display_location(company)
+                                            - location_flag = country_flag_emoji(company_country_iso_code(company))
+                                            span.company-hq-cell
+                                                - if location_flag.present?
+                                                    span.company-hq-flag aria-hidden="true"= location_flag
+                                                span= formatted_location
+                                        - else
+                                            | N/A
+                                    td data-label="Status"
+                                        span.company-pill.company-status= company.status.presence&.humanize || "Active"
+                            - if @companies.empty?
+                                tr
+                                    td.text-center.company-muted py="4" colspan="5" No companies match these filters.
+                = render "shared/pagination", collection: @companies, count_label: "companies"
 
 javascript:
-	document.addEventListener('DOMContentLoaded', function() {
-		// Search form handling
-		const searchForm = document.querySelector('form');
-		if (searchForm) {
-			// Handle enter key
-			searchForm.addEventListener('keypress', function(event) {
-				if (event.key === 'Enter') {
-					event.preventDefault();
-					this.submit();
-				}
-			});
+    (function() {
+        function bindCompanyFilterSearch() {
+            document.querySelectorAll("[data-company-filter-search]").forEach(function(input) {
+                if (input.dataset.bound) return;
+                input.dataset.bound = "true";
 
-			// Handle input changes with debounce
-			const searchInput = searchForm.querySelector('input[type="text"]');
-			if (searchInput) {
-				let timeout = null;
-				searchInput.addEventListener('input', function() {
-					clearTimeout(timeout);
-					timeout = setTimeout(() => {
-						searchForm.submit();
-					}, 300);
-				});
-			}
-		}
+                input.addEventListener("input", function() {
+                    let query = input.value.trim().toLowerCase();
+                    let menu = input.closest(".company-filter-menu");
+                    if (!menu) return;
 
-		// View toggle handling
-		const gridViewBtn = document.getElementById('grid-view');
-		const listViewBtn = document.getElementById('list-view');
-		const viewInput = document.getElementById('view-input');
+                    menu.querySelectorAll(".company-filter-checkbox-option[data-filter-name]").forEach(function(option) {
+                        let name = option.dataset.filterName || "";
+                        option.style.display = !query || name.indexOf(query) !== -1 ? "" : "none";
+                    });
+                });
+            });
+        }
 
-		if (gridViewBtn && listViewBtn && viewInput && searchForm) {
-			gridViewBtn.addEventListener('click', function() {
-				viewInput.value = 'grid';
-				gridViewBtn.classList.add('active');
-				listViewBtn.classList.remove('active');
-				searchForm.submit();
-			});
+        function itemCheckboxes(form) {
+            return form.querySelectorAll('input[type="checkbox"][name$="[]"]');
+        }
 
-			listViewBtn.addEventListener('click', function() {
-				viewInput.value = 'list';
-				listViewBtn.classList.add('active');
-				gridViewBtn.classList.remove('active');
-				searchForm.submit();
-			});
-		}
-	});
+        function updateCompanyFilterMaster(form) {
+            let master = form.querySelector("[data-company-filter-master]");
+            if (!master) return;
+
+            let checkboxes = itemCheckboxes(form);
+            let checkedCount = Array.from(checkboxes).filter(function(checkbox) { return checkbox.checked; }).length;
+            let total = checkboxes.length;
+
+            if (checkedCount === total || checkedCount === 0) {
+                master.checked = checkedCount === total;
+                master.indeterminate = false;
+            } else {
+                master.checked = false;
+                master.indeterminate = true;
+            }
+        }
+
+        function prepareCompanyFilterFormSubmit(form) {
+            let checkboxes = itemCheckboxes(form);
+            let allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(function(checkbox) { return checkbox.checked; });
+            let noneChecked = checkboxes.length > 0 && Array.from(checkboxes).every(function(checkbox) { return !checkbox.checked; });
+
+            checkboxes.forEach(function(checkbox) {
+                checkbox.disabled = false;
+            });
+
+            if (allChecked || noneChecked) {
+                checkboxes.forEach(function(checkbox) {
+                    checkbox.checked = true;
+                    checkbox.disabled = true;
+                });
+            }
+        }
+
+        function submitCompanyFilterForm(form) {
+            if (!form) return;
+            prepareCompanyFilterFormSubmit(form);
+            form.requestSubmit ? form.requestSubmit() : form.submit();
+        }
+
+        function checkboxStateSnapshot(form) {
+            return Array.from(itemCheckboxes(form)).map(function(checkbox) {
+                return checkbox.checked ? "1" : "0";
+            }).join(",");
+        }
+
+        function snapshotCompanyFilterForm(form) {
+            form.dataset.companyFilterSnapshot = checkboxStateSnapshot(form);
+        }
+
+        function isCompanyFilterFormDirty(form) {
+            if (!form || !form.dataset.companyFilterSnapshot) return false;
+            return form.dataset.companyFilterSnapshot !== checkboxStateSnapshot(form);
+        }
+
+        function handleCompanyFilterItemChange(form, event) {
+            if (!event.target || !event.target.matches('input[type="checkbox"][name$="[]"]')) return;
+
+            let checkboxes = itemCheckboxes(form);
+            let anyChecked = Array.from(checkboxes).some(function(checkbox) { return checkbox.checked; });
+
+            if (!anyChecked) {
+                checkboxes.forEach(function(checkbox) {
+                    checkbox.checked = true;
+                });
+            }
+
+            updateCompanyFilterMaster(form);
+        }
+
+        function bindCompanyFilterMasterCheckboxes() {
+            document.querySelectorAll("[data-company-filter-master]").forEach(function(master) {
+                if (master.dataset.bound) return;
+                master.dataset.bound = "true";
+
+                if (master.dataset.companyFilterMasterIndeterminate === "true") {
+                    master.indeterminate = true;
+                }
+
+                master.addEventListener("change", function() {
+                    let form = master.closest("form");
+                    if (!form) return;
+
+                    itemCheckboxes(form).forEach(function(checkbox) {
+                        checkbox.checked = master.checked;
+                    });
+                    updateCompanyFilterMaster(form);
+                });
+            });
+        }
+
+        function bindCompanyFilterCheckboxForms() {
+            document.querySelectorAll(".company-filter-checkbox-form").forEach(function(form) {
+                if (form.dataset.bound) return;
+                form.dataset.bound = "true";
+
+                updateCompanyFilterMaster(form);
+
+                form.addEventListener("change", function(event) {
+                    if (event.target && event.target.matches("[data-company-filter-master]")) return;
+                    handleCompanyFilterItemChange(form, event);
+                });
+            });
+        }
+
+        function bindCompanyFilterDropdownSubmit() {
+            document.querySelectorAll(".company-filter-dropdown").forEach(function(dropdown) {
+                if (dropdown.dataset.boundDropdown) return;
+                dropdown.dataset.boundDropdown = "true";
+
+                dropdown.addEventListener("show.bs.dropdown", function() {
+                    let form = dropdown.querySelector(".company-filter-checkbox-form");
+                    if (form) snapshotCompanyFilterForm(form);
+                });
+
+                dropdown.addEventListener("hide.bs.dropdown", function(event) {
+                    if (event.clickEvent && event.clickEvent.target.closest("a")) {
+                        dropdown.dataset.skipFilterSubmit = "true";
+                    }
+                });
+
+                dropdown.addEventListener("hidden.bs.dropdown", function() {
+                    if (dropdown.dataset.skipFilterSubmit === "true") {
+                        delete dropdown.dataset.skipFilterSubmit;
+                        return;
+                    }
+
+                    let form = dropdown.querySelector(".company-filter-checkbox-form");
+                    if (!form || !isCompanyFilterFormDirty(form)) return;
+                    submitCompanyFilterForm(form);
+                });
+
+                let menu = dropdown.querySelector(".dropdown-menu");
+                if (menu && !menu.dataset.bound) {
+                    menu.dataset.bound = "true";
+                    menu.addEventListener("click", function(event) {
+                        event.stopPropagation();
+                    });
+                }
+            });
+        }
+
+        function bindCompanyFilters() {
+            bindCompanyFilterSearch();
+            bindCompanyFilterMasterCheckboxes();
+            bindCompanyFilterCheckboxForms();
+            bindCompanyFilterDropdownSubmit();
+        }
+
+        document.addEventListener("turbo:load", bindCompanyFilters);
+        document.addEventListener("turbo:render", bindCompanyFilters);
+        bindCompanyFilters();
+    })();

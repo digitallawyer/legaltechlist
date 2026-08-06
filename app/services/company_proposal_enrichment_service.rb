@@ -1,0 +1,379 @@
+require "timeout"
+require "uri"
+
+class CompanyProposalEnrichmentService
+  MARKETING_TERMS = DescriptionDraftAgent::MARKETING_TERMS
+  EARLIEST_PLAUSIBLE_FOUNDING_YEAR = 1970
+
+  # Official business registries — the most authoritative founding-year source.
+  REGISTRY_HOSTS = %w[
+    opencorporates.com
+    companieshouse.gov.uk
+    sec.gov
+    bizfileonline.sos.ca.gov
+    handelsregister.de
+  ].freeze
+
+  # Self-reported company profiles with a documented "Founded" field.
+  PROFILE_HOSTS = %w[
+    linkedin.com
+    crunchbase.com
+  ].freeze
+
+  # Registry/profile hosts we accept for a founding year ONLY when the surrounding
+  # evidence text explicitly names the company (guards against same-name entities).
+  ENTITY_REGISTRY_HOSTS = (REGISTRY_HOSTS + PROFILE_HOSTS).freeze
+
+  def self.call(**kwargs)
+    new(**kwargs).call
+  end
+
+  # Normalize a URL to its bare host (lowercased, no leading www.), or nil.
+  def self.host_for(url)
+    host = URI.parse(url.to_s.strip).host
+    host&.downcase&.delete_prefix("www.")
+  rescue URI::InvalidURIError
+    nil
+  end
+
+  # A founding year is accepted ONLY when it is a plausible 4-digit year AND the
+  # citing source host is among the evidence we actually gathered (research results
+  # or the company's own domains). This prevents writing hallucinated/unsourced years.
+  def self.sourced_year(year:, source:, allowed_hosts:)
+    normalized = year.to_s.strip
+    return nil unless normalized.match?(/\A(?:19|20)\d{2}\z/)
+    return nil unless (EARLIEST_PLAUSIBLE_FOUNDING_YEAR..Date.current.year).cover?(normalized.to_i)
+
+    source_host = host_for(source)
+    return nil if source_host.blank?
+    return nil unless Array(allowed_hosts).include?(source_host)
+
+    normalized
+  end
+
+  # True when the citing source is (a) on the company's own canonical domain, or
+  # (b) on a known registry/profile host AND the surrounding evidence text explicitly
+  # names the company. This blocks year candidates cited from same-name but different
+  # entities (e.g. apualegal.com for a company whose canonical domain is apua.ai).
+  def self.entity_match?(record, source_url, evidence_text: nil)
+    return false if source_url.blank?
+
+    source_domain = Company.canonical_domain_for(source_url)
+    return false if source_domain.blank?
+
+    own_domain = own_canonical_domain(record)
+    return true if own_domain.present? && domains_related?(source_domain, own_domain)
+
+    return false unless ENTITY_REGISTRY_HOSTS.any? { |host| source_domain == host || source_domain.end_with?(".#{host}") }
+
+    name = display_name_for(record)
+    return false if name.blank? || evidence_text.blank?
+
+    evidence_text.to_s.downcase.include?(name.downcase)
+  end
+
+  # Returns :registry, :profile, :owned, or :other for a candidate source_url.
+  # Used to break ties between multiple entity-matched founding-year candidates.
+  def self.source_tier(source_url, company: nil)
+    domain = Company.canonical_domain_for(source_url)
+    return :other if domain.blank?
+
+    return :registry if REGISTRY_HOSTS.any? { |host| domain == host || domain.end_with?(".#{host}") }
+    return :profile if PROFILE_HOSTS.any? { |host| domain == host || domain.end_with?(".#{host}") }
+
+    own = own_canonical_domain(company)
+    return :owned if own.present? && domains_related?(domain, own)
+
+    :other
+  end
+
+  # Neutralize a drafted description: squish, strip marketing terms and source-meta
+  # phrasing. Shared by enrichment and discovery-time drafting so both produce the
+  # same house style.
+  def self.clean_description(description)
+    cleaned = description.to_s.squish
+    MARKETING_TERMS.each do |term|
+      cleaned = cleaned.gsub(/\b#{Regexp.escape(term)}\b/i, "")
+    end
+    cleaned = cleaned.gsub(/\bprovides or supports\b/i, "develops")
+    cleaned = cleaned.gsub(/\b(?:listed|included)\s+in\s+TechIndex\b/i, "")
+    cleaned = cleaned.gsub(/\b(?:based on|according to|identified in)\s+(?:available records|directory metadata|stored profiles|source data)\b/i, "")
+    cleaned = cleaned.gsub(/\bai\b/i, "AI")
+    cleaned.squish
+  end
+
+  def self.description_issues(description, source_description: nil, full_source_description: nil)
+    text = description.to_s
+    issues = []
+    issues << "Draft is shorter than expected." if text.split.size < 12
+    issues << "Draft may contain marketing language." if MARKETING_TERMS.any? { |term| text.downcase.include?(term) }
+    issues << "Draft may copy the source description." if [source_description, full_source_description].compact_blank.any? { |source| text.squish.casecmp?(source.to_s.squish) }
+    issues << "Draft may describe source metadata rather than company facts." if text.match?(/\b(available records|directory metadata|stored profiles|source data|current record)\b/i)
+    issues << "Draft is too generic for publication." if text.match?(/\bprovides or supports legal technology services\b/i)
+    issues
+  end
+
+  def self.description_critic_for(description, source_description: nil, full_source_description: nil, suggested_revision: "")
+    issues = description_issues(description, source_description: source_description, full_source_description: full_source_description)
+    {
+      "verdict" => issues.any? ? "revise" : "pass",
+      "issues" => issues,
+      "rationale" => issues.any? ? "Human revision is recommended before approval." : "No deterministic description issues were found.",
+      "suggested_revision" => issues.any? ? suggested_revision.to_s : "",
+      "mode" => "deterministic_fallback"
+    }
+  end
+
+  def self.own_canonical_domain(record)
+    return nil if record.nil?
+    return record.canonical_main_domain if record.respond_to?(:canonical_main_domain)
+
+    if record.respond_to?(:final_changes)
+      main_url = record.final_changes["main_url"].presence || record.try(:source_payload)&.dig("website")
+      return Company.canonical_domain_for(main_url)
+    end
+    nil
+  end
+
+  def self.display_name_for(record)
+    return record.name if record.respond_to?(:name) && record.name.present?
+    record.respond_to?(:display_name) ? record.display_name : nil
+  end
+
+  def self.domains_related?(a, b)
+    a == b || a.end_with?(".#{b}") || b.end_with?(".#{a}")
+  end
+
+  def initialize(proposal:, admin_user:)
+    @proposal = proposal
+    @admin_user = admin_user
+  end
+
+  def call
+    @research_payload = CompanyProposalResearchService.call(proposal: proposal)
+    @taxonomy_suggestion = CompanyProposalTaxonomySuggestionService.call(source_payload: source_payload, final_changes: proposal.final_changes)
+    final_changes = proposal.final_changes.merge(enriched_changes).merge(taxonomy_changes)
+    agent_payload = agent_details(final_changes)
+    proposal.update!(
+      status: "ready_for_review",
+      final_changes: final_changes,
+      proposed_changes: proposal.proposed_changes.merge(enriched_changes),
+      agent_details: agent_payload.merge("quality" => CompanyProposalQualityService.call(proposal.tap { |record| record.final_changes = final_changes; record.agent_details = agent_payload })),
+      admin_user: admin_user,
+      enriched_at: Time.current
+    )
+
+    proposal
+  end
+
+  private
+
+  attr_reader :proposal, :admin_user
+
+  def enriched_changes
+    @enriched_changes ||= {
+      "description" => proposed_description,
+      "number_of_funding_rounds" => number_of_funding_rounds,
+      "founded_date" => sourced_founded_year
+    }.compact
+  end
+
+  def taxonomy_changes
+    tag_names = Array(taxonomy_suggestion.dig("tags", "names")).compact
+    {
+      "category_id" => taxonomy_suggestion.dig("category", "id"),
+      "secondary_category_id" => taxonomy_suggestion.dig("secondary_category", "id"),
+      "business_model_id" => taxonomy_suggestion.dig("revenue_models", "ids")&.first,
+      "business_model_ids" => taxonomy_suggestion.dig("revenue_models", "ids"),
+      "target_client_id" => taxonomy_suggestion.dig("target_clients", "ids")&.first || taxonomy_suggestion.dig("target_client", "id"),
+      "target_client_ids" => taxonomy_suggestion.dig("target_clients", "ids"),
+      "all_tags" => tag_names.join(", ").presence
+    }.compact_blank
+  end
+
+  def proposed_description
+    clean_description(llm_payload["proposed_description"].presence || fallback_description)
+  end
+
+  # A single LLM call returns description + a strictly-sourced founding year.
+  def llm_payload
+    @llm_payload ||= fetch_llm_payload
+  end
+
+  def fetch_llm_payload
+    return {} unless llm_enabled?
+
+    chat = RubyLLM.chat(model: hard_model, provider: :openai, assume_model_exists: true)
+    response = Timeout.timeout(llm_timeout_seconds) { chat.ask(description_prompt) }
+    payload = parse_json_content(response.content)
+    payload.is_a?(Hash) ? payload : {}
+  rescue StandardError
+    {}
+  end
+
+  # Only fill founded_date when it is blank and the model cited a real source we
+  # gathered. Records the citing source for provenance/auditing.
+  def sourced_founded_year
+    return if proposal.final_changes["founded_date"].present?
+
+    candidate_source = llm_payload["founded_year_source"]
+    year = self.class.sourced_year(
+      year: llm_payload["founded_year"],
+      source: candidate_source,
+      allowed_hosts: evidence_hosts
+    )
+    return nil if year.blank?
+    return nil unless self.class.entity_match?(proposal, candidate_source, evidence_text: llm_payload["founded_year_evidence_text"])
+
+    @founded_year_source = candidate_source
+    year
+  end
+
+  def evidence_hosts
+    urls = Array(research_payload["results"]).map { |result| result["url"] }
+    urls << (source_payload["website"] || proposal.final_changes["main_url"])
+    urls << source_payload["crunchbase_url"]
+    urls << source_payload["linkedin_url"]
+    urls.compact_blank.filter_map { |url| self.class.host_for(url) }.uniq
+  end
+
+  def founded_year_provenance
+    return nil if @founded_year_source.blank?
+
+    {
+      "source_url" => @founded_year_source,
+      "source_tier" => self.class.source_tier(@founded_year_source, company: proposal).to_s,
+      "mode" => "web_research_cited",
+      "generated_at" => Time.current.utc.iso8601
+    }
+  end
+
+  def parse_json_content(content)
+    return content if content.is_a?(Hash)
+
+    JSON.parse(content.to_s)
+  rescue JSON::ParserError
+    { "proposed_description" => content.to_s }
+  end
+
+  def fallback_description
+    text = source_text.downcase
+
+    if text.match?(/\binsurance\b|\bclaims?\b|\bpolic(?:y|ies)\b/)
+      "#{display_name} develops legal technology for analyzing insurance policies and claims documentation."
+    elsif text.match?(/\bcontract\b|\bnegotiation\b|\bclm\b/)
+      "#{display_name} develops legal technology for contract review, drafting, negotiation, or lifecycle management."
+    elsif text.match?(/\blaw firms?\b|\blegal professionals?\b/)
+      "#{display_name} develops legal AI software for law firms and legal professionals."
+    elsif text.match?(/\blitigation\b|\bdisputes?\b|\bcase\b/)
+      "#{display_name} develops legal technology for litigation and case-management workflows."
+    elsif text.match?(/\bcompliance\b|\bregulatory\b|\brisk\b/)
+      "#{display_name} develops legal technology for compliance, regulatory, or risk-management workflows."
+    else
+      "#{display_name} develops legal technology software for legal teams and related professional workflows."
+    end
+  end
+
+  def clean_description(description)
+    self.class.clean_description(description)
+  end
+
+  def agent_details(final_changes)
+    {
+      "agent" => self.class.name,
+      "mode" => llm_enabled? ? "ruby_llm_or_fallback" : "deterministic_fallback",
+      "generated_at" => Time.current.utc.iso8601,
+      "source_limits" => [
+        "Source descriptions are evidence only and were not copied.",
+        "Admin review and editing are required before creating an invisible company draft.",
+        "Final publication requires a separate visible toggle."
+      ],
+      "web_research" => research_payload,
+      "taxonomy_suggestion" => taxonomy_suggestion,
+      "description_draft" => {
+        "proposed_description" => final_changes["description"],
+        "confidence" => "low",
+        "rationale" => description_rationale
+      },
+      "founded_date_source" => founded_year_provenance,
+      "description_critic" => description_critic(final_changes["description"])
+    }
+  end
+
+  def description_critic(description)
+    self.class.description_critic_for(
+      description,
+      source_description: source_payload["source_description"],
+      full_source_description: source_payload["full_source_description"],
+      suggested_revision: fallback_description
+    )
+  end
+
+  def description_prompt
+    {
+      candidate: source_payload.slice("name", "website", "location", "industries", "operating_status", "company_type", "founded_date", "funding_amount_usd", "number_of_funding_rounds", "founders"),
+      source_evidence: source_evidence,
+      web_research: research_payload,
+      instruction: "Return JSON with keys proposed_description, founded_year, founded_year_source, and founded_year_evidence_text. proposed_description: one neutral, academic directory sentence of 18-32 words using concrete product/function language grounded only in evidence; do not copy source descriptions; avoid marketing language, source-meta phrasing, customer counts, unverifiable superlatives, and the phrase 'provides or supports'. founded_year: the 4-digit founding year ONLY if a source explicitly states it (check the 'Founded' field on the company's LinkedIn/Crunchbase profile and official business registries such as OpenCorporates or national registries; prefer an official registry over a self-reported profile if they disagree), otherwise null — never guess or estimate. founded_year_source: the exact source URL (from the evidence/web_research above) that states the founded_year, otherwise null. founded_year_evidence_text: a short verbatim snippet from that source that names THIS company and states the year (used to confirm the source is about this company and not a same-named one), otherwise null."
+    }.to_json
+  end
+
+  def llm_enabled?
+    defined?(RubyLLM) && ENV["OPENAI_API_KEY"].present? && ENV.fetch("PROPOSAL_ENRICHMENT_USE_LLM", ENV.fetch("DESCRIPTION_DRAFTS_USE_LLM", "true")) == "true"
+  end
+
+  def hard_model
+    ENV.fetch("RUBYLLM_DESCRIPTION_MODEL", ENV.fetch("RUBYLLM_HARD_MODEL", "gpt-5.5"))
+  end
+
+  def llm_timeout_seconds
+    ENV.fetch("PROPOSAL_DESCRIPTION_TIMEOUT_SECONDS", "45").to_i
+  end
+
+  def display_name
+    proposal.display_name
+  end
+
+  def source_payload
+    proposal.source_payload || {}
+  end
+
+  def source_evidence
+    {
+      "short_description" => source_payload["source_description"],
+      "full_description" => source_payload["full_source_description"],
+      "industries" => Array(source_payload["industries"]),
+      "website" => source_payload["website"],
+      "crunchbase_url" => source_payload["crunchbase_url"],
+      "linkedin_url" => source_payload["linkedin_url"]
+    }.compact
+  end
+
+  def research_payload
+    @research_payload ||= CompanyProposalResearchService.call(proposal: proposal)
+  end
+
+  def taxonomy_suggestion
+    @taxonomy_suggestion ||= CompanyProposalTaxonomySuggestionService.call(source_payload: source_payload, final_changes: proposal.final_changes)
+  end
+
+  def source_text
+    [
+      source_payload["source_description"],
+      source_payload["full_source_description"],
+      Array(source_payload["industries"]).join(" ")
+    ].compact.join(" ")
+  end
+
+  def description_rationale
+    if Array(research_payload["results"]).any? || research_payload["summary"].present?
+      "Drafted from candidate source evidence and OpenAI Responses API web-search research, then filtered for neutral academic tone."
+    else
+      "Drafted from candidate source evidence because web search was unavailable."
+    end
+  end
+
+  def number_of_funding_rounds
+    source_payload["number_of_funding_rounds"].presence || source_payload["Number of Funding Rounds"].presence
+  end
+end

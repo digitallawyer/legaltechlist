@@ -1,23 +1,22 @@
-# This file should contain all the record creation needed to seed the database with its default values.
-# The data can then be loaded with the rake db:seed (or created alongside the db with db:setup).
-#
-# Examples:
-#
-#   cities = City.create([{ name: 'Chicago' }, { name: 'Copenhagen' }])
-#   Mayor.create(name: 'Emanuel', city: cities.first)
+MethodologyHelper::TARGET_CLIENTS.each do |row|
+  TargetClient.find_or_create_by!(name: row[:name]) do |client|
+    client.description = row[:definition]
+  end
+end
 
-target_clients = TargetClient.create([
-  {name:"Unknown",     description:"Business Model Not Known."},
-  {name:"Individuals", description:"Serves Individuals Directly."},
-  {name:"Companies",   description:"Serves Companies Directly."},
-  {name:"Government",  description:"Serves Governmnet Directly."},
-  {name:"Service Providers", description:"Serves Lawyers, Law Firms, and Other Legal Service Providers."}
+BusinessModel.create([
+  { name: "Subscription", description: "Monthly or annual recurring revenue, seat-based pricing, or tiered plans" },
+  { name: "Usage-Based", description: "Consumption-based billing for API calls, storage, compute, or per-unit usage" },
+  { name: "Transaction Fee", description: "Commissions, take rates, or fees on payments and marketplace transactions" },
+  { name: "Services", description: "Hourly, project, retainer, or managed-service delivery by people" },
+  { name: "Licensing", description: "Software or IP licensing fees and royalties" },
+  { name: "Advertising", description: "Advertising, sponsorships, and ad-supported revenue" },
+  { name: "Commerce", description: "One-time product sales, physical or digital" },
+  { name: "Success Fee", description: "Performance-based fees such as recruiting, M&A, or contingency pricing" },
+  { name: "Grants & Subsidies", description: "Grants, donations, or public subsidies (legal aid, A2J, nonprofits)" },
+  { name: "Other", description: "Revenue models that do not fit the categories above" }
 ])
 
-business_model = BusinessModel.create([
-  {name:"Unknown", description:"Business Model not known"},
-  {name:"Legal Tech", description:"Creates and Sells Technology Products."},
-  {name:"Legal Service Using Tech", description:"Provides a legal service using legal tech."}
-])
-
-AdminUser.create!(email: 'admin@example.com', password: 'password', password_confirmation: 'password')
+unless AdminUser.exists?(email: 'admin@example.com')
+  AdminUser.create!(email: 'admin@example.com', password: 'password', password_confirmation: 'password')
+end

@@ -1,0 +1,58 @@
+- content_for :title, "Agent Reviews"
+
+.card.border-0.shadow-sm.admin-compact-card
+    .card-header.bg-white
+        .d-flex.flex-wrap.justify-content-between.align-items-center.gap-2
+            h1.h4.mb-0 Agent Reviews
+            .admin-table-summary
+                span.admin-table-summary-item
+                    | Records 
+                    strong= number_with_delimiter(@agent_reviews.total_count)
+    .card-body.border-bottom.admin-tabs-row
+        .nav.admin-section-tabs
+            = link_to "All Runs", custom_admin_pipeline_runs_path, class: "nav-link"
+            = link_to "Agent Reviews", custom_admin_agent_reviews_path, class: "nav-link active"
+            = link_to "Import Reviews", custom_admin_pipeline_runs_path(activity: "import_reviews"), class: "nav-link"
+            = link_to "Failures", custom_admin_pipeline_runs_path(activity: "failed"), class: "nav-link"
+    .table-responsive
+        table.table.table-hover.align-middle.mb-0.admin-table.is-compact
+            thead
+                tr
+                    th Review
+                    th.admin-nowrap Type
+                    th.admin-nowrap Agent
+                    th.admin-nowrap Status
+                    th.admin-nowrap Company
+                    th.admin-nowrap Created
+                    th.admin-actions
+            tbody
+                - @agent_reviews.each do |run|
+                    - company = Company.find_by(id: run.details&.dig("company_id"))
+                    tr
+                        td.admin-description
+                            = link_to custom_admin_agent_review_path(run), class: "admin-primary-link", aria: { label: "Review #{run.name}" } do
+                                .fw-semibold= run.name
+                                .admin-cell-secondary= run.run_type
+                        td.admin-nowrap= run.run_type
+                        td.admin-nowrap= run.agent_name.presence || "Unassigned"
+                        td.admin-nowrap
+                            span.admin-status-pill class="text-bg-#{run.status == 'failed' ? 'danger' : 'secondary'}"= run.status
+                        td.admin-nowrap
+                            - if company
+                                = link_to company.name, custom_admin_company_review_path(company.id)
+                            - else
+                                span.admin-cell-secondary Not linked
+                        td.small.admin-nowrap= run.created_at
+                        td.text-end.admin-actions
+                            .dropdown
+                                button.btn.btn-sm.btn-light.border.btn-icon type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Agent review actions"
+                                    i.fas.fa-ellipsis-h
+                                .dropdown-menu.dropdown-menu-end
+                                    = link_to custom_admin_agent_review_path(run), class: "dropdown-item" do
+                                        i.fas.fa-eye.me-2
+                                        | Review Output
+            - if @agent_reviews.empty?
+                tbody
+                    tr
+                        td.text-muted.text-center colspan="7" No agent review output has been logged yet.
+    = render "shared/pagination", collection: @agent_reviews, count_label: "reviews", wrapper_class: "card-footer bg-white app-pagination-footer"

@@ -1,0 +1,280 @@
+- content_for :title, "#{@company.name} Review"
+- blank_value = "Blank"
+- field_value = ->(value) { value.present? ? value : blank_value }
+- link_value = ->(value) { value.present? ? link_to(value, value, target: "_blank", rel: "noopener") : blank_value }
+- date_value = ->(value) { value.present? ? value : blank_value }
+- compact_date = ->(value) { value.present? ? value.to_date.to_fs(:long) : blank_value }
+- currency_value = ->(value) { value.present? ? number_to_currency(value, precision: 0) : blank_value }
+- status_label = @company.status.present? ? @company.status.titleize : blank_value
+- founded_display = (@company.founded_date.present? && @company.founded_date != "0000") ? @company.founded_date : blank_value
+- headquarters_display = (@company.display_location.present? && @company.display_location != "Nowhere") ? company_display_location(@company) : blank_value
+- target_market_names = (@company.target_clients.any? ? @company.target_clients : Array(@company.target_client).compact).map(&:name).uniq.reject { |name| name.blank? || name == "Unknown" }
+- target_market_display = target_market_names.any? ? target_market_names.to_sentence : blank_value
+- revenue_model_names = @company.revenue_model_names.reject { |name| name.blank? || name == "Unknown" }
+- revenue_model_display = revenue_model_names.any? ? revenue_model_names.to_sentence : blank_value
+- funding_amount = @company.total_funding_amount_usd.to_f
+- funding_display = (if funding_amount >= 1_000_000_000 then "$#{(funding_amount / 1_000_000_000).round(1).to_s.sub(/\.0$/, '')}B" elsif funding_amount >= 1_000_000 then "$#{(funding_amount / 1_000_000).round}M" elsif funding_amount.positive? then number_to_currency(funding_amount, precision: 0) else blank_value end)
+- exit_display = @company.exit_date.present? ? @company.exit_date.strftime("%B %Y") : nil
+- key_facts = [{ label: "Status", icon: "fa-solid fa-circle-check", value: status_label }, { label: "Founded", icon: "fa-regular fa-calendar", value: founded_display }, { label: "Headquarters", icon: "fa-solid fa-location-dot", value: headquarters_display }, { label: "Target market", icon: "fa-solid fa-bullseye", value: target_market_display }, { label: "Revenue model", icon: "fa-solid fa-coins", value: revenue_model_display }, { label: "Total funding", icon: "fa-solid fa-dollar-sign", value: funding_display }]
+- key_facts << { label: "Exit", icon: "fa-solid fa-flag-checkered", value: exit_display } if exit_display.present?
+
+.d-flex.flex-wrap.justify-content-between.align-items-start.gap-3.mb-4
+    .admin-company-review-hero-main
+        - if @company.logo_placeholder?
+            .admin-company-review-logo-frame
+                .admin-company-review-logo-placeholder= @company.name.to_s.first
+        - else
+            = image_tag @company.logo, alt: "#{@company.name} logo", class: "admin-company-review-logo"
+        .admin-company-review-heading
+            h1.h3.mb-1= @company.name
+            span.admin-status-pill class=@company.review_state_badge_class
+                = @company.review_state_label
+            - if @company.main_url.present?
+                .mt-1
+                    = link_to @company.main_url, class: "admin-company-review-website", target: "_blank", rel: "noopener" do
+                        = website_display_label(@company.main_url)
+                        i.fas.fa-arrow-up-right-from-square.ms-1.small aria-hidden="true"
+            - if @company.slug.present?
+                .mt-1
+                    = link_to company_path(@company), class: "admin-company-review-website", target: "_blank", rel: "noopener" do
+                        | Public profile
+                        i.fas.fa-arrow-up-right-from-square.ms-1.small aria-hidden="true"
+    .admin-proposal-toolbar-primary
+        - if @company.slug.present?
+            = link_to company_path(@company), class: "btn btn-outline-secondary", target: "_blank", rel: "noopener" do
+                i.fas.fa-arrow-up-right-from-square.me-1
+                | View on site
+        = link_to edit_custom_admin_company_path(@company.id), class: "btn btn-outline-secondary" do
+            i.fas.fa-pen.me-1
+            | Edit
+        .dropdown
+            button.btn.btn-outline-secondary type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More company actions"
+                | More
+                i.fas.fa-chevron-down.ms-1.small
+            .dropdown-menu.dropdown-menu-end
+                = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "needs_work" }, class: "dropdown-item", form: { data: { turbo_confirm: "Mark #{@company.name} as needing more review?" } } do
+                    i.fas.fa-clock.me-2
+                    | Needs more work
+                = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "reject" }, class: "dropdown-item text-danger", form: { data: { turbo_confirm: "Reject and hide #{@company.name}?" } } do
+                    i.fas.fa-ban.me-2
+                    | Reject and hide
+                hr.dropdown-divider
+                = button_to custom_admin_company_agent_review_path(@company.id), method: :post, class: "dropdown-item", form: { data: { turbo_confirm: "Run a proposal-only agent review for this company?" } } do
+                    i.fas.fa-robot.me-2
+                    | Agent review
+                = button_to custom_admin_company_duplicate_review_path(@company.id), method: :post, class: "dropdown-item", form: { data: { turbo_confirm: "Run a proposal-only duplicate-domain review for this company?" } } do
+                    i.fas.fa-clone.me-2
+                    | Duplicate review
+                hr.dropdown-divider
+                = button_to custom_admin_company_path(@company.id), method: :delete, class: "dropdown-item text-danger", form: { data: { turbo_confirm: "Delete #{@company.name}? This permanently removes the company record from TechIndex." } } do
+                    i.fas.fa-trash-alt.me-2
+                    | Delete
+        = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "verified" }, class: "btn btn-success", form: { data: { turbo_confirm: "Mark #{@company.name} as verified?" } } do
+            i.fas.fa-check.me-1
+            | Mark verified
+
+.row.g-3
+    .col-lg-8
+        .card.border-0.shadow-sm.mb-3
+            .card-header.bg-white
+                h2.h5.mb-0 About
+            .card-body
+                - if @company.description.present?
+                    p.admin-about-description= @company.description
+                - else
+                    p.admin-about-description.text-muted= blank_value
+                - secondary_category_name = @company.secondary_category&.name
+                - if (@company.category&.name.present? && @company.category.name != "Unknown") || (secondary_category_name.present? && secondary_category_name != "Unknown") || @company.tags.any?
+                    .admin-about-tags
+                        - if @company.category&.name.present? && @company.category.name != "Unknown"
+                            span.admin-about-category
+                                span.admin-about-category-dot aria-hidden="true"
+                                = @company.category.name
+                        - if secondary_category_name.present? && secondary_category_name != "Unknown"
+                            span.admin-about-keyword= secondary_category_name
+                        - @company.tags.each do |tag|
+                            span.admin-about-keyword= tag.name
+
+        .card.border-0.shadow-sm.mb-3
+            .card-header.bg-white
+                h2.h5.mb-0 Key Facts
+            .card-body
+                .admin-key-facts-grid
+                    - key_facts.each do |fact|
+                        .admin-key-fact-card
+                            .admin-key-fact-icon
+                                i class="#{fact[:icon]}" aria-hidden="true"
+                            div
+                                .admin-key-fact-label= fact[:label]
+                                .admin-key-fact-value= fact[:value]
+
+        .card.border-0.shadow-sm.mb-3
+            .card-header.bg-white
+                h2.h5.mb-0 Admin Fields
+            .card-body
+                dl.row.mb-0
+                    dt.col-sm-3 Visible
+                    dd.col-sm-9= @company.visible? ? "Yes" : "No"
+                    dt.col-sm-3 Location
+                    dd.col-sm-9= field_value.call(@company.location)
+                    dt.col-sm-3 Successor company
+                    dd.col-sm-9
+                        - if @company.successor_company
+                            = link_to @company.successor_company.name, custom_admin_company_review_path(@company.successor_company.id)
+                        - else
+                            = blank_value
+
+        .card.border-0.shadow-sm.mb-3
+            .card-header.bg-white
+                h2.h5.mb-0 Links
+            .card-body
+                h3.h6 Company references
+                dl.row.mb-3
+                    dt.col-sm-3 Facebook
+                    dd.col-sm-9= link_value.call(@company.facebook_url)
+                    dt.col-sm-3 LinkedIn
+                    dd.col-sm-9= link_value.call(@company.linkedin_url)
+                    dt.col-sm-3 Twitter
+                    dd.col-sm-9= link_value.call(@company.twitter_url)
+                h3.h6 External references
+                dl.row.mb-3
+                    dt.col-sm-3 Crunchbase
+                    dd.col-sm-9= link_value.call(@company.crunchbase_url)
+                    dt.col-sm-3 Legal.io
+                    dd.col-sm-9= link_value.call(@company.legalio_url)
+                    dt.col-sm-3 LegalTech Atlas
+                    dd.col-sm-9= link_value.call(@company.legaltech_atlas_url)
+                dl.row.mb-0
+                    dt.col-sm-3 Logo URL
+                    dd.col-sm-9= link_value.call(@company.logo_url)
+
+        .card.border-0.shadow-sm.mb-3
+            .card-header.bg-white
+                h2.h5.mb-0 People And Funding
+            .card-body
+                dl.row.mb-0
+                    dt.col-sm-3 Contact name
+                    dd.col-sm-9= field_value.call(@company.contact_name)
+                    dt.col-sm-3 Contact email
+                    dd.col-sm-9= field_value.call(@company.contact_email)
+                    dt.col-sm-3 Founders
+                    dd.col-sm-9= field_value.call(@company.founders)
+                    dt.col-sm-3 Headquarters region
+                    dd.col-sm-9= field_value.call(@company.headquarters_region)
+                    dt.col-sm-3 Funding status
+                    dd.col-sm-9= field_value.call(@company.funding_status)
+                    dt.col-sm-3 Funding rounds
+                    dd.col-sm-9= field_value.call(@company.number_of_funding_rounds)
+
+        .card.border-0.shadow-sm.mb-3
+            .card-header.bg-white
+                h2.h5.mb-0 Source And Events
+            .card-body
+                dl.row.mb-0
+                    dt.col-sm-3 Source
+                    dd.col-sm-9= field_value.call(@company.source)
+                    dt.col-sm-3 Source URL
+                    dd.col-sm-9= link_value.call(@company.source_url)
+                    dt.col-sm-3 CodeX presenter
+                    dd.col-sm-9= @company.codex_presenter.nil? ? blank_value : (@company.codex_presenter? ? "Yes" : "No")
+                    dt.col-sm-3 CodeX presentation
+                    dd.col-sm-9= date_value.call(@company.codex_presentation_date)
+                    dt.col-sm-3 Latitude
+                    dd.col-sm-9= field_value.call(@company.latitude)
+                    dt.col-sm-3 Longitude
+                    dd.col-sm-9= field_value.call(@company.longitude)
+
+    .col-lg-4
+        .card.border-0.shadow-sm.mb-3
+            .card-header.bg-white
+                h2.h5.mb-0 Duplicate Check
+            .card-body.py-2
+                .list-group.list-group-flush
+                    .list-group-item.px-0.border-0.d-flex.align-items-center.gap-2.py-2
+                        - if @duplicate_domain_companies.any?
+                            i.fas.fa-exclamation-triangle.text-warning aria-hidden="true"
+                            span
+                                span.fw-semibold Canonical domain
+                                span.text-muted.ms-1 —
+                                - @duplicate_domain_companies.each_with_index do |company, index|
+                                    - if index.positive?
+                                        | , 
+                                    = link_to company.name, custom_admin_company_review_path(company.id)
+                        - else
+                            i.fas.fa-check-circle.text-success aria-hidden="true"
+                            span
+                                span.fw-semibold Canonical domain
+                                span.text-muted.ms-1 — No duplicates
+                    .list-group-item.px-0.border-0.d-flex.align-items-center.gap-2.py-2
+                        - if @duplicate_name_companies.any?
+                            i.fas.fa-exclamation-triangle.text-warning aria-hidden="true"
+                            span
+                                span.fw-semibold Normalized name
+                                span.text-muted.ms-1 —
+                                - @duplicate_name_companies.each_with_index do |company, index|
+                                    - if index.positive?
+                                        | , 
+                                    = link_to company.name, custom_admin_company_review_path(company.id)
+                        - else
+                            i.fas.fa-check-circle.text-success aria-hidden="true"
+                            span
+                                span.fw-semibold Normalized name
+                                span.text-muted.ms-1 — No duplicates
+
+        .card.border-0.shadow-sm.mb-3
+            .card-header.bg-white
+                h2.h5.mb-0 Quality Metadata
+            .card-body.py-2
+                - quality_rows = [["Status", field_value.call(@company.quality_status)], ["Verdict", field_value.call(@company.verification_verdict)], ["Score", field_value.call(@company.quality_score)], ["Verified at", compact_date.call(@company.verified_at)], ["Enriched at", compact_date.call(@company.enriched_at)], ["Quality reviewed at", compact_date.call(@company.quality_reviewed_at)], ["Human reviewed at", compact_date.call(@company.human_reviewed_at)]]
+                .list-group.list-group-flush
+                    - quality_rows.each do |label, value|
+                        .list-group-item.px-0.border-0.py-2
+                            span
+                                span.fw-semibold= label
+                                span.text-muted.ms-1 —
+                                span= value
+                    - quality_review = @company.quality_review || {}
+                    .list-group-item.px-0.border-0.py-2
+                        - if quality_review.blank?
+                            span
+                                span.fw-semibold Quality review
+                                span.text-muted.ms-1 —
+                                span= blank_value
+                        - else
+                            details.admin-metadata-details
+                                summary.admin-metadata-summary
+                                    span.fw-semibold Quality review
+                                    span.text-muted.ms-1 —
+                                    span= "#{quality_review.size} #{'field'.pluralize(quality_review.size)}"
+                                pre.bg-light.border.rounded.p-2.small.mb-0.mt-2= JSON.pretty_generate(quality_review)
+
+        .card.border-0.shadow-sm.mb-3
+            .card-header.bg-white
+                h2.h5.mb-0 System Metadata
+            .card-body.py-2
+                - system_rows = [["ID", @company.id.to_s], ["Slug", field_value.call(@company.slug)], ["Canonical domain", field_value.call(@company.canonical_domain.presence || @company.canonical_main_domain)], ["Fingerprint", field_value.call(@company.fingerprint)], ["Created at", compact_date.call(@company.created_at)], ["Updated at", compact_date.call(@company.updated_at)]]
+                .list-group.list-group-flush
+                    - system_rows.each do |label, value|
+                        .list-group-item.px-0.border-0.py-2
+                            span
+                                span.fw-semibold= label
+                                span.text-muted.ms-1 —
+                                span.text-break= value
+
+        .card.border-0.shadow-sm
+            .card-header.bg-white
+                h2.h5.mb-0 Review Activity
+            .card-body
+                - if @company_pipeline_runs.any?
+                    ul.list-unstyled.mb-0
+                        - @company_pipeline_runs.each do |run|
+                            li.mb-2
+                                = link_to run.name, custom_admin_agent_review_path(run), class: "text-decoration-none fw-semibold"
+                                .text-muted.small
+                                    = run.status.humanize
+                                    - if run.finished_at.present?
+                                        span= " · #{run.finished_at.to_date.to_fs(:long)}"
+                                    - elsif run.created_at.present?
+                                        span= " · #{run.created_at.to_date.to_fs(:long)}"
+                - else
+                    p.text-muted.mb-0 No agent or duplicate reviews have been run for this company yet.

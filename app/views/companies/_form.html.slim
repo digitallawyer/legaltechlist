@@ -1,116 +1,99 @@
-= form_with(model: @company, local: true, class: "company-form") do |f|
-    .card.border.mb-4
-        .card-body
-            h5.card-title.mb-4 Contact Information
-            .row.g-3
-                .col-md-6
-                    .form-group
-                        = f.label :contact_name, class: "form-label"
-                        = f.text_field :contact_name, class: "form-control"
-                .col-md-6
-                    .form-group
-                        = f.label :contact_email, class: "form-label"
-                        = f.email_field :contact_email, class: "form-control"
+- category_options = Category.where.not(name: "Unknown").order(:name)
+- revenue_model_options = BusinessModel.canonical.order(:name)
+- target_client_options = TargetClient.canonical.order(:name)
+- tag_options = Tag.discoverable_for_form
+- contribution_form = @contribution_form || CompanyContributionForm.new
+= form_with model: contribution_form, url: companies_path, scope: :company_contribution, local: true, html: { class: "company-suggest-form" } do |f|
+    div style="display:none" aria-hidden="true"
+        = label_tag :website_url, "Website"
+        = text_field_tag :website_url, nil, tabindex: "-1", autocomplete: "off"
+    - if contribution_form.errors.any?
+        .company-suggest-errors
+            h2= pluralize(contribution_form.errors.count, "error") + " prevented this submission"
+            ul
+                - contribution_form.errors.full_messages.each do |message|
+                    li= message
 
-    .card.border.mb-4
-        .card-body
-            h5.card-title.mb-4 Company Information
-            .row.g-3
-                .col-md-6
-                    .form-group
-                        = f.label :name, class: "form-label"
-                        = f.text_field :name, class: "form-control"
-                .col-md-6
-                    .form-group
-                        = f.label :location, class: "form-label"
-                        = f.text_field :location, class: "form-control"
-                .col-md-6
-                    .form-group
-                        = f.label :founded_date, class: "form-label"
-                        = f.text_field :founded_date, class: "form-control"
-                .col-md-6
-                    .form-group
-                        = f.label :employee_count, class: "form-label"
-                        = f.text_field :employee_count, class: "form-control"
-                .col-md-6
-                    .form-group
-                        = f.label :category_id, class: "form-label"
-                        = f.select :category_id, 
-                            Category.all.order(:name).map { |c| [c.name, c.id] }, 
-                            { include_blank: false }, 
-                            { class: "form-select" }
-                .col-md-12
-                    .form-group
-                        = f.label :description, class: "form-label"
-                        = f.text_area :description, class: "form-control", rows: 4
-                .col-md-12
-                    .form-group
-                        = f.label :all_tags, class: "form-label"
-                        = f.text_field :all_tags, class: "form-control"
+    section.company-suggest-section
+        .company-suggest-section-label Your contact
+        .row.g-3
+            .col-md-6
+                = f.label :contact_name, required_label_text("Name"), class: "form-label"
+                = f.text_field :contact_name, class: "form-control", autocomplete: "name", placeholder: "Jane Smith", required: true
+            .col-md-6
+                = f.label :contact_email, required_label_text("Email"), class: "form-label"
+                = f.email_field :contact_email, class: "form-control", autocomplete: "email", placeholder: "you@example.com", required: true
 
-    .card.border.mb-4
-        .card-body
-            h5.card-title.mb-4 Online Presence
-            .row.g-3
-                .col-md-6
-                    .form-group
-                        = f.label :main_url, class: "form-label"
-                        = f.text_field :main_url, class: "form-control"
-                .col-md-6
-                    .form-group
-                        = f.label :status, class: "form-label"
-                        = f.select :status, 
-                            ['active', 'inactive', 'acquired'], 
-                            { include_blank: true }, 
-                            { class: "form-select" }
-                .col-md-6
-                    .form-group
-                        = f.label :twitter_url, class: "form-label"
-                        .input-group
-                            span.input-group-text
-                                i.fab.fa-twitter
-                            = f.text_field :twitter_url, class: "form-control"
-                .col-md-6
-                    .form-group
-                        = f.label :linkedin_url, class: "form-label"
-                        .input-group
-                            span.input-group-text
-                                i.fab.fa-linkedin
-                            = f.text_field :linkedin_url, class: "form-control"
-                .col-md-6
-                    .form-group
-                        = f.label :facebook_url, class: "form-label"
-                        .input-group
-                            span.input-group-text
-                                i.fab.fa-facebook
-                            = f.text_field :facebook_url, class: "form-control"
-                .col-md-6
-                    .form-group
-                        = f.label :angellist_url, class: "form-label"
-                        .input-group
-                            span.input-group-text
-                                i.fab.fa-angellist
-                            = f.text_field :angellist_url, class: "form-control"
-                .col-md-6
-                    .form-group
-                        = f.label :crunchbase_url, class: "form-label"
-                        = f.text_field :crunchbase_url, class: "form-control"
-                .col-md-6
-                    .form-group
-                        = f.label :legalio_url, class: "form-label"
-                        = f.text_field :legalio_url, class: "form-control"
+    section.company-suggest-section
+        .company-suggest-section-label Company profile
+        .row.g-3
+            .col-md-6
+                = f.label :name, required_label_text("Company name"), class: "form-label"
+                = f.text_field :name, class: "form-control", placeholder: "Acme Legal Tech", required: true
+            .col-md-6
+                = f.label :main_url, required_label_text("Website"), class: "form-label"
+                = f.url_field :main_url, class: "form-control", placeholder: "https://", required: true
+            .col-md-6
+                = f.label :location, required_label_text("Headquarters"), class: "form-label"
+                = f.text_field :location, class: "form-control", placeholder: "City, region, country", required: true
+            .col-md-6
+                = f.label :founded_date, required_label_text("Year founded"), class: "form-label"
+                = f.text_field :founded_date, class: "form-control", placeholder: "YYYY", required: true
+            .col-md-6
+                = f.label :category_id, required_label_text("Primary category"), class: "form-label"
+                = f.collection_select :category_id, category_options, :id, :name, { include_blank: "Select a category" }, { class: "form-select", required: true }
+                .form-text
+                    = link_to "Category definitions", statistics_methodology_path
+            .col-md-6
+                = f.label :status, required_label_text("Status"), class: "form-label"
+                = f.select :status, [["Active", "active"], ["Inactive", "inactive"], ["Acquired", "acquired"]], { include_blank: "Select status" }, { class: "form-select", required: true }
+            .col-12
+                = f.label :description, required_label_text("Description"), class: "form-label"
+                = f.text_area :description, class: "form-control", rows: 5, placeholder: "What does the company do? Who does it serve?", required: true
+            .col-12
+                = f.label :business_model_ids, required_label_text("Revenue model(s)"), class: "form-label"
+                .company-suggest-checkbox-grid
+                    = f.collection_check_boxes :business_model_ids, revenue_model_options, :id, :name do |builder|
+                        .form-check
+                            = builder.check_box class: "form-check-input"
+                            = builder.label class: "form-check-label"
+            .col-12
+                = f.label :target_client_ids, required_label_text("Target client(s)"), class: "form-label"
+                .company-suggest-checkbox-grid
+                    = f.collection_check_boxes :target_client_ids, target_client_options, :id, :name do |builder|
+                        .form-check
+                            = builder.check_box class: "form-check-input"
+                            = builder.label class: "form-check-label"
+            .col-12
+                = f.label :tag_names, required_label_text("Tags"), class: "form-label"
+                .company-suggest-checkbox-grid
+                    = f.collection_check_boxes :tag_names, tag_options, :name, :name do |builder|
+                        .form-check
+                            = builder.check_box class: "form-check-input"
+                            = builder.label class: "form-check-label"
 
-    .card.border.mb-4
-        .card-body
-            h5.card-title.mb-4 Company Branding
-            .row.g-3
-                .col-md-6
-                    .form-group
-                        = f.label :logo_url, "Logo URL", class: "form-label"
-                        = f.text_field :logo_url, class: "form-control"
-                        .form-text.text-secondary
-                            | Enter a direct URL to your company logo (recommended size: 64x64px)
+    section.company-suggest-section
+        .company-suggest-section-label Links
+        .row.g-3
+            .col-md-6
+                = f.label :crunchbase_url, "Crunchbase URL", class: "form-label"
+                = f.url_field :crunchbase_url, class: "form-control", placeholder: "https://www.crunchbase.com/organization/harvey"
+            .col-md-6
+                = f.label :linkedin_url, "LinkedIn URL", class: "form-label"
+                = f.url_field :linkedin_url, class: "form-control", placeholder: "https://www.linkedin.com/company/harvey/"
+            .col-md-6
+                = f.label :twitter_url, "X / Twitter URL", class: "form-label"
+                = f.url_field :twitter_url, class: "form-control", placeholder: "https://x.com/harvey"
+            .col-md-6
+                = f.label :facebook_url, "Facebook URL", class: "form-label"
+                = f.url_field :facebook_url, class: "form-control", placeholder: "https://www.facebook.com/harvey"
+            .col-md-6
+                = f.label :legalio_url, "Legal.io URL", class: "form-label"
+                = f.url_field :legalio_url, class: "form-control", placeholder: "https://www.legal.io/legal-software/130/Legal-io"
+            .col-md-6
+                = f.label :legaltech_atlas_url, "LegalTech Atlas URL", class: "form-label"
+                = f.url_field :legaltech_atlas_url, class: "form-control", placeholder: "https://legaltechatlas.com/companies/harvey"
 
-    .d-grid.gap-2.d-md-flex.justify-content-md-end
-        = f.submit "Submit", class: "btn btn-primary"
-        = link_to "Cancel", companies_path, class: "btn btn-outline-secondary"
+    .company-suggest-actions
+        = link_to "Cancel", companies_path, class: "company-suggest-cancel"
+        = f.submit "Submit suggestion", class: "company-suggest-submit"

@@ -4,11 +4,299 @@ class StaticPagesControllerTest < ActionController::TestCase
   test "should get home" do
     get :home
     assert_response :success
+    assert_select "title", text: "Legal Tech Company Database | CodeX TechIndex"
+    assert_select "meta[name=?][content*='curated ecosystem data']", "description"
   end
 
   test "should get about" do
     get :about
     assert_response :success
+    assert_select "title", text: /About/
+    assert_select "meta[name=?][content*='Stanford CodeX']", "description"
+    assert_includes @response.body, "About the CodeX TechIndex"
+    assert_includes @response.body, "Contributors"
+    assert_includes @response.body, "Contributor, Code = Law Participant"
+    assert_not_includes @response.body, 'src=""'
+  end
+
+  test "should get statistics" do
+    get :statistics
+    assert_response :success
+    assert_select ".stats-index-card", count: 9
+  end
+
+  test "business_model redirects to industry focus revenue model view" do
+    get :business_model
+    assert_redirected_to statistics_category_evolution_5_years_path(dimension: "revenue_model")
+  end
+
+  test "industry focus revenue model dimension uses canonical revenue model names" do
+    get :category_evolution_5_years, params: { dimension: "revenue_model" }
+    assert_response :success
+
+    models = assigns(:model_metrics).map { |row| row[:model] }
+    assert models.all? { |name| MethodologyHelper::REVENUE_MODEL_NAMES.include?(name) }
+    refute_includes models, "Legal Tech"
+    refute_includes models, "Unknown"
+  end
+
+  test "country distribution renders map chart by default" do
+    get :country_distribution
+    assert_response :success
+    assert_includes @response.body, "country-distribution-chart"
+    assert_includes @response.body, "drawCountryGeoChart"
+    assert_includes @response.body, "country-distribution-chart-data"
+    assert_includes @response.body, "gstatic.com/charts/loader.js"
+    assert_select "h1.stats-chart-title", text: "Geographic Distribution"
+    assert_select ".stats-segment-control .stats-segment.is-active", text: "By Country"
+    assert_not_includes @response.body, "drawRegionCountrySunburstChart"
+  end
+
+  test "country distribution surfaces significant markets with no entries" do
+    get :country_distribution
+    assert_response :success
+    assert assigns(:missing_significant_countries).is_a?(Array)
+    if assigns(:missing_significant_countries).any?
+      assert_select ".stats-country-gaps", 1
+      assert_select ".stats-country-gaps h3", text: "Significant markets with no entries yet"
+    end
+  end
+
+  test "country distribution region view renders sankey chart" do
+    get :country_distribution, params: { view: "region" }
+    assert_response :success
+    assert_includes @response.body, "companies-by-region-chart"
+    assert_includes @response.body, "companies-by-region-data"
+    assert_includes @response.body, "drawRegionCountrySankeyChart"
+    assert_includes @response.body, "type: \"sankey\""
+    assert_includes @response.body, "echarts@5.5.1/dist/echarts.min.js"
+    assert_select "h1.stats-chart-title", text: "Geographic Distribution"
+    assert_select ".stats-segment-control .stats-segment.is-active", text: "By Region"
+    assert assigns(:region_sankey_data).present?
+    assert_equal "All companies", assigns(:region_sankey_data)[:nodes].first[:name]
+    assert assigns(:region_sankey_data)[:links].present?
+    assert assigns(:region_sankey_data)[:links].any? { |link| link[:source] == "All companies" }
+  end
+
+  test "country distribution redirects legacy regions view param" do
+    get :country_distribution, params: { view: "regions" }
+    assert_response :success
+    assert_select ".stats-segment-control .stats-segment.is-active", text: "By Region"
+  end
+
+  test "companies by region redirects to unified geographic page" do
+    get :companies_by_region
+    assert_redirected_to statistics_country_distribution_path(view: "region")
+  end
+
+  test "funding by region redirects to unified funding page" do
+    get :funding_by_region
+    assert_redirected_to statistics_funding_by_category_path(dimension: "region")
+  end
+
+  test "funding by category renders category chart by default" do
+    get :funding_by_category
+    assert_response :success
+    assert_includes @response.body, "funding-by-category-chart"
+    assert_select "h1.stats-chart-title", text: "Funding"
+    assert_select "#funding-dimension option[selected]", text: "By Category"
+    assert_not_includes @response.body, "funding-by-region-chart"
+    assert_select ".stats-chart-nav .stats-chart-nav-next .stats-chart-nav-title", text: "Funding by Region"
+  end
+
+  test "funding by category region view renders sankey chart" do
+    get :funding_by_category, params: { dimension: "region" }
+    assert_response :success
+    assert_includes @response.body, "funding-by-region-chart"
+    assert_includes @response.body, "funding-by-region-data"
+    assert_includes @response.body, "drawRegionCountrySankeyChart"
+    assert_includes @response.body, "type: \"sankey\""
+    assert_select "h1.stats-chart-title", text: "Funding"
+    assert_select "#funding-dimension option[selected]", text: "By Region"
+    assert assigns(:region_sankey_data).present?
+    assert_equal "Disclosed funding", assigns(:region_sankey_data)[:nodes].first[:name]
+    assert_select ".stats-chart-nav .stats-chart-nav-next .stats-chart-nav-title", text: "AI in Legal Tech"
+  end
+
+  test "legacy funding region view param still works" do
+    get :funding_by_category, params: { view: "region" }
+    assert_response :success
+    assert_select "#funding-dimension option[selected]", text: "By Region"
+  end
+
+  test "venture stage redirects to funding venture stage view" do
+    get :venture_stage
+    assert_redirected_to statistics_funding_by_category_path(dimension: "venture_stage")
+  end
+
+  test "funding venture stage dimension renders stage chart" do
+    get :funding_by_category, params: { dimension: "venture_stage" }
+    assert_response :success
+    assert_includes @response.body, "venture-stage-chart"
+    assert_select "h1.stats-chart-title", text: "Funding"
+    assert_select "#funding-dimension option[selected]", text: "By Venture Stage"
+    assert assigns(:stage_metrics).all? { |row| StatisticsHelper::VENTURE_STAGE_ORDER.include?(row[:stage]) }
+    refute_includes assigns(:stage_metrics).map { |row| row[:stage] }, "For Profit"
+  end
+  test "should get total_companies cumulative view" do
+    get :total_companies
+    assert_response :success
+    assert_select "h1.stats-chart-title", text: "Total Companies"
+    assert_select ".stats-segment-control .stats-segment.is-active", text: "Cumulative"
+    assert_select ".stats-chart-nav .stats-chart-nav-prev .stats-chart-nav-title", text: "Technology Themes"
+    assert_select ".stats-chart-nav .stats-chart-nav-next .stats-chart-nav-title", text: "Geographic Distribution"
+    assert_select ".stats-page-back", count: 0
+  end
+
+  test "total_companies all time redirects to default range" do
+    get :total_companies_all_time
+    assert_redirected_to statistics_total_companies_path
+
+    get :total_companies_all_time, params: { view: "annual" }
+    assert_redirected_to statistics_total_companies_path(view: "annual")
+  end
+
+  test "should get total_companies annual view" do
+    get :total_companies, params: { view: "annual" }
+    assert_response :success
+    assert_select ".stats-segment-control .stats-segment.is-active", text: "By Year"
+  end
+
+  test "companies_founded redirects to unified growth page" do
+    get :companies_founded
+    assert_redirected_to statistics_total_companies_path(view: "annual")
+  end
+
+  test "companies_founded csv export still works" do
+    get :companies_founded, params: { format: :csv }
+    assert_response :success
+    assert_equal "text/csv", @response.media_type
+  end
+
+  test "extract_country normalizes country aliases and administrative regions" do
+    examples = {
+      "San Francisco, CA" => "United States",
+      "San Francisco,  California" => "United States",
+      "London,  England" => "United Kingdom",
+      "Toronto,  Ontario" => "Canada",
+      "Mumbai,  Maharashtra" => "India",
+      "Sydney,  New South Wales" => "Australia",
+      "Tallinn,  Harjumaa" => "Estonia",
+      "Milano,  Lombardia" => "Italy",
+      "Roma,  Lazio" => "Italy",
+      "Amsterdam,  Noord-Holland" => "Netherlands",
+      "Cambridge,  Cambridgeshire" => "United Kingdom",
+      "Edinburgh,  Edinburgh" => "United Kingdom",
+      "Sheridan,  Wyoming" => "United States",
+      "Noida,  Uttar Pradesh" => "India",
+      "Ahmedabad,  Gujarat" => "India",
+      "Barcelona,  Catalonia" => "Spain",
+      "Singapore,  Central Region" => "Singapore",
+      "Dubai,  Dubai" => "United Arab Emirates",
+      "Gent,  Oost-Vlaanderen" => "Belgium",
+      "Tel Aviv,  Tel Aviv" => "Israel",
+      "Islamabad,  Islamabad" => "Pakistan",
+      "Limasol,  Limassol" => "Cyprus",
+      "Cape Town,  NA - South Africa" => "South Africa",
+      "San Francisco, United States1" => "United States",
+      "New York City, United States2" => "United States",
+      "London, United Kingdom1" => "United Kingdom",
+      "Wiesbaden, Germany1" => "Germany",
+      "Taipei, Taiwan1" => "Taiwan",
+      "Hong Kong China" => "Hong Kong"
+    }
+
+    examples.each do |location, country|
+      assert_equal country, @controller.send(:extract_country, location), "Expected #{location.inspect} to normalize to #{country.inspect}"
+    end
+  end
+
+  test "methodology page renders" do
+    get :methodology
+    assert_response :success
+    assert_includes @response.body, "Data Methodology"
+    assert_includes @response.body, "Company profiles"
+    assert_includes @response.body, "Company profile fields"
+    assert_includes @response.body, "Citations"
+    assert_includes @response.body, "data-citation-copy"
+    assert_includes @response.body, "[1]"
+    assert_includes @response.body, "CodeX TechIndex"
+    assert_includes @response.body, "Primary categories (12)"
+    assert_includes @response.body, "12 primary functional categories"
+    assert_not_includes @response.body, "Visibility rules"
+    assert_not_includes @response.body, "Situation"
+  end
+
+  test "statistics pages include methodology partial" do
+    get :category_evolution_5_years, params: { dimension: "market_focus" }
+    assert_response :success
+    assert_includes @response.body, "stats-methodology"
+  end
+
+  test "target client redirects to industry focus market view" do
+    get :target_client
+    assert_redirected_to statistics_category_evolution_5_years_path(dimension: "market_focus")
+  end
+
+  test "industry focus market view renders cumulative line chart by default" do
+    get :category_evolution_5_years, params: { dimension: "market_focus" }
+    assert_response :success
+    assert_includes @response.body, "target-client-chart"
+    assert_includes @response.body, "LineChart"
+    assert_select "h1.stats-chart-title", text: "Industry Focus"
+    assert_select ".stats-segment-control .stats-segment.is-active", text: "Cumulative"
+    assert_select "#industry-focus-dimension option[selected]", text: "By Market Focus"
+    assert assigns(:chart_series).present?
+  end
+
+  test "industry focus market view annual mode renders by year line chart" do
+    get :category_evolution_5_years, params: { dimension: "market_focus", view: "annual" }
+    assert_response :success
+    assert_select ".stats-segment-control .stats-segment.is-active", text: "By Year"
+    assert assigns(:chart_series).present?
+  end
+
+  test "ai trends renders cumulative chart by default" do
+    get :ai_trends
+    assert_response :success
+    assert_includes @response.body, "ai-trends-cumulative-chart"
+    assert_select "h1.stats-chart-title", text: "AI in Legal Tech"
+    assert_select ".stats-segment-control .stats-segment.is-active", text: "Cumulative"
+    assert assigns(:table_data).present?
+  end
+
+  test "ai trends annual view renders by year chart" do
+    get :ai_trends, params: { view: "annual" }
+    assert_response :success
+    assert_includes @response.body, "ai-trends-annual-chart"
+    assert_select ".stats-segment-control .stats-segment.is-active", text: "By Year"
+  end
+
+  test "should get category_evolution_5_years with cumulative line chart" do
+    get :category_evolution_5_years
+    assert_response :success
+    assert_includes @response.body, "category-evolution-chart"
+    assert_includes @response.body, "LineChart"
+    assert_select "h1.stats-chart-title", text: "Industry Focus"
+    assert_select "#industry-focus-dimension option[selected]", text: "By Industry"
+    assert_select ".stats-category-filter-checkbox", minimum: 1
+    assert_equal assigns(:table_data).size, assigns(:chart_series).size
+  end
+
+  test "should get tag_distribution with column chart" do
+    get :tag_distribution
+    assert_response :success
+    assert_includes @response.body, "tag-distribution-chart"
+    assert_includes @response.body, "ColumnChart"
+    assert_includes @response.body, "chart.js"
+  end
+
+  test "statistics pages include turbo chart bootstrap" do
+    get :tag_distribution
+    assert_response :success
+    assert_includes @response.body, "turbo.min"
+    assert_includes @response.body, "chartkick:load"
+    assert_includes @response.body, 'data-turbo-track="reload"'
   end
 
 end

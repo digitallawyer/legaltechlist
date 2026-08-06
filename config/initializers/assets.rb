@@ -9,14 +9,9 @@ Rails.application.config.assets.paths << Rails.root.join('vendor', 'javascript')
 
 # Precompile additional assets.
 Rails.application.config.assets.precompile += %w( 
-  active_admin.js 
-  active_admin.css 
   companies.js 
   application.js
 )
-
-# Enable compiling assets on deploy
-Rails.application.config.assets.compile = true
 
 # Initialize configuration defaults
 Rails.application.config.assets.initialize_on_precompile = false

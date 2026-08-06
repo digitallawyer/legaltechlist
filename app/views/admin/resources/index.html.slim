@@ -1,0 +1,62 @@
+- content_for :title, @title
+
+.card.border-0.shadow-sm.admin-compact-card
+    .card-header.bg-white
+        .d-flex.flex-wrap.justify-content-between.align-items-center.gap-2
+            h1.h4.mb-0= @title
+            .d-flex.flex-wrap.align-items-center.gap-2
+                .admin-table-summary
+                    span.admin-table-summary-item
+                        | Records 
+                        strong= number_with_delimiter(@records.total_count)
+                = link_to new_custom_admin_resource_path(resource: @resource_key), class: "btn btn-sm btn-primary rounded-pill px-3" do
+                    i.fas.fa-plus.me-2
+                    = "New #{@title.singularize}"
+    .card-body.border-bottom.admin-tabs-row
+        .nav.admin-section-tabs
+            - Admin::ResourcesController::RESOURCE_CONFIG.each do |key, config|
+                = link_to config[:title], custom_admin_resources_path(resource: key), class: "nav-link #{key == @resource_key ? 'active' : ''}"
+    .table-responsive
+        table.table.table-hover.align-middle.mb-0.admin-table.is-compact
+            thead
+                tr
+                    th.admin-nowrap ID
+                    th Name
+                    th Details
+                    th.admin-nowrap Updated
+                    th.admin-actions
+            tbody
+                - @records.each do |record|
+                    tr
+                        td.admin-nowrap= record.id
+                        td.admin-nowrap
+                            = link_to edit_custom_admin_resource_path(resource: @resource_key, id: record.id), class: "admin-primary-link", aria: { label: "Edit #{record.respond_to?(:email) ? record.email : record.name}" } do
+                                .fw-semibold= record.respond_to?(:email) ? record.email : record.name
+                        td.admin-description
+                            - if record.respond_to?(:description)
+                                .admin-cell-secondary= truncate(record.description.to_s, length: 140)
+                            - elsif record.is_a?(SubCategory)
+                                .admin-cell-secondary= record.category&.name || "No category"
+                            - elsif record.is_a?(Tag)
+                                .admin-cell-secondary= "#{record.companies.count} companies"
+                            - elsif record.is_a?(AdminUser)
+                                .admin-cell-secondary= "Sign-ins: #{record.sign_in_count}"
+                            - else
+                                .admin-cell-secondary No details
+                        td.small.admin-nowrap= record.updated_at
+                        td.text-end.admin-actions
+                            .dropdown
+                                button.btn.btn-sm.btn-light.border.btn-icon type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Taxonomy record actions"
+                                    i.fas.fa-ellipsis-h
+                                .dropdown-menu.dropdown-menu-end
+                                    = link_to edit_custom_admin_resource_path(resource: @resource_key, id: record.id), class: "dropdown-item" do
+                                        i.fas.fa-pen.me-2
+                                        | Edit
+                                    = button_to custom_admin_resource_record_path(resource: @resource_key, id: record.id), method: :delete, class: "dropdown-item text-danger", form: { data: { turbo_confirm: "Delete this record?" } } do
+                                        i.fas.fa-trash-alt.me-2
+                                        | Delete
+            - if @records.empty?
+                tbody
+                    tr
+                        td.text-muted.text-center colspan="5" No records found.
+    = render "shared/pagination", collection: @records, count_label: "records", wrapper_class: "card-footer bg-white app-pagination-footer"

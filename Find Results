@@ -1,6 +1,0 @@
-Searching 434 files for "ltcv6"
-
-/Users/pietergunst/Sites/legaltechlist/lib/tasks/import.rake:
-   10: 		CSV.foreach("#{Rails.root}/lib/ltcv2.csv", :headers => true, :encoding => 'ISO-8859-1:UTF-8') do |row|
-
-1 match in 1 file

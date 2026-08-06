@@ -1,0 +1,33 @@
+- content_for :title, "Upload Companies CSV"
+
+.mb-4
+    h1.h3.mb-1 Upload Candidate CSV
+    p.text-muted.mb-0 Process Atlas/Crunchbase CSV candidates into invisible drafts when data is complete; exceptions appear in proposal review.
+
+.card.border-0.shadow-sm.mb-4
+    .card-body
+        .d-flex.flex-wrap.align-items-center.justify-content-between.gap-3
+            div
+                .admin-kicker Review workspace
+                .fw-semibold Uploads auto-create invisible drafts only when quality gates pass; duplicates and missing data stay in proposals.
+            .nav.nav-pills
+                = link_to "Review", custom_admin_company_proposals_path, class: "nav-link"
+                = link_to "Upload CSV", upload_custom_admin_companies_csv_path, class: "nav-link active"
+
+.card.border-0.shadow-sm
+    .card-body
+        = form_with url: import_custom_admin_companies_csv_path, scope: :dump, local: true, multipart: true do |f|
+            .mb-3
+                = f.label :file, "CSV file", class: "form-label"
+                = f.file_field :file, class: "form-control", accept: ".csv"
+            .d-flex.gap-2
+                = f.submit "Process Candidates", class: "btn btn-warning", formaction: review_import_candidates_custom_admin_companies_csv_path, data: { turbo_confirm: "Process candidates into invisible drafts or proposal review? Public records will not be published." }
+                = link_to "Cancel", custom_admin_companies_path, class: "btn btn-outline-secondary"
+            .accordion.mt-4 id="legacyImportDanger"
+                .accordion-item.border-danger
+                    h2.accordion-header id="legacyImportHeading"
+                        button.accordion-button.collapsed.text-danger type="button" data-bs-toggle="collapse" data-bs-target="#legacyImportCollapse" aria-expanded="false" aria-controls="legacyImportCollapse" Legacy importer danger zone
+                    #legacyImportCollapse.accordion-collapse.collapse aria-labelledby="legacyImportHeading" data-bs-parent="#legacyImportDanger"
+                        .accordion-body
+                            p.text-muted.small This legacy importer can create or update public company records. Use it only after reviewing candidates and confirming the import is intentional.
+                            = f.submit "Import CSV", class: "btn btn-outline-danger", data: { turbo_confirm: "This uses the legacy importer and may create or update company records. Continue only after candidate review." }

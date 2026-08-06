@@ -23,18 +23,13 @@
     </p>
 
     <p>
-      <strong><%= t("formtastic.labels.company.employee_count") %>:</strong>
-      <%= @company.employee_count %>
-    </p>
-
-    <p>
       <strong><%= t("formtastic.labels.company.all_tags") %>:</strong>
       <%= @company.all_tags %>
     </p>
 
     <p>
       <strong><%= t("formtastic.labels.company.category") %>:</strong>
-      <%= Category.find(@company.category).name %>
+      <%= Category.find(@company.category_id).name %>
     </p>
 
     <p>
@@ -48,10 +43,6 @@
     <p>
       <strong><%= t("formtastic.labels.company.twitter_url") %>:</strong>
       <%= @company.twitter_url %>
-    </p>
-    <p>
-      <strong><%= t("formtastic.labels.company.angellist_url") %>:</strong>
-      <%= @company.angellist_url %>
     </p>
     <p>
       <strong><%= t("formtastic.labels.company.crunchbase_url") %>:</strong>

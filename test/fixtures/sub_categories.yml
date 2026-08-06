@@ -1,11 +1,13 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  description: MyText
-  category_id: 
+  id: 1
+  name: Contract Management
+  description: Tools for managing legal contracts
+  category_id: 1
 
 two:
-  name: MyString
-  description: MyText
-  category_id: 
+  id: 2
+  name: E-Discovery
+  description: Tools for electronic discovery
+  category_id: 2

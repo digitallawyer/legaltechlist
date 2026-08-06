@@ -1,0 +1,44 @@
+= render partial: "shared/stats_styles"
+.stats-page
+    .stats-page-inner
+        .stats-chart-card
+            .stats-chart-header
+                .stats-chart-header-row
+                    .stats-chart-heading
+                        h1.stats-chart-title Funding Efficiency
+                    .stats-chart-controls
+                        = render partial: "shared/stats_export_dropdown", locals: { csv_path: download_funding_efficiency_path(format: :csv) }
+            .stats-chart-body
+                h2.stats-table-title.mb-3 Efficiency Scores by Category
+                = bar_chart @efficiency_scores, height: 400, colors: ["#8c1515"], library: { scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: "Efficiency Score" } } } }
+        .stats-chart-card
+            .stats-chart-body
+                h2.stats-table-title.mb-3 Average Funding per Round
+                = bar_chart @funding_per_round, height: 320, colors: ["#8c1515"], library: { scales: { y: { beginAtZero: true, title: { display: true, text: "Funding per Round ($)" } } } }
+        .stats-table-card
+            .stats-table-card-header
+                h2.stats-table-title Category metrics
+            .stats-table-card-body
+                .table-responsive
+                    table.table.table-hover.align-middle#efficiencyTable
+                        thead
+                            tr
+                                th Category
+                                th.text-end Companies
+                                th.text-end Funded
+                                th.text-end Avg Rounds
+                                th.text-end Per Round
+                                th.text-end Per Year
+                                th.text-end Success Rate
+                                th.text-end Score
+                        tbody
+                            - @category_metrics.each do |category, metrics|
+                                tr
+                                    td= category
+                                    td.text-end= metrics[:companies]
+                                    td.text-end= metrics[:funded_companies]
+                                    td.text-end= number_with_precision(metrics[:avg_rounds], precision: 1)
+                                    td.text-end= number_to_currency(metrics[:funding_per_round], precision: 0)
+                                    td.text-end= number_to_currency(metrics[:funding_per_year], precision: 0)
+                                    td.text-end= number_to_percentage(metrics[:success_rate], precision: 1)
+                                    td.text-end= number_with_precision(metrics[:efficiency_score], precision: 1)

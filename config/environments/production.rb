@@ -4,7 +4,7 @@ Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
   # Code is not reloaded between requests.
-  config.cache_classes = true
+  config.enable_reloading = false
 
   # Eager load code on boot. This eager loads most of Rails and
   # your application in memory, allowing both threaded web servers
@@ -14,7 +14,10 @@ Rails.application.configure do
 
   # Full error reports are disabled and caching is turned on.
   config.consider_all_requests_local       = false
+  config.exceptions_app = routes
   config.action_controller.perform_caching = true
+  config.middleware.use Rack::Deflater
+  config.silence_healthcheck_path = "/up"
 
   # Disable serving static files from the `/public` folder by default since
   # Apache or NGINX already handles this.
@@ -54,12 +57,23 @@ Rails.application.configure do
   # Prepend all log lines with the following tags.
   config.log_tags = [ :request_id ]
 
-  # Use a different cache store in production.
-  # config.cache_store = :mem_cache_store
+  # Use Redis when configured; otherwise fall back to in-process memory to avoid
+  # blocking every request on localhost Redis connection failures on Heroku.
+  if ENV["REDIS_URL"].present?
+    config.cache_store = :redis_cache_store, {
+      url: ENV["REDIS_URL"],
+      reconnect_attempts: 1,
+      error_handler: ->(method:, returning:, exception:) {
+        Rails.logger.warn("Redis cache #{method} failed: #{exception.class}")
+      }
+    }
+  else
+    config.cache_store = :memory_store, { size: 64.megabytes }
+  end
 
-  # Use a real queuing backend for Active Job (and separate queues per environment)
-  # config.active_job.queue_adapter     = :resque
-  # config.active_job.queue_name_prefix = "legaltechlist_#{Rails.env}"
+  # Durable, DB-backed Active Job processing handled by the dedicated `jobs` dyno
+  # (Solid Queue). Jobs survive deploys/restarts and don't contend with web traffic.
+  config.active_job.queue_adapter = :solid_queue
   config.action_mailer.perform_caching = false
 
   # Ignore bad email addresses and do not raise email delivery errors.
@@ -89,17 +103,11 @@ Rails.application.configure do
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
 
-  # Analytics
-  GA.tracker = "UA-176105565-1"
-
   # Twitter settings
   config.twitter_publish = false
   config.twitter_user = 'CodeXStanford'
   config.twitter_list = 'Legaltechlist'
   config.twitter_list_url = 'https://twitter.com/CodeXStanford/lists/legaltechlist'
-
-  # Add this line for Active Storage (if you plan to use it)
-  config.active_storage.service = :local
 
   # Enable serving of static files from the `/public` folder
   config.public_file_server.enabled = true
@@ -115,6 +123,6 @@ Rails.application.configure do
   # Do not fallback to assets pipeline if a precompiled asset is missed
   config.assets.compile = false
 
-  # Enable serving of static files from the `/public` folder
-  config.serve_static_files = true
+  # Add after line 36
+  config.active_storage.service = :bucketeer
 end

@@ -1,0 +1,209 @@
+- content_for :title, "#{@pipeline_run.name} Pipeline Run"
+
+.d-flex.justify-content-between.align-items-start.mb-4
+    div
+        h1.h3.mb-1= @pipeline_run.name
+        - if @pipeline_run.status.in?(%w[pending running])
+            span.admin-status-pill.text-bg-warning.text-dark.mt-2 Running
+    = link_to "Back to Pipeline Runs", custom_admin_pipeline_runs_path, class: "btn btn-outline-secondary"
+
+- if @pipeline_run.status.in?(%w[pending running])
+    meta http-equiv="refresh" content="5"
+    .alert.alert-info.mb-4
+        | Discovery is running in the background. This page refreshes every 5 seconds until results are ready.
+
+.row.g-3
+    .col-lg-8
+        - if @pipeline_run.run_type == CompanyDiscoveryService::RUN_TYPE && @pipeline_run.status.in?(%w[pending running])
+            .card.border-0.shadow-sm.mb-3
+                .card-body
+                    p.text-muted.mb-0 Waiting for LLM web search to finish. Large discovery runs can take a few minutes.
+        - elsif @pipeline_run.run_type == CompanyDiscoveryService::RUN_TYPE
+            - discovery_summary = @details["summary"] || {}
+            - discovery_candidates = Array(@details["candidates"])
+            - proposal_results = Array(@details["proposal_results"])
+            - exclusion_context = @details["exclusion_context"] || {}
+            - search_payload = @details["search"] || {}
+            .card.border-0.shadow-sm.mb-3
+                .card-header.bg-white.d-flex.justify-content-between.align-items-center
+                    h2.h5.mb-0 LLM Discovery Review
+                    = link_to "New discovery", new_custom_admin_discovery_path, class: "btn btn-sm btn-outline-primary"
+                .card-body
+                    .row.g-3.mb-3
+                        .col-sm-3
+                            .text-muted.small Discovered
+                            .fw-semibold= number_with_delimiter(discovery_summary["discovered_count"].to_i)
+                        .col-sm-3
+                            .text-muted.small Absent
+                            .fw-semibold= number_with_delimiter(discovery_summary["absent_candidates"].to_i)
+                        .col-sm-3
+                            .text-muted.small Already indexed
+                            .fw-semibold= number_with_delimiter(discovery_summary["existing_or_possible_duplicates"].to_i)
+                        .col-sm-3
+                            .text-muted.small Verified websites
+                            .fw-semibold= number_with_delimiter(discovery_summary["verified_websites"].to_i)
+                    - if exclusion_context["visible_company_count"].present?
+                        p.text-muted.small.mb-3= "Compared against #{number_with_delimiter(exclusion_context['visible_company_count'])} visible companies (#{number_with_delimiter(exclusion_context['excluded_name_count'])} names / #{number_with_delimiter(exclusion_context['excluded_domain_count'])} domains excluded)."
+                    - if discovery_summary["dry_run_message"].present?
+                        .alert.alert-info= discovery_summary["dry_run_message"]
+                    - if discovery_summary["search_error"].present?
+                        .alert.alert-danger= "LLM search error: #{discovery_summary['search_error']}"
+                    - if search_payload["mode"] == "disabled_no_responses_web_search"
+                        .alert.alert-danger OpenAI web search is disabled or OPENAI_API_KEY is missing.
+                    - if discovery_candidates.any?
+                        = form_with url: custom_admin_pipeline_run_company_proposals_path(@pipeline_run), method: :post, local: true do
+                            .table-responsive
+                                table.table.table-sm.align-middle.mb-3
+                                    thead
+                                        tr
+                                            th Queue
+                                            th Candidate
+                                            th Website
+                                            th Status
+                                            th Why discovered
+                                            th Result
+                                    tbody
+                                        - discovery_candidates.each_with_index do |candidate, index|
+                                            - result = proposal_results.find { |item| item["row_index"].to_i == index } || proposal_results.find { |item| item["name"].to_s == candidate["name"].to_s }
+                                            tr
+                                                td
+                                                    - if candidate["status"] == "absent_candidate" && result.blank?
+                                                        = check_box_tag "candidate_indexes[]", index, false, id: "candidate_index_#{index}", class: "form-check-input"
+                                                    - else
+                                                        span.text-muted -
+                                                td
+                                                    .fw-semibold= candidate["name"]
+                                                    .text-muted.small= candidate["location"]
+                                                    - if candidate["why_discovered"].present?
+                                                        .text-muted.small= candidate["why_discovered"]
+                                                td
+                                                    - if candidate["website"].present?
+                                                        = link_to candidate["canonical_domain"].presence || candidate["website"], candidate["website"], target: "_blank", rel: "noopener"
+                                                        - if candidate["website_verified"]
+                                                            span.badge.text-bg-success.ms-1 Verified
+                                                        - else
+                                                            span.badge.text-bg-secondary.ms-1 Unverified
+                                                    - else
+                                                        span.text-muted Missing
+                                                td
+                                                    - if candidate["status"] == "absent_candidate"
+                                                        span.badge.text-bg-success Absent candidate
+                                                    - else
+                                                        span.badge.text-bg-warning Already indexed
+                                                    .small.text-muted= "#{Array(candidate['name_matches']).size} name / #{Array(candidate['domain_matches']).size} domain matches"
+                                                td.small= candidate["why_discovered"]
+                                                td.small
+                                                    - if result.present?
+                                                        .fw-semibold= result["action"].to_s.humanize
+                                                        - if result["proposal_id"].present?
+                                                            = link_to "Proposal ##{result['proposal_id']}", custom_admin_company_proposal_path(result["proposal_id"])
+                                                    - else
+                                                        span.text-muted Not queued
+                            - if discovery_summary["dry_run_message"].present?
+                                = submit_tag "Queue Selected Absent Candidates", class: "btn btn-primary", data: { turbo_confirm: "Create editable proposals for selected absent candidates? No companies will be published." }
+                    - else
+                        p.text-muted.mb-0 No discovery candidates returned.
+
+        - if @pipeline_run.run_type == "atlas_candidate_import_review"
+            .card.border-0.shadow-sm.mb-3
+                .card-header.bg-white
+                    h2.h5.mb-0 Candidate Import Review
+                .card-body
+                    .row.g-3.mb-3
+                        .col-sm-3
+                            .text-muted.small Reviewed
+                            .fw-semibold= number_with_delimiter(@candidate_import_summary["reviewed_rows"].to_i)
+                        .col-sm-3
+                            .text-muted.small Absent
+                            .fw-semibold= number_with_delimiter(@candidate_import_summary["absent_candidates"].to_i)
+                        .col-sm-3
+                            .text-muted.small Name matches
+                            .fw-semibold= number_with_delimiter(@candidate_import_summary["existing_name_matches"].to_i)
+                        .col-sm-3
+                            .text-muted.small Domain matches
+                            .fw-semibold= number_with_delimiter(@candidate_import_summary["existing_domain_matches"].to_i)
+                    - if @candidate_import_summary["warning"].present?
+                        .alert.alert-warning= @candidate_import_summary["warning"]
+                    - automation = @details["automation"] || {}
+                    - automation_results = Array(@details["automation_results"])
+                    - if automation.present?
+                        .alert.alert-info
+                            = "Automation processed #{number_with_delimiter(automation['processed_rows'].to_i)} rows: #{number_with_delimiter(automation['auto_drafted'].to_i)} auto-drafted, #{number_with_delimiter(automation['needs_review'].to_i)} needing review, #{number_with_delimiter(automation['needs_duplicate_review'].to_i)} duplicate reviews."
+                    - if @candidate_import_candidates.any?
+                        = form_with url: custom_admin_pipeline_run_company_proposals_path(@pipeline_run), method: :post, local: true do
+                            .table-responsive
+                                table.table.table-sm.align-middle.mb-3
+                                    thead
+                                        tr
+                                            th Queue
+                                            th Candidate
+                                            th Website
+                                            th Status
+                                            th Matches
+                                            th Recommended action
+                                            th Result
+                                    tbody
+                                        - @candidate_import_candidates.each_with_index do |candidate, index|
+                                            - result = automation_results.find { |item| item["row_index"].to_i == index }
+                                            tr
+                                                td
+                                                    - if candidate["status"] == "absent_candidate"
+                                                        = check_box_tag "candidate_indexes[]", index, false, id: "candidate_index_#{index}", class: "form-check-input"
+                                                    - else
+                                                        span.text-muted -
+                                                td
+                                                    .fw-semibold= candidate["name"]
+                                                    .text-muted.small= candidate["location"]
+                                                td
+                                                    - if candidate["website"].present?
+                                                        = link_to candidate["canonical_domain"].presence || candidate["website"], candidate["website"], target: "_blank", rel: "noopener"
+                                                    - else
+                                                        span.text-muted Missing
+                                                td
+                                                    - if candidate["status"] == "absent_candidate"
+                                                        span.badge.text-bg-success Absent candidate
+                                                    - else
+                                                        span.badge.text-bg-warning Existing or duplicate
+                                                td.small= "#{Array(candidate['name_matches']).size} name / #{Array(candidate['domain_matches']).size} domain"
+                                                td.small= candidate["recommended_action"]
+                                                td.small
+                                                    - if result.present?
+                                                        .fw-semibold= result["action"].to_s.humanize
+                                                        - if result["proposal_id"].present?
+                                                            = link_to "Proposal ##{result['proposal_id']}", custom_admin_company_proposal_path(result["proposal_id"])
+                                                        - if result["company_id"].present?
+                                                            .text-muted= "Draft company ##{result['company_id']}"
+                                                    - else
+                                                        span.text-muted Not processed
+                            = submit_tag "Queue Selected Absent Candidates", class: "btn btn-primary", data: { turbo_confirm: "Create editable proposals for selected absent candidates without changing company records?" }
+                    - else
+                        p.text-muted.mb-0 No candidate rows recorded.
+
+        .card.border-0.shadow-sm
+            .card-header.bg-white
+                h2.h5.mb-0 Details
+            .card-body
+                dl.row.mb-0
+                    dt.col-sm-3 Type
+                    dd.col-sm-9= @pipeline_run.run_type
+                    dt.col-sm-3 Status
+                    dd.col-sm-9= @pipeline_run.status
+                    dt.col-sm-3 Agent
+                    dd.col-sm-9= @pipeline_run.agent_name.presence || "None"
+                    dt.col-sm-3 Records processed
+                    dd.col-sm-9= number_with_delimiter(@pipeline_run.records_processed)
+                    dt.col-sm-3 Started
+                    dd.col-sm-9= @pipeline_run.started_at || "Not started"
+                    dt.col-sm-3 Finished
+                    dd.col-sm-9= @pipeline_run.finished_at || "Not finished"
+                    dt.col-sm-3 Error
+                    dd.col-sm-9= @pipeline_run.error_message.presence || "None"
+    .col-lg-4
+        .card.border-0.shadow-sm
+            .card-header.bg-white
+                h2.h5.mb-0 Raw Details
+            .card-body
+                - if @pipeline_run.details.present?
+                    pre.bg-light.border.rounded.p-3.small.mb-0= JSON.pretty_generate(@pipeline_run.details)
+                - else
+                    p.text-muted.mb-0 No structured details recorded.

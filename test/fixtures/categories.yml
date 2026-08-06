@@ -1,9 +1,13 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  description: MyText
+  id: 1
+  slug: knowledge-research
+  name: Knowledge & Research
+  description: Legal databases, institutional knowledge management, and practical guidance resources
 
 two:
-  name: MyString
-  description: MyText
+  id: 2
+  slug: document-management
+  name: Document Management
+  description: Solutions for managing legal documents

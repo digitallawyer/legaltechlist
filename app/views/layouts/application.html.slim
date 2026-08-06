@@ -1,48 +1,406 @@
-css: 
+css:
+    html {
+        height: 100%;
+    }
+
+    html,
+    body {
+        background: #f3efe6;
+        font-family: "Source Sans 3", "Source Sans 3 Fallback", "Helvetica Neue", helvetica, arial, sans-serif;
+    }
+
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+
+    .public-page {
+        background: #f3efe6;
+        display: flex;
+        flex: 1 0 auto;
+        flex-direction: column;
+    }
+
+    .public-page h1,
+    .public-page h2,
+    .public-page .public-display-title {
+        font-family: edict, "edict Fallback", Georgia, Cambria, "Times New Roman", Times, serif;
+    }
+
+    .public-page .bg-body,
+    .public-page .bg-body-tertiary {
+        background-color: #f3efe6 !important;
+    }
+
+    .public-nav-actions {
+        align-items: center;
+        display: flex;
+        flex-shrink: 0;
+        gap: 0.65rem;
+        margin: 0 0 0 auto;
+    }
+
+    .public-nav-search {
+        max-width: 28rem;
+        min-width: 18rem;
+    }
+
+    .public-nav-contribute {
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 0.7rem;
+        box-sizing: border-box;
+        color: rgba(255, 255, 255, 0.92);
+        display: inline-flex;
+        font-size: 0.86rem;
+        font-weight: 600;
+        justify-content: center;
+        line-height: 1.5;
+        min-height: 2.35rem;
+        padding: 0 0.75rem;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .public-nav-contribute:hover,
+    .public-nav-contribute:focus {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.46);
+        color: #fff;
+    }
+
+    .public-nav-search-field {
+        position: relative;
+    }
+
+    .public-nav-search-icon {
+        color: rgba(255, 255, 255, 0.58);
+        left: 0.85rem;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .public-nav-search .form-control {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 0.7rem;
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 0.86rem;
+        min-height: 2.35rem;
+        padding-left: 2.25rem;
+    }
+
+    .public-nav-search-field.has-shortcut .form-control {
+        padding-right: 3.65rem;
+    }
+
+    .public-nav-search-shortcut {
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 0.4rem;
+        color: rgba(255, 255, 255, 0.52);
+        display: none;
+        font-family: inherit;
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        line-height: 1;
+        padding: 0.22rem 0.4rem;
+        pointer-events: none;
+        position: absolute;
+        right: 0.55rem;
+        top: 50%;
+        transform: translateY(-50%);
+        user-select: none;
+    }
+
+    .public-nav-search-field.has-shortcut .public-nav-search-shortcut {
+        display: inline-block;
+    }
+
+    .public-nav-search .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.58);
+    }
+
+    .public-nav-search .form-control:focus {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.46);
+        box-shadow: 0 0 0 0.16rem rgba(140, 21, 21, 0.35);
+        color: #fff;
+    }
+
+    .public-nav-search .form-control[readonly] {
+        cursor: pointer;
+    }
+
+    @media (max-width: 991.98px) {
+        .navbar .navbar-collapse {
+            padding: 0.7rem 0 0.3rem;
+        }
+
+        .navbar .navbar-nav {
+            gap: 0.1rem;
+        }
+
+        .navbar .nav-link {
+            border-radius: 0.55rem;
+            padding: 0.45rem 0.75rem;
+        }
+
+        .navbar .nav-link:hover,
+        .navbar .nav-link:focus {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .navbar .nav-divider-link {
+            display: none;
+        }
+
+        .navbar .overview-toggle {
+            display: none;
+        }
+
+        .navbar .dropdown-menu {
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+            display: block;
+            margin: 0;
+            padding: 0.1rem 0 0.25rem;
+        }
+
+        .navbar .dropdown-toggle::after {
+            display: none;
+        }
+
+        .navbar .dropdown-item {
+            border-radius: 0.55rem;
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 0.92rem;
+            padding: 0.42rem 0.75rem;
+        }
+
+        .navbar .dropdown-item:hover,
+        .navbar .dropdown-item:focus {
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+        }
+
+        .public-nav-actions {
+            flex-direction: column;
+            margin: 0.65rem 0 0;
+            width: 100%;
+        }
+
+        .public-nav-search {
+            max-width: none;
+            min-width: 0;
+            width: 100%;
+        }
+
+        .public-nav-contribute {
+            display: flex;
+            width: 100%;
+        }
+    }
+
     .fs-sm {
-        font-size: 0.875rem !important; 
+        font-size: 0.875rem !important;
     }
-    
+
     .fs-xs {
-        font-size: 0.75rem !important; 
+        font-size: 0.75rem !important;
     }
-    
+
     .fs-xxs {
         font-size: 0.625rem !important;
+    }
+
+    .public-footer {
+        background: #2a2723 !important;
+        border-top: 1px solid #f3efe6;
+        color: rgba(255, 255, 255, 0.72);
+        flex-shrink: 0;
+        margin-top: auto;
+        min-height: 0 !important;
+        padding: 3rem 0 1.5rem;
+    }
+
+    .public-footer-main {
+        align-items: flex-start;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2.5rem;
+        justify-content: space-between;
+        margin-bottom: 2.5rem;
+    }
+
+    .public-footer-brand-block {
+        max-width: 34rem;
+    }
+
+    .public-footer-title {
+        color: rgba(255, 255, 255, 0.94);
+        font-family: edict, "edict Fallback", Georgia, Cambria, "Times New Roman", Times, serif;
+        font-size: 1.35rem;
+        font-weight: 500;
+        margin-bottom: 0.85rem;
+    }
+
+    .public-footer-copy {
+        color: rgba(255, 255, 255, 0.58);
+        font-size: 0.82rem;
+        line-height: 1.65;
+        margin: 0;
+        max-width: 32rem;
+    }
+
+    .public-footer-nav-title {
+        color: rgba(255, 255, 255, 0.42);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        margin-bottom: 0.85rem;
+        text-transform: uppercase;
+    }
+
+    .public-footer-links {
+        display: grid;
+        gap: 0.55rem;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .public-footer-links a {
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 0.82rem;
+        text-decoration: none;
+    }
+
+    .public-footer-links a:hover {
+        color: #fff;
+        text-decoration: underline;
+    }
+
+    .public-footer-bottom {
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.38);
+        font-size: 0.72rem;
+        padding-top: 1.25rem;
+    }
+
+    .public-footer-bottom-row {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.5rem;
+        justify-content: space-between;
+    }
+
+    .public-footer-meta-link {
+        color: rgba(255, 255, 255, 0.52);
+        font-size: 0.72rem;
+        margin-left: auto;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .public-footer-meta-link:hover {
+        color: rgba(255, 255, 255, 0.72);
+        text-decoration: underline;
+    }
+
+    .public-footer-disclaimer {
+        color: rgba(255, 255, 255, 0.38);
+        font-size: 0.68rem;
+        line-height: 1.55;
+        margin: 0.75rem 0 0;
+        max-width: 58rem;
+    }
+
+    .public-footer-disclaimer a {
+        color: rgba(255, 255, 255, 0.52);
+        text-decoration: none;
+    }
+
+    .public-footer-disclaimer a:hover {
+        color: rgba(255, 255, 255, 0.72);
+        text-decoration: underline;
+    }
+
+    @media (max-width: 767.98px) {
+        .public-footer {
+            padding: 2.25rem 0 1.25rem;
+        }
+
+        .public-footer-main {
+            margin-bottom: 1.75rem;
+        }
     }
 
 doctype html
 html
     head
-        title CodeX Techindex
-        meta name="viewport" content="width=device-width, initial-scale=1"
-        meta name="description" content="Legal Tech Business Database"
+        title= seo_page_title
+        meta name="viewport" content="width=device-width, initial-scale=1.0"
+        meta name="description" content=seo_description
+        link rel="canonical" href=canonical_url
+        = pagination_rel_link(@companies&.prev_page, "prev") if defined?(@companies) && @companies.respond_to?(:prev_page)
+        = pagination_rel_link(@companies&.next_page, "next") if defined?(@companies) && @companies.respond_to?(:next_page)
         meta property="og:type" content="website"
-        meta property="og:title" content="CodeX Techindex"
-        meta property="og:url" content="https://techindex.law.stanford.edu/"
+        meta property="og:site_name" content="CodeX TechIndex"
+        meta property="og:title" content=seo_full_title
+        meta property="og:description" content=seo_description
+        meta property="og:url" content=canonical_url
+        meta name="twitter:card" content="summary"
+        meta name="twitter:title" content=seo_full_title
+        meta name="twitter:description" content=seo_description
         meta name="language" content="us"
         meta name="audience" content="all"
-        meta name="robots" content="index,follow"
+        meta name="robots" content=(content_for?(:robots) ? content_for(:robots) : "index,follow")
+        meta name="turbo-prefetch" content="false"
         meta name="keywords" content="codex,legal,tech,index,sls,stanford,bay,area,database,search"
-        
+        link rel="alternate" type="application/rss+xml" title="CodeX TechIndex RSS" href=feed_url
+        script type="application/ld+json"= website_json_ld
+        - if content_for?(:json_ld)
+            script type="application/ld+json"= content_for(:json_ld)
+
         = csrf_meta_tags
         = csp_meta_tag
-         / Bootstrap CSS and JS from CDN
+
+        / Bootstrap CSS
         link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-        script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        
-        = stylesheet_link_tag "application"
-        = javascript_include_tag "https://code.jquery.com/jquery-3.7.1.min.js"
-        = javascript_include_tag "application", defer: true, type: "module"
-        = javascript_include_tag "https://www.gstatic.com/charts/loader.js"
-        = javascript_include_tag "chartkick"
-        
+
+        = stylesheet_link_tag "application", media: "all"
+
         / Font Awesome
         link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-    
+
+        - stats_chart_page = controller_name == "static_pages" && !%w[home about statistics].include?(action_name)
+        - google_chart_page = controller_name == "static_pages" && action_name == "country_distribution"
+        - if stats_chart_page
+            script defer="" data-turbo-track="reload" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+            script defer="" data-turbo-track="reload" src="https://cdn.jsdelivr.net/npm/chartkick@5.0.1/dist/chartkick.js"
+            script defer="" data-turbo-track="reload" src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"
+        - if google_chart_page
+            script defer="" data-turbo-track="reload" src="https://www.gstatic.com/charts/loader.js"
+        - if google_analytics_id.present?
+            script async="" src="https://www.googletagmanager.com/gtag/js?id=#{google_analytics_id}"
+            javascript:
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '#{google_analytics_id}');
+
     body
         = render "shared/navbar"
-        div style="margin-top: 60px"
+        .public-page style="margin-top: 60px"
             = yield
         = render "shared/footer"
-  
+        = render "shared/company_search_modal"
+        = render "shared/stats_turbo_charts"
+        = javascript_include_tag "turbo.min", defer: true, data: { turbo_track: "reload" }
+        script defer="" src="https://code.jquery.com/jquery-3.7.1.min.js"
+        script defer="" src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"

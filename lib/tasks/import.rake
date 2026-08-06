@@ -7,6 +7,10 @@ require 'csv'
 namespace :csv do
 
 	task :import => :environment do
+    unless ENV["ALLOW_LEGACY_CSV_IMPORT"] == "true"
+      abort "Legacy csv:import is disabled. Use ImportCsvToCompanyService or set ALLOW_LEGACY_CSV_IMPORT=true."
+    end
+
 		CSV.foreach("#{Rails.root}/lib/presentation_data_03.csv", :headers => true, :encoding => 'UTF-8') do |row|
       row.to_hash
       #9_3_set_2
@@ -14,13 +18,6 @@ namespace :csv do
       #Company.create(row)
 
       # clean up data to ensure validation on import
-      # Removing employee count for now
-      # count = row["employee_count"].to_i
-      # if count.nil?
-      #   count = 1
-      # elsif count < 1
-      #   count = 1
-      # end
 
       # Add placeholder when no location is present
       if row["location"].nil? || row["location"] == ""
@@ -81,15 +78,17 @@ namespace :csv do
         catFullname[1]=""
       end
 
-      cat = Category.where(:name => catName).first_or_create!
-      sub = SubCategory.where(:name => catFullname[1],
-                              :category => cat
-                            ).first_or_create!(:name => catFullname[1],
-                                               :category => cat)
+      cat = TaxonomyNormalizationService.find_category(row["category"]) || Category.find_by(name: "Unknown")
+      sub = nil
+      if catFullname[1].present?
+        sub = SubCategory.find_by(name: catFullname[1].strip, category: cat)
+      end
 
-      #find references
-      biz = BusinessModel.where(:name => row["business_model"]).first
-      trg = TargetClient.where(:name => row["target_client"]).first
+      revenue_models = TaxonomyNormalizationService.find_revenue_models(row["business_model"])
+      revenue_models = [BusinessModel.find_by(name: "Other")].compact if revenue_models.empty?
+      biz = revenue_models.first
+      target_clients = TaxonomyNormalizationService.find_target_clients(row["target_client"])
+      trg = target_clients.first || TargetClient.find_by(name: "Unknown")
 
       # add the entry to the database
       c = Company.where(:name => row["name"]).first_or_create!(
@@ -111,7 +110,37 @@ namespace :csv do
         :target_client => trg,
         :all_tags => row["all_tags"]
       )
+      c.business_model_ids = revenue_models.map(&:id) if c.persisted?
+      c.target_client_ids = target_clients.map(&:id) if c.persisted? && target_clients.any?
 
     end
 	end
+end
+
+namespace :import do
+  desc "Import companies from CSV file"
+  task companies: :environment do
+    input_file = 'input.csv'
+
+    unless File.exist?(input_file)
+      puts "Error: Could not find #{input_file}"
+      exit 1
+    end
+
+    # Create a temporary uploaded file object that ImportCsvToCompanyService expects
+    temp_file = ActionDispatch::Http::UploadedFile.new(
+      tempfile: File.open(input_file),
+      filename: File.basename(input_file),
+      type: 'text/csv'
+    )
+
+    puts "Starting import from #{input_file}..."
+    stats = ImportCsvToCompanyService.import(temp_file)
+
+    puts "\nImport completed!"
+    puts "Created: #{stats[:created]}"
+    puts "Updated: #{stats[:updated]}"
+    puts "Skipped: #{stats[:skipped]}"
+    puts "Errors: #{stats[:errors]}"
+  end
 end

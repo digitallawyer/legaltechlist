@@ -1,0 +1,44 @@
+= render partial: "shared/stats_styles"
+.stats-page
+    .stats-page-inner
+        .stats-chart-card
+            .stats-chart-header
+                .stats-chart-header-row
+                    .stats-chart-heading
+                        h1.stats-chart-title Exit Patterns
+                    .stats-chart-controls
+                        = render partial: "shared/stats_export_dropdown", locals: { csv_path: statistics_exit_patterns_path(format: :csv) }
+            .stats-chart-body
+                h2.stats-table-title.mb-3 Exit Timing Distribution
+                = line_chart @exit_timing, height: 480, colors: ["#8c1515"], library: { scales: { y: { beginAtZero: true } } }
+        .stats-table-card
+            .stats-table-card-header
+                h2.stats-table-title Exit Analysis by Category
+            .stats-table-card-body
+                .table-responsive
+                    table.table.table-hover.align-middle
+                        thead
+                            tr
+                                th Category
+                                th.text-end Total Exits
+                                th.text-end Avg Time to Exit
+                                th.text-end Exit Rate
+                        tbody
+                            - @exit_metrics.each do |category, metrics|
+                                tr
+                                    td= category
+                                    td.text-end= metrics[:total_exits]
+                                    td.text-end #{metrics[:avg_time_to_exit]} years
+                                    td.text-end #{metrics[:exit_rate]}%
+        .stats-insights-card
+            h2.stats-chart-title Key Insights
+            ul.list-unstyled.mb-0
+                li.mb-3
+                    i.fas.fa-chart-line.text-cardinal-red.me-2
+                    | Categories with highest exit rates: #{@exit_metrics.sort_by { |_, m| -m[:exit_rate] }.first(3).map { |c, m| "#{c} (#{m[:exit_rate]}%)" }.join(", ")}
+                li.mb-3
+                    i.fas.fa-clock.text-cardinal-red.me-2
+                    | Average time to exit: #{@exit_metrics.empty? ? 0 : (@exit_metrics.values.sum { |m| m[:avg_time_to_exit] } / @exit_metrics.size)} years
+                li.mb-3
+                    i.fas.fa-rocket.text-cardinal-red.me-2
+                    | Most exits occurred in #{@exit_timing.empty? ? "N/A" : @exit_timing.max_by { |_, count| count }.first}
