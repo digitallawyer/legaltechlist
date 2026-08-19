@@ -1,4 +1,5 @@
 require "test_helper"
+require "minitest/mock"
 
 class CompanyDiscoverySearchServiceTest < ActiveSupport::TestCase
   StubSearchClient = lambda do |prompt|
@@ -97,6 +98,36 @@ class CompanyDiscoverySearchServiceTest < ActiveSupport::TestCase
     assert_equal "2019", company["founded_date"], "a cited year should be kept"
   end
 
+  test "captures a secondary category and tags from the discovery payload" do
+    client = lambda do |_prompt|
+      {
+        content: {
+          "companies" => [
+            {
+              "name" => "Multi Legal Co",
+              "website" => "https://multi-legal.example",
+              "location" => "Amsterdam, Netherlands",
+              "description" => "Contract lifecycle management and analytics for corporate legal teams.",
+              "why_discovered" => "matches",
+              "category" => "Contract Management",
+              "secondary_category" => "Analytics & Insights",
+              "business_models" => ["Subscription"],
+              "target_clients" => ["Corporate Legal"],
+              "tags" => ["Redlining", "AI"]
+            }
+          ]
+        }.to_json,
+        search_urls: ["https://multi-legal.example/about"],
+        raw_search_call_count: 1
+      }
+    end
+
+    result = CompanyDiscoverySearchService.call(discovery_type: "category", context: { category: "Contract Management" }, exclusion_list: { "names" => [], "domains" => [] }, limit: 5, search_client: client)
+    company = result["companies"].first
+    assert_equal "Analytics & Insights", company["secondary_category_name"]
+    assert_equal ["Redlining", "AI"], company["tag_names"]
+  end
+
   test "drops an uncited founding-year source" do
     client = lambda do |_prompt|
       {
@@ -138,5 +169,52 @@ class CompanyDiscoverySearchServiceTest < ActiveSupport::TestCase
     assert_equal 2, calls
     assert_equal true, result["empty_result_retry"]
     assert_equal 1, result["companies"].size
+  end
+
+  test "retries the web search on a transient timeout instead of failing the run" do
+    calls = 0
+    flaky_client = lambda do |_prompt|
+      calls += 1
+      raise Timeout::Error, "execution expired" if calls == 1
+
+      StubSearchClient.call(_prompt)
+    end
+
+    service = CompanyDiscoverySearchService.new(
+      discovery_type: "country",
+      context: { country: "France" },
+      exclusion_list: { "names" => [], "domains" => [] },
+      limit: 5,
+      search_client: flaky_client
+    )
+
+    result = nil
+    service.stub(:sleep, nil) { result = service.call }
+
+    assert_equal 2, calls, "should retry once after the transient timeout"
+    assert_equal 1, result["companies"].size
+    assert_equal "openai_responses_web_search", result["mode"]
+  end
+
+  test "gives up after exhausting transient retries and reports the error" do
+    calls = 0
+    always_timeout = lambda do |_prompt|
+      calls += 1
+      raise Timeout::Error, "execution expired"
+    end
+
+    service = CompanyDiscoverySearchService.new(
+      discovery_type: "country",
+      context: { country: "France" },
+      exclusion_list: { "names" => [], "domains" => [] },
+      limit: 5,
+      search_client: always_timeout
+    )
+
+    result = nil
+    service.stub(:sleep, nil) { result = service.call }
+
+    assert_equal 3, calls, "1 initial attempt + 2 retries"
+    assert_equal "openai_responses_web_search_error", result["mode"]
   end
 end

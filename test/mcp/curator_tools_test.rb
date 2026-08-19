@@ -335,6 +335,39 @@ module Mcp
       end
     end
 
+    test "approve_proposal publish=true promotes an existing invisible draft to visible" do
+      proposal = ready_proposal
+      with_env("MCP_CURATOR_AUTOPUBLISH" => "true", "MCP_CURATOR_MIN_CONFIDENCE" => "0.8") do
+        drafted = call(Mcp::Tools::ApproveProposalTool, id: proposal.id, publish: false)
+        assert_equal false, drafted["published"]
+        company_id = drafted["company_id"]
+
+        assert_no_difference "Company.count" do
+          promoted = call(Mcp::Tools::ApproveProposalTool, id: proposal.id, publish: true, confidence: 0.95)
+          assert_equal "published", promoted["result"]
+          assert_equal true, promoted["published"]
+          assert_equal company_id, promoted["company_id"]
+        end
+      end
+      assert proposal.reload.company.visible?
+      assert_equal "published", proposal.status
+    end
+
+    test "approve_proposal defaults to publishing when human_approved is passed" do
+      proposal = ready_proposal
+      result = call(Mcp::Tools::ApproveProposalTool, id: proposal.id, human_approved: true)
+      assert_equal true, result["published"]
+      assert_equal "published", result["result"]
+      assert proposal.reload.company.visible?
+    end
+
+    test "approve_proposal still drafts when publish is explicitly false even with human approval" do
+      proposal = ready_proposal
+      result = call(Mcp::Tools::ApproveProposalTool, id: proposal.id, human_approved: true, publish: false)
+      assert_equal false, result["published"]
+      assert_not proposal.reload.company.visible?
+    end
+
     test "update_company_field sets a factual field on a live company" do
       company = companies(:one)
       result = call(Mcp::Tools::UpdateCompanyFieldTool, slug: company.slug, fields: { "location" => "Austin, TX" })
@@ -406,11 +439,33 @@ module Mcp
       assert_equal 1, done["queued_proposals_count"]
     end
 
-    test "get_proposal surfaces the discovery description critic verdict" do
+    test "get_proposal surfaces the description critic verdict for a clean draft" do
       proposal = ready_proposal
-      proposal.update!(agent_details: { "description_critic" => { "verdict" => "pass", "issues" => [] } })
       result = call(Mcp::Tools::GetProposalTool, id: proposal.id)
       assert_equal "pass", result["description_critic"]["verdict"]
+    end
+
+    test "get_proposal critic verdict reflects the live gate decision, not a stale stored verdict" do
+      proposal = ready_proposal
+      # Stored verdict says pass, but the current description is weak: get_proposal
+      # must report the same 'revise' the publish gate acts on, not the stale value.
+      proposal.update!(
+        agent_details: proposal.agent_details.merge("description_critic" => { "verdict" => "pass", "issues" => [] }),
+        final_changes: proposal.final_changes.merge(
+          "description" => "BestProfi operates bestprofi.com as its primary web presence for publishing information and enabling online access to its services."
+        )
+      )
+      result = call(Mcp::Tools::GetProposalTool, id: proposal.id)
+      assert_equal "revise", result["description_critic"]["verdict"], result["description_critic"].inspect
+      assert_equal false, result["quality"]["publish_ready"]
+      assert_equal result["quality"]["description_critic"]["verdict"], result["description_critic"]["verdict"]
+    end
+
+    test "update_proposal refreshes the stored critic verdict when the description changes" do
+      proposal = ready_proposal
+      proposal.update!(agent_details: proposal.agent_details.merge("description_critic" => { "verdict" => "pass", "issues" => [] }))
+      call(Mcp::Tools::UpdateProposalTool, id: proposal.id, changes: { "description" => "BestProfi operates bestprofi.com as its primary web presence for publishing information and enabling online access to its services." })
+      assert_equal "revise", proposal.reload.agent_details["description_critic"]["verdict"]
     end
 
     test "list_review_queue computes publish_ready live when no cached report exists" do
@@ -470,7 +525,432 @@ module Mcp
       end
     end
 
+    test "record_acquisition sets status, acquirer, and exit date" do
+      result = call(Mcp::Tools::RecordAcquisitionTool, slug: "test-company-one", acquirer_name: "LawVu", acquirer_url: "https://lawvu.com", acquired_on: "2025")
+      assert_equal "recorded", result["result"]
+      company = companies(:one).reload
+      assert_equal "acquired", company.status
+      assert_equal "LawVu", company.acquirer_name
+      assert_equal "https://lawvu.com", company.acquirer_url
+      assert_equal "2025-01-01", company.exit_date.iso8601
+      assert_equal "LawVu", result["acquirer"]["name"]
+    end
+
+    test "record_acquisition links an in-index successor company" do
+      result = call(Mcp::Tools::RecordAcquisitionTool, slug: "test-company-one", acquirer_name: "Test Company Two", successor_slug: "test-company-two")
+      assert_equal "recorded", result["result"]
+      assert_equal companies(:two).id, companies(:one).reload.successor_company_id
+      assert_equal companies(:two).id, result["acquirer"]["successor_company_id"]
+    end
+
+    test "record_acquisition rejects a blank acquirer and self-succession" do
+      blank = Mcp::Tools::RecordAcquisitionTool.call(server_context: @context, slug: "test-company-one", acquirer_name: "  ")
+      assert blank.error?
+
+      self_ref = Mcp::Tools::RecordAcquisitionTool.call(server_context: @context, slug: "test-company-one", acquirer_name: "X", successor_slug: "test-company-one")
+      assert self_ref.error?
+    end
+
+    test "record_acquisition surfaces in get_company acquisition block" do
+      call(Mcp::Tools::RecordAcquisitionTool, slug: "test-company-one", acquirer_name: "LawVu", acquirer_url: "https://lawvu.com")
+      result = call(Mcp::Tools::GetCompanyTool, slug: "test-company-one")
+      assert_equal "LawVu", result["acquisition"]["acquirer_name"]
+      assert_equal "https://lawvu.com", result["acquisition"]["acquirer_url"]
+    end
+
+    test "record_acquisition records year precision and source url, surfaced in get_company" do
+      result = call(Mcp::Tools::RecordAcquisitionTool, slug: "test-company-one", acquirer_name: "LawVu", acquired_on: "2024", source_url: "https://example.com/news")
+      assert_equal "2024-01-01", result["acquired_on"]
+      assert_equal "year", result["date_precision"]
+
+      acq = call(Mcp::Tools::GetCompanyTool, slug: "test-company-one")["acquisition"]
+      assert_equal "2024-01-01", acq["acquired_on"]
+      assert_equal "year", acq["date_precision"]
+      assert_equal "https://example.com/news", acq["source_url"]
+    end
+
+    test "approve_proposal publishes a historical company straight into acquired state" do
+      proposal = ready_proposal
+      result = call(Mcp::Tools::ApproveProposalTool, id: proposal.id, human_approved: true, status: "acquired",
+                    acquisition: { "acquirer_name" => "BigLaw Corp", "acquirer_url" => "https://biglaw.example", "acquired_on" => "2023" })
+      assert result["published"]
+      assert_equal "acquired", result["company_status"]
+      assert_equal "BigLaw Corp", result["acquisition"]["acquirer_name"]
+
+      company = Company.find(result["company_id"])
+      assert_equal "acquired", company.status
+      assert company.visible?
+      assert_equal "BigLaw Corp", company.acquirer_name
+      assert_equal "2023-01-01", company.exit_date.iso8601
+    end
+
+    test "approve_proposal accepts a plain status without an acquisition payload" do
+      proposal = ready_proposal
+      result = call(Mcp::Tools::ApproveProposalTool, id: proposal.id, human_approved: true, status: "inactive")
+      assert_equal "inactive", result["company_status"]
+      assert_equal "inactive", Company.find(result["company_id"]).status
+    end
+
+    test "get_stats surfaces lifecycle counts and server version" do
+      companies(:one).update_columns(status: "acquired")
+      companies(:two).update_columns(status: "inactive")
+      Rails.cache.clear
+      result = call(Mcp::Tools::GetStatsTool)
+      assert_equal Mcp::CuratorServer::VERSION, result["server_version"]
+      assert result["companies"]["by_status"].is_a?(Hash)
+      assert_operator result["companies"]["acquired"].to_i, :>=, 1
+      assert_operator result["companies"]["inactive"].to_i, :>=, 1
+    end
+
+    test "create_company creates a pending proposal by default" do
+      assert_no_difference "Company.count" do
+        result = call(Mcp::Tools::CreateCompanyTool, name: "Brand New LegalCo", main_url: "https://brandnewlegalco.example")
+        assert_equal "proposal_created", result["result"]
+        assert result["created"]
+        assert_equal false, result["published"]
+        assert CompanyProposal.exists?(result["proposal_id"])
+      end
+    end
+
+    test "create_company surfaces duplicate matches for an existing company" do
+      result = call(Mcp::Tools::CreateCompanyTool, name: "Test Company One", main_url: "http://example.com")
+      assert result["duplicate_matches"]["name"].any? || result["duplicate_matches"]["domain"].any?
+    end
+
+    test "create_company publishes a live company with human approval" do
+      result = call(Mcp::Tools::CreateCompanyTool,
+                    name: "Publishable LegalCo", main_url: "https://publishablelegalco.example",
+                    location: "Boston, MA", description: "Publishable LegalCo builds cloud-based contract review and analytics software used by corporate legal teams and law firms.",
+                    category_id: categories(:one).id, business_model_ids: [business_models(:one).id], target_client_ids: [target_clients(:one).id],
+                    publish: true, human_approved: true)
+      assert result["published"], result.inspect
+      company = Company.find(result["company_id"])
+      assert company.visible?
+      assert_equal "Publishable LegalCo", company.name
+    end
+
+    test "create_company imports an acquired company in one call" do
+      result = call(Mcp::Tools::CreateCompanyTool,
+                    name: "Acquired LegalCo", main_url: "https://acquiredlegalco.example",
+                    location: "Austin, TX", description: "Acquired LegalCo built litigation analytics and case management tools used by law firms and corporate legal departments.",
+                    category_id: categories(:one).id, business_model_ids: [business_models(:one).id], target_client_ids: [target_clients(:one).id],
+                    publish: true, human_approved: true,
+                    acquisition: { "acquirer_name" => "MegaLegal", "acquired_on" => "2022" })
+      assert result["published"]
+      company = Company.find(result["company_id"])
+      assert_equal "acquired", company.status
+      assert_equal "MegaLegal", company.acquirer_name
+      assert company.visible?
+    end
+
+    test "create_company rejects an acquisition payload without publish" do
+      response = Mcp::Tools::CreateCompanyTool.call(server_context: @context, name: "Draft Acq Co", main_url: "https://draftacqco.example", acquisition: { "acquirer_name" => "X" })
+      assert response.error?
+    end
+
+    test "search_companies filters by lifecycle status" do
+      companies(:one).update_columns(status: "acquired")
+      companies(:two).update_columns(status: "active")
+      result = call(Mcp::Tools::SearchCompaniesTool, status: "acquired")
+      ids = result["companies"].map { |c| c["id"] }
+      assert_includes ids, companies(:one).id
+      assert_not_includes ids, companies(:two).id
+    end
+
+    test "check_url_health enqueues jobs for due companies" do
+      companies(:one).update_columns(status: "active", main_url: "http://example.com", url_checked_at: nil)
+      assert_enqueued_with(job: CheckCompanyUrlHealthJob) do
+        result = call(Mcp::Tools::CheckUrlHealthTool, company_ids: [companies(:one).id])
+        assert_equal "enqueued", result["result"]
+        assert_includes result["company_ids"], companies(:one).id
+      end
+    end
+
+    test "search_companies filters to broken urls" do
+      companies(:one).update_columns(url_status: Company::URL_STATUS_BROKEN)
+      result = call(Mcp::Tools::SearchCompaniesTool, url_broken: true)
+      ids = result["companies"].map { |c| c["id"] }
+      assert_includes ids, companies(:one).id
+      assert_not_includes ids, companies(:two).id
+    end
+
+    test "get_company reports url_health status" do
+      companies(:one).update_columns(url_status: Company::URL_STATUS_BROKEN, url_status_code: 404, url_checked_at: Time.current, url_health: { "consecutive_failures" => 2 })
+      result = call(Mcp::Tools::GetCompanyTool, slug: "test-company-one")
+      assert_equal Company::URL_STATUS_BROKEN, result["url_health"]["status"]
+      assert_equal 2, result["url_health"]["consecutive_failures"]
+    end
+
+    test "get_stats exposes category/country/url_health/founded_date breakdowns" do
+      Rails.cache.clear
+      result = call(Mcp::Tools::GetStatsTool, fresh: true)
+      companies = result["companies"]
+
+      assert companies["by_category"].is_a?(Array)
+      assert companies["by_category"].any? { |row| row["name"].present? && row.key?("visible_count") }
+      assert companies["by_country"].is_a?(Array)
+      assert companies["by_country"].any? { |row| row["country"] == "United States" }
+      assert companies["url_health"].is_a?(Hash)
+      %w[ok broken unknown untried].each { |key| assert companies["url_health"].key?(key) }
+      assert companies["founded_date"].is_a?(Hash)
+      %w[present null backfill_untried backfill_no_source].each { |key| assert companies["founded_date"].key?(key) }
+    end
+
+    test "get_stats reconciles inactive with by_status and reports closed separately" do
+      companies(:one).update_columns(status: "inactive")
+      companies(:two).update_columns(status: "closed")
+      Rails.cache.clear
+      result = call(Mcp::Tools::GetStatsTool, fresh: true)
+      companies = result["companies"]
+
+      assert_equal companies["by_status"]["inactive"].to_i, companies["inactive"]
+      assert_equal companies["by_status"]["closed"].to_i, companies["closed"]
+    end
+
+    test "list_companies paginates and reports has_more" do
+      page1 = call(Mcp::Tools::ListCompaniesTool, visible: true, limit: 1, offset: 0)
+      assert_equal 1, page1["count"]
+      assert page1["total"] >= 2
+      assert page1["has_more"]
+      page2 = call(Mcp::Tools::ListCompaniesTool, visible: true, limit: 1, offset: 1)
+      assert (page1["companies"].map { |c| c["id"] } & page2["companies"].map { |c| c["id"] }).empty?
+    end
+
+    test "list_companies filters by category, missing founded_date, and country" do
+      companies(:one).update_column(:founded_date, "")
+      companies(:two).update_column(:founded_date, "2021")
+
+      by_category = call(Mcp::Tools::ListCompaniesTool, category_id: 1)
+      ids = by_category["companies"].map { |c| c["id"] }
+      assert_includes ids, 1
+      assert_not_includes ids, 2
+
+      null_founded = call(Mcp::Tools::ListCompaniesTool, founded_date_null: true)
+      assert_includes null_founded["companies"].map { |c| c["id"] }, 1
+      assert_not_includes null_founded["companies"].map { |c| c["id"] }, 2
+
+      swiss = call(Mcp::Tools::ListCompaniesTool, country: "Switzerland")
+      assert_equal 0, swiss["count"]
+      us = call(Mcp::Tools::ListCompaniesTool, country: "United States")
+      assert_operator us["count"], :>=, 2
+    end
+
+    test "list_companies rejects an unknown review_state instead of returning everything" do
+      response = Mcp::Tools::ListCompaniesTool.call(server_context: @context, review_state: "bogus")
+      assert response.error?
+      body = JSON.parse(response.to_h[:content].first[:text])
+      assert_match(/Unknown review_state/, body["error"])
+    end
+
+    test "list_companies accepts needs_review as an alias for in_review" do
+      companies(:one).update_column(:quality_status, "needs_review")
+      companies(:two).update_column(:quality_status, "")
+      result = call(Mcp::Tools::ListCompaniesTool, review_state: "needs_review")
+      ids = result["companies"].map { |c| c["id"] }
+      assert_includes ids, 1
+      assert_not_includes ids, 2
+    end
+
+    test "list_companies rejects an unknown url_health_status" do
+      response = Mcp::Tools::ListCompaniesTool.call(server_context: @context, url_health_status: "flaky")
+      assert response.error?
+    end
+
+    test "list_companies filters by url_health_status untried" do
+      companies(:one).update_columns(url_status: Company::URL_STATUS_OK, url_checked_at: Time.current)
+      untried = call(Mcp::Tools::ListCompaniesTool, url_health_status: "untried")
+      ids = untried["companies"].map { |c| c["id"] }
+      assert_not_includes ids, 1
+      assert_includes ids, 2
+    end
+
+    test "list_companies filters by url_reason and surfaces reason_code" do
+      companies(:one).update_columns(url_status: Company::URL_STATUS_UNKNOWN, url_checked_at: Time.current, url_health: { "reason_code" => "dns_failure", "reason" => "SocketError" })
+      companies(:two).update_columns(url_status: Company::URL_STATUS_UNKNOWN, url_checked_at: Time.current, url_health: { "reason_code" => "bot_blocked" })
+
+      result = call(Mcp::Tools::ListCompaniesTool, url_reason: "dns_failure")
+      ids = result["companies"].map { |c| c["id"] }
+      assert_includes ids, 1
+      assert_not_includes ids, 2
+      row = result["companies"].find { |c| c["id"] == 1 }
+      assert_equal "dns_failure", row["url_reason_code"]
+    end
+
+    test "get_stats url_health.by_reason classifies non-ok verdicts" do
+      companies(:one).update_columns(url_status: Company::URL_STATUS_BROKEN, url_checked_at: Time.current, url_health: { "reason_code" => "http_404" })
+      companies(:two).update_columns(url_status: Company::URL_STATUS_UNKNOWN, url_checked_at: Time.current, url_health: { "reason" => "server responded 403 (access-restricted)" })
+      Rails.cache.clear
+      result = call(Mcp::Tools::GetStatsTool, fresh: true)
+      by_reason = result["companies"]["url_health"]["by_reason"]
+      assert_operator by_reason["http_404"].to_i, :>=, 1
+      # derived from free-text on the row that has no stored reason_code
+      assert_operator by_reason["bot_blocked"].to_i, :>=, 1
+    end
+
+    test "get_stats url_health scopes by_reason_broken and by_reason_unknown by verdict" do
+      companies(:one).update_columns(url_status: Company::URL_STATUS_BROKEN, url_checked_at: Time.current, url_health: { "reason_code" => "http_404" })
+      companies(:two).update_columns(url_status: Company::URL_STATUS_UNKNOWN, url_checked_at: Time.current, url_health: { "reason_code" => "bot_blocked" })
+      Rails.cache.clear
+      url_health = call(Mcp::Tools::GetStatsTool, fresh: true)["companies"]["url_health"]
+
+      # http_404 is a broken-only cause; bot_blocked is an unknown-only cause here.
+      assert_operator url_health["by_reason_broken"]["http_404"].to_i, :>=, 1
+      assert_nil url_health["by_reason_broken"]["bot_blocked"]
+      assert_operator url_health["by_reason_unknown"]["bot_blocked"].to_i, :>=, 1
+      assert_nil url_health["by_reason_unknown"]["http_404"]
+    end
+
+    test "get_backfill_run summarizes filled, no_source and pending outcomes for a run" do
+      started = Time.current
+      run = PipelineRun.create!(name: "Founded-date backfill batch", run_type: Mcp::Tools::BackfillFoundedDatesTool::RUN_TYPE, status: "running", started_at: started, records_processed: 3, details: { "company_ids" => [companies(:one).id, companies(:two).id, 999_999], "enqueued" => 3, "targeted" => true })
+      companies(:one).update_columns(founded_date: "2015-01-01", founded_year_provenance: { "status" => "filled", "attempted_at" => (started + 1.second).utc.iso8601 })
+      companies(:two).update_columns(founded_date: "", founded_year_provenance: { "status" => "no_source", "attempted_at" => (started + 1.second).utc.iso8601 })
+
+      result = call(Mcp::Tools::GetBackfillRunTool, run_id: run.id)
+      assert_equal "succeeded", result["status"]
+      assert_equal 1, result["filled"]
+      assert_equal 1, result["no_source"]
+      assert_equal 1, result["missing"]
+      assert_equal 0, result["pending"]
+    end
+
+    test "get_backfill_run marks companies not yet attempted as pending" do
+      started = Time.current
+      run = PipelineRun.create!(name: "Founded-date backfill batch", run_type: Mcp::Tools::BackfillFoundedDatesTool::RUN_TYPE, status: "running", started_at: started, records_processed: 1, details: { "company_ids" => [companies(:one).id], "enqueued" => 1, "targeted" => false })
+      companies(:one).update_columns(founded_date: "", founded_year_provenance: nil)
+
+      result = call(Mcp::Tools::GetBackfillRunTool, run_id: run.id)
+      assert_equal "running", result["status"]
+      assert_equal 1, result["pending"]
+    end
+
+    test "list_duplicate_candidates returns flagged pairs with match type" do
+      make_company(name: "Avokati AI", url: "http://avokati.example")
+      make_company(name: "Avokati AI", url: "http://avokati.example")
+
+      result = call(Mcp::Tools::ListDuplicateCandidatesTool)
+      pair = result["pairs"].find { |p| p["name_a"] == "Avokati AI" && p["name_b"] == "Avokati AI" }
+      assert pair, result["pairs"].inspect
+      assert_equal "name+domain", pair["match_type"]
+      assert_operator pair["confidence"], :>, 0.9
+    end
+
+    test "list_duplicate_candidates filters by match_type" do
+      make_company(name: "Solo Name Co", url: "http://solo-a.example")
+      make_company(name: "Solo Name Co", url: "http://solo-b.example")
+
+      name_only = call(Mcp::Tools::ListDuplicateCandidatesTool, match_type: "name")
+      pair = name_only["pairs"].find { |p| p["name_a"] == "Solo Name Co" }
+      assert pair
+      assert_equal "name", pair["match_type"]
+
+      domain_only = call(Mcp::Tools::ListDuplicateCandidatesTool, match_type: "domain")
+      assert_nil domain_only["pairs"].find { |p| p["name_a"] == "Solo Name Co" }
+    end
+
+    test "duplicate detector excludes hidden rows so resolved pairs drop out of the queue" do
+      a = make_company(name: "DupDetector Co", url: "http://dupdetector.example")
+      b = make_company(name: "DupDetector Co", url: "http://dupdetector.example")
+      pair = ->(result) { result["pairs"].find { |p| [p["company_id_a"], p["company_id_b"]].sort == [a.id, b.id].sort } }
+
+      assert pair.call(call(Mcp::Tools::ListDuplicateCandidatesTool)), "pair should surface while both are visible"
+
+      b.update!(visible: false)
+      assert_nil pair.call(call(Mcp::Tools::ListDuplicateCandidatesTool)), "hiding the loser should drop the pair"
+    end
+
+    test "duplicate detector excludes rejected-quality rows" do
+      a = make_company(name: "RejDetector Co", url: "http://rejdetector.example")
+      b = make_company(name: "RejDetector Co", url: "http://rejdetector.example")
+      b.update!(quality_status: "rejected")
+
+      result = call(Mcp::Tools::ListDuplicateCandidatesTool)
+      assert_nil result["pairs"].find { |p| [p["company_id_a"], p["company_id_b"]].sort == [a.id, b.id].sort }
+    end
+
+    test "merge_companies previews without deleting when unauthorized" do
+      keeper = make_company(name: "Avvoka", url: "http://avvoka.example")
+      dup = make_company(name: "Avvoka", url: "http://avvoka.example")
+      keeper.update_columns(total_funding_amount_usd: nil)
+      dup.update_columns(total_funding_amount_usd: 5_000_000)
+
+      result = nil
+      assert_no_difference "Company.count" do
+        result = call(Mcp::Tools::MergeCompaniesTool, keep_id: keeper.id, merge_ids: [dup.id])
+      end
+      assert_equal "preview", result["result"]
+      assert result["requires_confirmation"]
+      assert_equal [dup.id], result["duplicate_ids"]
+      assert_equal 5_000_000, result["filled_fields"][dup.id.to_s]["total_funding_amount_usd"].to_i
+      assert Company.exists?(dup.id)
+    end
+
+    test "merge_companies folds blank fields and deletes the duplicate when authorized" do
+      keeper = make_company(name: "Avvoka", url: "http://avvoka.example")
+      dup = make_company(name: "Avvoka", url: "http://avvoka.example")
+      keeper.update_columns(total_funding_amount_usd: nil, founders: nil)
+      dup.update_columns(total_funding_amount_usd: 5_000_000, founders: "Jane Doe")
+
+      result = nil
+      assert_difference "Company.count", -1 do
+        result = call(Mcp::Tools::MergeCompaniesTool, keep_id: keeper.id, merge_ids: [dup.id], human_approved: true)
+      end
+      assert_equal "merged", result["result"]
+      assert_equal [dup.id], result["deleted_company_ids"]
+      assert_not Company.exists?(dup.id)
+      keeper.reload
+      assert_equal 5_000_000, keeper.total_funding_amount_usd.to_i
+      assert_equal "Jane Doe", keeper.founders
+    end
+
+    test "merge_companies refuses to delete an acquired duplicate" do
+      keeper = make_company(name: "MergeAcq Co", url: "http://mergeacq.example")
+      dup = make_company(name: "MergeAcq Co", url: "http://mergeacq.example")
+      dup.update_columns(status: "acquired")
+
+      response = Mcp::Tools::MergeCompaniesTool.call(server_context: @context, keep_id: keeper.id, merge_ids: [dup.id], human_approved: true)
+      assert response.error?
+      assert Company.exists?(dup.id)
+    end
+
+    test "merge_companies executes autonomously with sufficient confidence" do
+      keeper = make_company(name: "ConfMerge Co", url: "http://confmerge.example")
+      dup = make_company(name: "ConfMerge Co", url: "http://confmerge.example")
+
+      with_env("MCP_CURATOR_MIN_CONFIDENCE" => "0.8") do
+        assert_difference "Company.count", -1 do
+          result = call(Mcp::Tools::MergeCompaniesTool, keep_id: keeper.id, merge_ids: [dup.id], confidence: 0.95)
+          assert_equal "merged", result["result"]
+        end
+      end
+    end
+
+    test "check_url_health reports skipped ids that have no main_url" do
+      companies(:one).update_columns(main_url: "http://example.com", url_checked_at: nil)
+      companies(:two).update_columns(main_url: "")
+      result = call(Mcp::Tools::CheckUrlHealthTool, company_ids: [companies(:one).id, companies(:two).id])
+      assert_includes result["company_ids"], companies(:one).id
+      assert_includes result["skipped_company_ids"], companies(:two).id
+      assert_equal 1, result["skipped"]
+    end
+
     private
+
+    def make_company(name:, url:)
+      company = Company.new(
+        name: name,
+        location: "Boston, MA",
+        description: "A sufficiently long neutral description for testing purposes.",
+        main_url: url,
+        visible: true,
+        category: categories(:one),
+        business_model: business_models(:one),
+        target_client: target_clients(:one)
+      )
+      company.skip_geocoding = true
+      company.save!
+      company
+    end
 
     def with_env(vars)
       previous = {}

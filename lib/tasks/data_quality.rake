@@ -156,6 +156,40 @@ namespace :data_quality do
     puts "Backfill founded_date complete mode=#{mode} limit=#{limit} force=#{force} filled=#{filled} skipped=#{skipped.sort.to_h}"
   end
 
+  desc "Probe company website health (main_url reachability) as a QC signal. Defaults to enqueue async jobs; set INLINE=true to run synchronously (small batches). LIMIT=n caps the batch (default 200). COMPANY_IDS=1,2,3 targets specific companies. COOLDOWN_DAYS=n overrides the ~30-day re-check window."
+  task check_url_health: :environment do
+    inline = ENV.fetch("INLINE", "false") == "true"
+    verbose = ENV.fetch("VERBOSE", "false") == "true"
+    limit = ENV.fetch("LIMIT", "200").to_i
+    cooldown = ENV.fetch("COOLDOWN_DAYS", "30").to_i.days
+    company_ids = ENV["COMPANY_IDS"].to_s.split(",").map(&:to_i).reject(&:zero?)
+
+    scope =
+      if company_ids.any?
+        Company.with_main_url.where(id: company_ids)
+      else
+        Company.url_check_due(cooldown).order(Arel.sql("url_checked_at ASC NULLS FIRST"))
+      end
+
+    counts = Hash.new(0)
+    processed = 0
+
+    scope.limit(limit).find_each do |company|
+      processed += 1
+      if inline
+        result = CompanyUrlHealthCheckService.call(company: company)
+        counts[result["url_status"] || result["result"]] += 1
+        puts "CHECK company_id=#{company.id} url_status=#{result['url_status']} code=#{result['status_code']} #{company.main_url}" if verbose
+      else
+        CheckCompanyUrlHealthJob.perform_later(company.id)
+        counts["enqueued"] += 1
+      end
+    end
+
+    mode = inline ? "inline" : "enqueued"
+    puts "URL health check complete mode=#{mode} limit=#{limit} processed=#{processed} results=#{counts.sort.to_h}"
+  end
+
   desc "Normalize company locations missing country names. Defaults to dry-run; set DRY_RUN=false to write."
   task normalize_locations: :environment do
     dry_run = ENV.fetch("DRY_RUN", "true") != "false"
@@ -191,6 +225,33 @@ namespace :data_quality do
     mode = dry_run ? "dry-run" : "write"
     puts examples if dry_run && !verbose
     puts "Normalize locations complete mode=#{mode} category_id=#{category_id || 'all'} changed=#{changed} still_missing_flag=#{still_missing_flag}"
+  end
+
+  desc "Canonicalize the stored country column to its normalized name (folds spelling/native variants like Brasil->Brazil, Schweiz->Switzerland). Defaults to dry-run; set DRY_RUN=false to write."
+  task normalize_countries: :environment do
+    dry_run = ENV.fetch("DRY_RUN", "true") != "false"
+    verbose = ENV.fetch("VERBOSE", "false") == "true"
+    changed = 0
+    examples = []
+
+    Company.where.not(country: [nil, ""]).find_each do |company|
+      canonical = LocationCountryResolver.normalize_country_name(company.country)
+      next if canonical.blank? || canonical == company.country
+
+      changed += 1
+      if dry_run
+        line = "DRY RUN company_id=#{company.id} #{company.country.inspect} -> #{canonical.inspect}"
+        verbose ? puts(line) : (examples << line if examples.size < 30)
+      else
+        # update_columns skips validations/callbacks so we don't retrigger geocoding or
+        # location recomposition — we only canonicalize the country value in place.
+        company.update_columns(country: canonical, updated_at: Time.current)
+      end
+    end
+
+    mode = dry_run ? "dry-run" : "write"
+    puts examples if dry_run && !verbose
+    puts "Normalize countries complete mode=#{mode} changed=#{changed}"
   end
 
   desc "Backfill structured country and city fields from location text. Defaults to dry-run; set DRY_RUN=false to write."

@@ -53,8 +53,10 @@ class DiscoveryCandidateNormalizerService
       "funding_round_type" => discovery_hash["funding_round_type"],
       "funding_amount_hint" => discovery_hash["funding_amount_hint"],
       "category_name" => discovery_hash["category_name"],
+      "secondary_category_name" => discovery_hash["secondary_category_name"],
       "business_model_names" => discovery_hash["business_model_names"].presence,
       "target_client_names" => discovery_hash["target_client_names"].presence,
+      "tag_names" => discovery_hash["tag_names"].presence,
       "founded_year_source" => discovery_hash["founded_year_source"],
       "discovery_description" => discovery_hash["description"].to_s.squish.presence
     }.compact

@@ -28,7 +28,9 @@ human to approve.
 Read / context: `search_companies`, `get_company`, `list_review_queue`,
 `get_proposal`, `duplicate_check`, `get_taxonomy` (controlled vocabulary of
 categories, business models, target clients, and canonical tags), `get_stats`
-(directory size, data-quality gaps, and backlog counts for cadence planning).
+(directory size, data-quality gaps, lifecycle counts (`acquired`/`inactive`/`by_status`),
+`server_version`, and backlog counts for cadence planning). `search_companies` also filters
+by `status` and `url_broken`.
 
 Discovery: `discover_companies` (async — dry run by default; `queue_proposals: true`
 creates `discovery_candidate` proposals) and `get_discovery_run` (poll a discovery run
@@ -47,11 +49,81 @@ not been materialized yet (so freshly-committed proposals never show `publish_re
 `get_proposal` surfaces `description_critic` and `taxonomy_suggestion` so a discovery-time
 pass/verdict is observable on the proposal.
 
-Maintenance: `run_company_review`, `propose_company_update` (queue an editorial edit
+Maintenance: `create_company` (add a specific known company directly — no web
+discovery), `run_company_review`, `propose_company_update` (queue an editorial edit
 to an existing company as a `user_suggestion` proposal), `update_company_field`
 (edit safe factual fields — founded_date/location/founders/status — directly on a
 live company in one call; `founded_date` requires a 4-digit year and a `source_url`
-citation), `apply_safe_fields`, `mark_review`, `suggest_taxonomy`.
+citation), `record_acquisition` (mark a company acquired and capture the acquirer —
+by free-text name/URL, plus an optional in-index successor link — and exit date in
+one audited call), `check_url_health` (enqueue async website-reachability probes that
+record `url_status` = ok / unknown / broken as a soft inactivity signal), `apply_safe_fields`,
+`mark_review`, `suggest_taxonomy`.
+
+### Adding a known company (`create_company`)
+
+`discover_companies` is bulk web-search only; it can't add one specific company, and
+acquired/defunct companies rarely surface (their sites redirect to the acquirer). Use
+`create_company` for those: pass `name` + `main_url` and any known facts and taxonomy ids
+(`category_id`, `business_model_ids`, `target_client_ids`, `all_tags`, …). It normalizes the
+input, runs a duplicate check (returning existing matches instead of creating a duplicate), and
+builds a real proposal with duplicate signals + the quality gate.
+
+- Default: creates a **pending proposal** for review; returns its id and any duplicate matches.
+- `publish: true` (with `human_approved: true`, or a `confidence` above the autonomy threshold
+  and a passing quality gate) publishes live in one call — it delegates to the same
+  `approve_proposal` path, so gating and autonomy rules are identical.
+- `status` (e.g. `"acquired"`, `"inactive"`) and/or an `acquisition` payload import a
+  historical/acquired company straight into that lifecycle state (never flashing as active).
+  An `acquisition` payload requires publish.
+
+This removes the need to repurpose a `discover_companies` shell via `update_proposal` (which
+would destroy a real discovered candidate).
+
+### Website health (`check_url_health`)
+
+A broken `main_url` is a *soft* indicator that a company may have gone inactive, not
+proof. `check_url_health` enqueues async jobs (`CheckCompanyUrlHealthJob`, Solid Queue)
+that fetch the URL following redirects and record on the company:
+
+- `url_status`: `ok` (2xx / redirect→2xx), `unknown` (up but access-restricted — 401/403/
+  405/406/429 bot-blocks — or a single transient failure below the flap threshold), or
+  `broken` (gone/unreachable across `FAILURE_THRESHOLD` = 2 consecutive checks).
+- `url_status_code`, `url_checked_at`, and `url_health` (`consecutive_failures`, `final_url`,
+  `reason`, `last_ok_at`).
+
+The service **never** changes lifecycle status. Curators verify a broken URL (the site may
+have merely moved/rebranded/blocked bots), then set `update_company_field(status:"inactive")`
+or `record_acquisition` as appropriate. Blind sweeps pick active companies not checked within
+a ~30-day cooldown; a weekly recurring sweep runs automatically. Find candidates with
+`search_companies(url_broken:true)`, track the gap with `get_stats.companies.broken_url`, and
+read the per-company verdict via `get_company.url_health`. Also runnable as
+`rake data_quality:check_url_health` (`INLINE=true` for small synchronous batches).
+
+### Acquisitions (`record_acquisition`)
+
+Sets `status=acquired`, stores `acquirer_name` (+ optional `acquirer_url`), records
+`acquired_on` (a bare year stores at Jan 1 with `date_precision: "year"`; a full date
+stores as `"day"`), persists the announcement `source_url`, and links `successor_company_id`
+when the acquirer/successor is itself in the index (`successor_slug`). The acquirer need not
+be a TechIndex entry — e.g. Clausebase acquired by LawVu. The acquired company is retained as
+a historical record. Surfaced on the public profile ("Acquired by …", rendered as a year when
+precision is year) and in `get_company.acquisition` (`acquirer_name`, `acquirer_url`,
+`acquired_on`, `date_precision`, `source_url`, `successor`). The underlying date column remains
+`exit_date`; the tool/read field is `acquired_on`.
+
+**Adding an already-acquired/defunct company in one step:** `approve_proposal` accepts a
+`status` (e.g. `"acquired"`, `"inactive"`) that is baked into the company at creation — so a
+historical entry publishes straight into that lifecycle state and never briefly appears active.
+Pass an optional `acquisition` payload (`acquirer_name`, `acquirer_url`, `acquired_on`,
+`successor_slug`, `source_url`) to record the acquirer in the same call (this implies
+`status=acquired`). No follow-up `record_acquisition` is needed.
+
+### Lifecycle visibility
+
+`get_stats.companies` includes `acquired`, `inactive`, and a full `by_status` map alongside the
+quality-gap tallies, and `get_stats.server_version` reports the running connector build.
+`search_companies(status: "acquired")` lists entries in a given lifecycle state.
 
 Meta: `suggest_improvement` (Claude records tooling/workflow/data suggestions; logged
 to `PipelineRun` and posted to Slack).
@@ -92,6 +164,17 @@ discipline, and the approval rules below.
   (no plausible year) or `main_url` (not a valid HTTP URL). This keeps score-gamed spam
   (e.g. the ROHTO advance-fee submission that scored 100) out of `publish_ready`. It is
   scoped to public submissions to avoid false positives on internal discovery candidates.
+- Publish default + draft recovery: `approve_proposal`'s `publish` now defaults to `true` when
+  `human_approved: true` (and `false` otherwise), so a human approval goes live instead of
+  silently drafting. Re-calling `approve_proposal(publish: true)` on a proposal that was already
+  approved as an invisible draft **promotes that existing draft to visible** (via
+  `CompanyProposalApprovalService#promote_existing_company`) instead of dead-ending on the
+  idempotency guard — no second company is minted and no `propose_company_update` workaround is
+  needed. Promotion still re-checks duplicate/publish blockers.
+- Discovery web-search resilience: `CompanyDiscoverySearchService` retries the web-search step on
+  transient failures (timeouts/`execution expired`, upstream 5xx/rate-limits) with linear backoff
+  (`DISCOVERY_SEARCH_RETRIES`, default 2) before surfacing an error, so a blip no longer fails a
+  whole discovery run.
 - Low-confidence taxonomy: `update_proposal` now marks `agent_details.taxonomy_suggestion.accepted`
   when taxonomy fields are set, so a curator confirmation clears the blocker without
   re-running `enrich_proposal`.
@@ -128,8 +211,24 @@ discipline, and the approval rules below.
   cite-gated at the source: `CompanyDiscoverySearchService` keeps `founded_date` only when the
   model returned a source URL it actually saw in search; an uncited year is dropped (not stored)
   so the company becomes a clean `backfill_founded_dates` target rather than an uncited guess.
+- Description bar (house style): descriptions target a substantive 2-4 sentences (~45-90 words),
+  neutral and evidence-grounded, covering what the company builds and its deployment/business
+  model, its core capabilities and legal workflows, who it serves, and notable named
+  products/integrations. Both the discovery prompt (`CompanyDiscoverySearchService`) and the
+  enrichment prompt (`CompanyProposalEnrichmentService`) request this richer format; thin evidence
+  yields a shorter factual description rather than padded speculation.
+- Critic enforcement (consistent across paths): the deterministic critic
+  (`CompanyProposalEnrichmentService.description_critic_for`) flags too-short drafts, marketing
+  language (word-boundary matched, so names like "BestProfi" are not falsely flagged),
+  copied source text, source-metadata phrasing, and generic "web presence" filler. The publish
+  gate (`CompanyProposalQualityService`) now recomputes this verdict live on the current draft and
+  blocks publishing on a non-pass verdict — so a "revise" description can never publish regardless
+  of whether it came from discovery, enrichment, or a manual edit. The enrich path mirrors
+  discovery's promote-on-pass: it keeps the LLM draft only when it clears the critic, otherwise it
+  uses a house-style deterministic fallback that is written to pass (crisp one-liner covering what
+  it does + who it serves) rather than a generic web-presence sentence.
 - Discovery-time description drafting: the same `discover_companies` pass now also drafts a
-  neutral, encyclopedic description (18-32 words, no marketing language). At proposal creation the
+  neutral, encyclopedic description. At proposal creation the
   draft is cleaned (`CompanyProposalEnrichmentService.clean_description`) and run through the
   deterministic critic (`.description_critic_for`); only a draft that passes (and clears the
   quality gate's word-count bar) is promoted to `final_changes["description"]` with the recorded

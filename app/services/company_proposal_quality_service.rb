@@ -20,6 +20,7 @@ class CompanyProposalQualityService
       "missing_required_fields" => missing_required_fields,
       "missing_publish_blocking_fields" => missing_publish_blocking_fields,
       "blockers" => blockers,
+      "description_critic" => description_critic,
       "warnings" => warnings,
       "usable_web_evidence_count" => usable_web_results.size,
       "usable_source_evidence_count" => usable_source_evidence_count,
@@ -58,11 +59,42 @@ class CompanyProposalQualityService
       values << "Resolve duplicate signals before publishing." if proposal.duplicate_blocking?
       values << "Complete required fields before publishing: #{missing_publish_blocking_fields.map(&:humanize).to_sentence}." if missing_publish_blocking_fields.any?
       values << "Review low-confidence taxonomy before publishing." if low_confidence_taxonomy?
-      values << "Revise weak or generic description before publishing." if weak_description?
-      values << "Description appears to copy the source text." if copied_source_description?
+      values << description_blocker if description_blocker
       values << "Possible spam or malformed public submission — requires human review before publishing." if spam_suspected?
       values
     end
+  end
+
+  # Enforce the description critic verdict consistently across every path
+  # (discovery, enrichment, and manual edits). The verdict is computed live on the
+  # current draft — never trusting a possibly-stale stored verdict — so a "revise"
+  # description can never be published regardless of how it was authored. Blank
+  # descriptions are handled by missing_publish_blocking_fields, so we skip them
+  # here to avoid double-reporting.
+  def description_blocker
+    return nil if changes["description"].blank?
+    return nil if description_critic_verdict["verdict"] == "pass"
+
+    issues = Array(description_critic_verdict["issues"]).map(&:to_s).map(&:downcase).to_sentence.presence
+    issues ? "Revise the description before publishing (#{issues})." : "Revise the description before publishing."
+  end
+
+  def description_critic_verdict
+    @description_critic_verdict ||= CompanyProposalEnrichmentService.description_critic_for(
+      changes["description"],
+      source_description: proposal.source_payload["source_description"],
+      full_source_description: proposal.source_payload["full_source_description"]
+    )
+  end
+
+  # The critic verdict exposed on the report so readers (get_proposal,
+  # list_review_queue) see the SAME determination the publish gate acts on — never
+  # a stale stored verdict. Nil when there is no description yet (a missing
+  # description is reported via missing_publish_blocking_fields instead).
+  def description_critic
+    return nil if changes["description"].blank?
+
+    description_critic_verdict
   end
 
   # Public submissions are the main spam vector (recruitment/advance-fee scams,
@@ -138,13 +170,6 @@ class CompanyProposalQualityService
     description.split.size < 10 ||
       description.match?(/\bprovides or supports legal technology services\b/i) ||
       description.match?(/\b(listed in TechIndex|directory metadata|available records|source data)\b/i)
-  end
-
-  def copied_source_description?
-    source_description = proposal.source_payload["source_description"].to_s.squish
-    full_source_description = proposal.source_payload["full_source_description"].to_s.squish
-    description = changes["description"].to_s.squish
-    description.present? && ([source_description, full_source_description].compact_blank.any? { |source| description.casecmp?(source) })
   end
 
   def low_confidence_taxonomy?

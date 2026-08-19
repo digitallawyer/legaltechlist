@@ -36,6 +36,71 @@ class CompanyCandidateRowProcessorServiceTest < ActiveSupport::TestCase
     assert_equal "https://linkedin.example/company/prefill", proposal.agent_details.dig("founded_date_source", "source_url")
   end
 
+  test "discovery prefill maps a secondary category and tags" do
+    admin = AdminUser.create!(email: "rp-#{SecureRandom.hex(3)}@example.com", password: "password123", password_confirmation: "password123")
+    tag = TagTaxonomyService.discoverable_canonical_names.first
+    candidate = {
+      "name" => "Tagged Legal Co",
+      "website" => "https://tagged-legal.example",
+      "canonical_domain" => "tagged-legal.example",
+      "category_name" => categories(:one).name,
+      "secondary_category_name" => categories(:two).name,
+      "business_model_names" => [business_models(:one).name],
+      "target_client_names" => [target_clients(:one).name],
+      "tag_names" => [tag],
+      "status" => "absent_candidate"
+    }
+
+    CompanyCandidateRowProcessorService.call(
+      candidate: candidate,
+      index: 0,
+      admin_user: admin,
+      source: "llm_discovery",
+      proposal_type: "discovery_candidate",
+      source_label: "LLM Discovery",
+      skip_auto_draft: true
+    )
+
+    proposal = CompanyProposal.find_by(source: "llm_discovery", source_identifier: "tagged-legal.example")
+    assert proposal, "expected a discovery proposal to be created"
+    assert_equal categories(:two).id, proposal.final_changes["secondary_category_id"]
+    assert_includes proposal.final_changes["all_tags"].to_s, tag
+    assert proposal.agent_details.dig("taxonomy_suggestion", "tags", "accepted"), "tags should be recorded as accepted"
+  end
+
+  test "a complete critic-passing discovery prefill is marked enriched with a quality report" do
+    admin = AdminUser.create!(email: "rp-#{SecureRandom.hex(3)}@example.com", password: "password123", password_confirmation: "password123")
+    drafted = "Enriched Legal develops contract review and clause extraction software for corporate legal teams to analyze agreements and monitor obligations across large document collections."
+    candidate = {
+      "name" => "Enriched Legal Co",
+      "website" => "https://enriched-legal.example",
+      "canonical_domain" => "enriched-legal.example",
+      "location" => "London, United Kingdom",
+      "founded_date" => "2020",
+      "category_name" => categories(:one).name,
+      "business_model_names" => [business_models(:one).name],
+      "target_client_names" => [target_clients(:one).name],
+      "discovery_description" => drafted,
+      "status" => "absent_candidate"
+    }
+
+    CompanyCandidateRowProcessorService.call(
+      candidate: candidate,
+      index: 0,
+      admin_user: admin,
+      source: "llm_discovery",
+      proposal_type: "discovery_candidate",
+      source_label: "LLM Discovery",
+      skip_auto_draft: true
+    )
+
+    proposal = CompanyProposal.find_by(source: "llm_discovery", source_identifier: "enriched-legal.example")
+    assert proposal, "expected a discovery proposal to be created"
+    assert proposal.enriched_at.present?, "a complete prefill should be marked enriched to skip the 3-call enrichment"
+    assert_equal "ready_for_review", proposal.status
+    assert proposal.agent_details["quality"].present?, "a quality report should be stamped for observability"
+  end
+
   test "does not overwrite existing taxonomy on re-discovery" do
     admin = AdminUser.create!(email: "rp-#{SecureRandom.hex(3)}@example.com", password: "password123", password_confirmation: "password123")
     existing = CompanyProposal.create!(

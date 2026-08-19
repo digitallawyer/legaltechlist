@@ -9,6 +9,16 @@ class Company < ActiveRecord::Base
 
   EARLIEST_PLAUSIBLE_FOUNDING_YEAR = 1970
 
+  # URL-health verdicts recorded by CompanyUrlHealthCheckService. A broken URL is a
+  # soft signal that a company may have gone inactive — it is surfaced for curator
+  # review and never auto-flips the lifecycle status.
+  URL_STATUS_OK = "ok".freeze
+  URL_STATUS_BROKEN = "broken".freeze
+  URL_STATUS_UNKNOWN = "unknown".freeze
+  # Statuses we consider already-resolved: no point re-checking a URL we've already
+  # decided is dead/acquired.
+  URL_CHECK_SKIP_STATUSES = %w[inactive closed acquired].freeze
+
   before_update :publish_tweet, :if => :visible_changed?
   before_update :publish_to_list, :if => :visible_changed?
   after_commit :sync_legaltech_atlas_link, on: :update, if: :should_sync_legaltech_atlas_link?
@@ -48,8 +58,23 @@ class Company < ActiveRecord::Base
   validate :must_have_at_least_one_revenue_model
   validates :target_client, presence: true
   validates :description, presence: true, length: {minimum: 5}
+  validates :acquirer_url, format: {with: %r{\Ahttps?://}, message: "must be an http(s) URL."}, allow_blank: true
 
   scope :publicly_visible, -> { where(visible: true) }
+  # URL-health scopes for the maintenance sweep and curator review.
+  scope :url_broken, -> { where(url_status: URL_STATUS_BROKEN) }
+  # Filter by the machine-readable url_health reason_code (bot_blocked / dns_failure /
+  # timeout / http_404 / ...) so "unknown" verdicts can be triaged.
+  scope :url_reason, ->(code) { where("url_health ->> 'reason_code' = ?", code.to_s) }
+  scope :with_main_url, -> { where.not(main_url: [nil, ""]) }
+  # Companies believed active (excludes already-resolved lifecycle states) whose URL
+  # has not been checked within the cooldown window. ISO-8601 UTC strings compare
+  # correctly, but url_checked_at is a real datetime so a plain time comparison works.
+  scope :url_check_due, ->(cooldown = 30.days) {
+    with_main_url
+      .where("status IS NULL OR LOWER(status) NOT IN (?)", URL_CHECK_SKIP_STATUSES)
+      .where("url_checked_at IS NULL OR url_checked_at < ?", cooldown.ago)
+  }
   scope :missing_main_url, -> { where(main_url: [nil, ""]) }
   scope :missing_founded_date, -> { where(founded_date: [nil, ""]) }
   # Companies still missing a founded_date that have NOT had a server-side backfill
@@ -74,6 +99,11 @@ class Company < ActiveRecord::Base
   scope :unknown_target_client, -> { left_joins(:target_client).where(target_clients: { name: "Unknown" }) }
   scope :duplicate_name_candidates, -> { where(id: duplicate_name_candidate_ids) }
   scope :duplicate_domain_candidates, -> { where(id: duplicate_domain_candidate_ids) }
+  # Rows the duplicate detector should compare. Curator-resolved duplicates are hidden
+  # (visible:false) or rejected-quality; excluding them means hiding/rejecting the loser of
+  # a pair drops it from the dup queue instead of re-surfacing forever. IS DISTINCT FROM
+  # keeps NULL quality_status rows (they are not "rejected").
+  scope :dedup_candidates, -> { where(visible: true).where("companies.quality_status IS DISTINCT FROM ?", "rejected") }
   scope :with_normalized_name, ->(normalized_name) {
     return none if normalized_name.blank?
 
@@ -240,20 +270,57 @@ class Company < ActiveRecord::Base
   end
 
   def self.compute_duplicate_name_candidate_ids
-    rows = where.not(name: [nil, ""]).pluck(:id, :name)
+    rows = dedup_candidates.where.not(name: [nil, ""]).pluck(:id, :name)
     grouped = rows.group_by { |_id, name| normalized_name_value(name) }
     grouped.values.select { |group| group.size > 1 }.flatten(1).map(&:first)
   end
 
+  # Duplicate candidate groups (for list_duplicate_candidates): each entry is
+  # { "value" => matched_value, "ids" => [company_id, ...] } for a normalized name /
+  # canonical domain shared by more than one company.
+  def self.duplicate_name_groups
+    rows = dedup_candidates.where.not(name: [nil, ""]).pluck(:id, :name)
+    rows.group_by { |_id, name| normalized_name_value(name) }
+        .select { |value, group| value.present? && group.size > 1 }
+        .map { |value, group| { "value" => value, "ids" => group.map(&:first).sort } }
+  end
+
+  def self.duplicate_domain_groups
+    has_canonical = column_names.include?("canonical_domain")
+    cols = has_canonical ? [:id, :main_url, :canonical_domain] : [:id, :main_url]
+    scope = dedup_candidates.where.not(main_url: [nil, ""])
+    scope = scope.or(dedup_candidates.where.not(canonical_domain: [nil, ""])) if has_canonical
+    rows = scope.pluck(*cols)
+
+    rows.group_by { |row| (has_canonical ? row[2].presence : nil) || canonical_domain_for(row[1]) }
+        .select { |domain, group| domain.present? && group.size > 1 }
+        .map { |domain, group| { "value" => domain, "ids" => group.map(&:first).sort } }
+  end
+
+  # Ids within `scope` whose resolved+normalized country matches `name`. Country is
+  # free text (with native-language variants), so matching is done in Ruby via the
+  # LocationCountryResolver canonicalization used across the statistics pages.
+  def self.ids_with_normalized_country(name, scope: all)
+    target = LocationCountryResolver.normalize_country_name(name)
+    return [] if target.blank?
+
+    scope.pluck(:id, :country, :location).filter_map do |id, country, location|
+      resolved = country.presence || LocationCountryResolver.country_name_for(location)
+      next if resolved.blank?
+
+      id if LocationCountryResolver.normalize_country_name(resolved) == target
+    end
+  end
+
   def self.compute_duplicate_domain_candidate_ids
     stored_ids = if column_names.include?("canonical_domain")
-      duplicate_domains = where.not(canonical_domain: [nil, ""]).group(:canonical_domain).having("COUNT(*) > 1").select(:canonical_domain)
-      where(canonical_domain: duplicate_domains).pluck(:id)
+      duplicate_domains = dedup_candidates.where.not(canonical_domain: [nil, ""]).group(:canonical_domain).having("COUNT(*) > 1").select(:canonical_domain)
+      dedup_candidates.where(canonical_domain: duplicate_domains).pluck(:id)
     else
       []
     end
 
-    rows = where.not(main_url: [nil, ""]).pluck(:id, :main_url)
+    rows = dedup_candidates.where.not(main_url: [nil, ""]).pluck(:id, :main_url)
     grouped = rows.group_by { |_id, main_url| canonical_domain_for(main_url) }
     fallback_ids = grouped.except(nil).values.select { |group| group.size > 1 }.flatten(1).map(&:first)
 
@@ -307,6 +374,29 @@ class Company < ActiveRecord::Base
 
   def normalize_status
     self.status = status.to_s.strip.downcase.presence
+  end
+
+  def url_broken?
+    url_status == URL_STATUS_BROKEN
+  end
+
+  def url_consecutive_failures
+    url_health&.dig("consecutive_failures").to_i
+  end
+
+  # Acquisition display data, preferring an in-DB successor link (canonical) and
+  # falling back to the free-text acquirer captured when the acquirer is not in the
+  # index (e.g. a non-legal-tech buyer). Returns nil when nothing is recorded.
+  def acquirer_display
+    if successor_company.present?
+      { name: successor_company.name, url: nil, company: successor_company }
+    elsif acquirer_name.present?
+      { name: acquirer_name, url: acquirer_url.presence, company: nil }
+    end
+  end
+
+  def acquired?
+    status.to_s.downcase == "acquired"
   end
 
   def sync_structured_location_fields
@@ -420,8 +510,12 @@ class Company < ActiveRecord::Base
     end
   end
 
+  def twitter_publish_enabled?
+    Rails.configuration.respond_to?(:twitter_publish) && Rails.configuration.twitter_publish
+  end
+
   def publish_tweet
-    if (self.visible? && Rails.configuration.twitter_publish)
+    if (self.visible? && twitter_publish_enabled?)
       #initialize twitter_client to access their API
       twitter_client = Twitter::REST::Client.new do |config|
           config.consumer_key        = ENV["TWITTER_CONSUMER_KEY"]
@@ -442,7 +536,7 @@ class Company < ActiveRecord::Base
   end
 
   def publish_to_list
-    if (self.visible? && Rails.configuration.twitter_publish)
+    if (self.visible? && twitter_publish_enabled?)
       #initialize twitter_client to access their API
       twitter_client = Twitter::REST::Client.new do |config|
           config.consumer_key        = ENV["TWITTER_CONSUMER_KEY"]
@@ -478,7 +572,7 @@ class Company < ActiveRecord::Base
        latitude longitude created_at updated_at
        quality_status verification_verdict quality_score verified_at enriched_at
        quality_reviewed_at human_reviewed_at fingerprint canonical_domain source source_url
-       legaltech_atlas_url]
+       legaltech_atlas_url acquirer_name acquirer_url url_status url_status_code url_checked_at]
   end
 
   def self.ransackable_associations(auth_object = nil)

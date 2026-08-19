@@ -34,8 +34,13 @@ class LocationCountryResolver
     "NA - Uruguay" => "Uruguay",
     "NA - Venezuela" => "Venezuela",
     "NA - Vietnam" => "Vietnam",
-    "Ivory Coast" => "Côte d'Ivoire",
+    # Canonicalize to the English "Ivory Coast": it is the form the ISO map keys on
+    # ('ivory coast' => 'CI'), whereas the accented "Côte d'Ivoire" fails the iso lookup
+    # (map key is un-accented). Mapping both variants one-way avoids an alias cycle where
+    # each form normalized to the other and never converged.
+    "Ivory Coast" => "Ivory Coast",
     "Côte d'Ivoire" => "Ivory Coast",
+    "Cote d'Ivoire" => "Ivory Coast",
     "Channel Islands" => "United Kingdom",
     "Cayman Islands" => "Cayman Islands",
     "Trinidad and Tobago" => "Trinidad and Tobago",

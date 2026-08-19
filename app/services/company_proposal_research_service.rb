@@ -17,17 +17,14 @@ class CompanyProposalResearchService
   def call
     return disabled_payload unless responses_web_search_enabled?
 
-    response = Timeout.timeout(llm_timeout_seconds) { responses_chat.ask(research_prompt) }
-    output = response.raw&.body&.fetch("output", []) || []
-    citations = RubyLLM::ResponsesAPI::BuiltInTools.extract_citations(output.flat_map { |item| Array(item["content"]) })
-    search_calls = RubyLLM::ResponsesAPI::BuiltInTools.parse_web_search_results(output)
+    result = WebSearchAgent.search(research_prompt, model: research_model, timeout: llm_timeout_seconds)
 
     {
       "mode" => "openai_responses_web_search",
       "query" => research_query,
-      "summary" => response.content.to_s.squish,
-      "results" => search_results(citations, search_calls),
-      "raw_search_call_count" => search_calls.size,
+      "summary" => result[:content].to_s.squish,
+      "results" => search_results(result[:citations], result[:search_calls]),
+      "raw_search_call_count" => result[:raw_search_call_count],
       "generated_at" => Time.current.utc.iso8601
     }
   rescue StandardError => e
@@ -62,10 +59,6 @@ class CompanyProposalResearchService
     defined?(RubyLLM::ResponsesAPI::BuiltInTools) &&
       ENV["OPENAI_API_KEY"].present? &&
       ENV.fetch("PROPOSAL_WEB_SEARCH_USE_RESPONSES", Rails.env.production? ? "true" : "false") == "true"
-  end
-
-  def responses_chat
-    RubyLLM.chat(model: research_model, provider: :openai_responses, assume_model_exists: true).with_params(tools: [RubyLLM::ResponsesAPI::BuiltInTools.web_search(search_context_size: "medium")])
   end
 
   def research_model

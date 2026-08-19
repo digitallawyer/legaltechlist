@@ -52,45 +52,19 @@ class UserSubmissionTriageService
   def llm_verdict
     return verdict("review", 0.5, "llm_disabled", "LLM triage disabled; queued for human review.") unless llm_enabled?
 
-    response = llm_classify
+    response = SubmissionTriageAgent.call(proposal: proposal)
+    return verdict("review", 0.5, "llm_error", "LLM triage failed; queued for human review.") if response.blank?
+
     verdict(response["verdict"], response["confidence"].to_f, "llm", response["reason"])
   rescue StandardError => e
     Rails.logger.debug("[UserSubmissionTriageService] LLM triage failed: #{e.message}")
     verdict("review", 0.5, "llm_error", "LLM triage failed; queued for human review.")
   end
 
-  def llm_classify
-    chat = RubyLLM.chat(model: llm_model, provider: :openai, assume_model_exists: true)
-    response = Timeout.timeout(llm_timeout_seconds) { chat.ask(llm_prompt) }
-    JSON.parse(response.content.to_s)
-  end
-
-  def llm_prompt
-    <<~PROMPT
-      You triage public legal-tech directory submissions. Return JSON only:
-      {"verdict":"accept"|"review"|"reject","confidence":0.0-1.0,"reason":"short reason"}
-
-      Proposal type: #{proposal.proposal_type}
-      Company name: #{proposal.final_changes['name']}
-      Website: #{proposal.final_changes['main_url']}
-      Description: #{proposal.final_changes['description']}
-      User message: #{proposal.user_message}
-      Duplicate domain signals: #{proposal.duplicate_signals['domain_matches'].to_json}
-    PROMPT
-  end
-
   def llm_enabled?
     defined?(RubyLLM) &&
       ENV["OPENAI_API_KEY"].present? &&
       ENV.fetch("USER_SUBMISSION_TRIAGE_USE_LLM", Rails.env.production? ? "true" : "false") == "true"
-  end
-
-  def llm_model
-    ENV.fetch("RUBYLLM_TRIAGE_MODEL", "gpt-4o-mini")
-  end
-
-  def llm_timeout_seconds
-    ENV.fetch("USER_SUBMISSION_TRIAGE_TIMEOUT_SECONDS", "20").to_i
   end
 
   def verdict(verdict, confidence, mode, reason)

@@ -1,4 +1,5 @@
 require "test_helper"
+require "minitest/mock"
 
 class CompanyProposalWorkflowTest < ActiveSupport::TestCase
   test "queues absent Atlas candidates as proposals without changing companies" do
@@ -44,6 +45,70 @@ class CompanyProposalWorkflowTest < ActiveSupport::TestCase
     assert_equal "disabled_no_responses_web_search", proposal.agent_details["web_research"]["mode"]
   end
 
+  test "single-call enrichment maps agent output and cite-gates the founding year" do
+    proposal = CompanyProposal.create!(
+      status: "pending",
+      proposal_type: "atlas_candidate",
+      source: "legaltechatlas_csv",
+      source_identifier: "single-call-#{SecureRandom.hex(3)}",
+      source_payload: { "name" => "Single Call Co", "website" => "https://singlecall.example" },
+      proposed_changes: { "name" => "Single Call Co", "main_url" => "https://singlecall.example" },
+      final_changes: { "name" => "Single Call Co", "main_url" => "https://singlecall.example" }
+    )
+
+    agent_payload = {
+      "mode" => "openai_responses_web_search",
+      "proposed_description" => "Single Call Co develops contract review and obligation-tracking software for corporate legal teams to analyze agreements across large document collections.",
+      "founded_year" => "2018",
+      "founded_year_source" => "https://www.linkedin.com/company/singlecall",
+      "founded_year_evidence_text" => "Single Call Co was founded in 2018.",
+      "taxonomy_llm_suggestions" => {
+        "category_name" => categories(:one).name,
+        "category_confidence" => 0.9,
+        "revenue_model_names" => [business_models(:one).name],
+        "revenue_model_confidence" => 0.9,
+        "target_client_names" => [target_clients(:one).name],
+        "target_client_confidence" => 0.9,
+        "tag_names" => [],
+        "tags_confidence" => 0.0,
+        "mode" => "ruby_llm_single_call"
+      },
+      "web_research" => { "mode" => "openai_responses_web_search", "results" => [{ "url" => "https://www.linkedin.com/company/singlecall" }] }
+    }
+
+    with_env("OPENAI_API_KEY" => "test", "ENRICHMENT_SINGLE_CALL" => "true", "PROPOSAL_ENRICHMENT_USE_LLM" => "true") do
+      ProposalEnrichmentAgent.stub(:call, ->(**) { agent_payload }) do
+        CompanyProposalEnrichmentService.call(proposal: proposal, admin_user: admin_users(:one))
+      end
+    end
+
+    proposal.reload
+    assert_equal categories(:one).id, proposal.final_changes["category_id"]
+    assert_match(/contract review/i, proposal.final_changes["description"])
+    assert_equal "pass", proposal.agent_details["description_critic"]["verdict"], "a clean agent draft should pass the critic and be used"
+    assert_equal "2018", proposal.final_changes["founded_date"], "a cited, entity-matched year should be filled"
+    assert_equal "https://www.linkedin.com/company/singlecall", proposal.agent_details.dig("founded_date_source", "source_url")
+  end
+
+  test "enrichment preserves a discovery-cited founded_date_source instead of overwriting it" do
+    proposal = CompanyProposal.create!(
+      status: "pending",
+      proposal_type: "discovery_candidate",
+      source: "llm_discovery",
+      source_identifier: "provenance-#{SecureRandom.hex(3)}",
+      source_payload: { "name" => "Provenance Co", "website" => "https://provenance.example" },
+      proposed_changes: { "name" => "Provenance Co", "main_url" => "https://provenance.example" },
+      final_changes: { "name" => "Provenance Co", "main_url" => "https://provenance.example", "founded_date" => "2016" },
+      agent_details: { "founded_date_source" => { "source_url" => "https://linkedin.example/company/provenance", "mode" => "discovery_search_cited" } }
+    )
+
+    CompanyProposalEnrichmentService.call(proposal: proposal, admin_user: admin_users(:one))
+
+    proposal.reload
+    assert_equal "2016", proposal.final_changes["founded_date"], "an existing cited year is kept"
+    assert_equal "https://linkedin.example/company/provenance", proposal.agent_details.dig("founded_date_source", "source_url"), "the discovery-cited provenance must be preserved"
+  end
+
   test "proposal enrichment drafts stronger descriptions from source evidence" do
     proposal = CompanyProposal.create!(
       status: "pending",
@@ -81,7 +146,7 @@ class CompanyProposalWorkflowTest < ActiveSupport::TestCase
 
     assert_equal original_company_count + 1, Company.count
     assert_equal "New Atlas Candidate", company.name
-    assert_equal "A neutral reviewed description for a new legal technology company.", company.description
+    assert_equal "A neutral reviewed description covering what this new legal technology company builds and the legal teams it serves.", company.description
     assert_not company.visible?
     assert_equal "needs_review", company.quality_status
     assert_equal "human_approved_candidate", company.verification_verdict
@@ -257,6 +322,39 @@ class CompanyProposalWorkflowTest < ActiveSupport::TestCase
     assert_not CompanyProposalEnrichmentService.entity_match?(company, "https://www.linkedin.com/company/someone-else", evidence_text: "A totally different firm")
   end
 
+  test "publish gate blocks a description that fails the critic on any path" do
+    proposal = ready_proposal
+    proposal.update!(
+      final_changes: proposal.final_changes.merge(
+        "description" => "BestProfi is an Almaty-based organization operating bestprofi.com as its primary web presence for publishing information and enabling online access to its services."
+      )
+    )
+
+    quality = CompanyProposalQualityService.call(proposal.reload)
+    assert_not quality["publish_ready"], quality["blockers"].inspect
+    assert quality["blockers"].any? { |blocker| blocker =~ /revise the description/i }, quality["blockers"].inspect
+  end
+
+  test "critic does not flag a company name that merely contains a marketing substring" do
+    critic = CompanyProposalEnrichmentService.description_critic_for(
+      "BestProfi develops legal technology for contract review and document management used by law firms and in-house legal teams."
+    )
+    assert_equal "pass", critic["verdict"], critic["issues"].inspect
+  end
+
+  test "enrich fallback description clears the critic and reads like a factual one-liner" do
+    proposal = queued_proposal
+    CompanyProposalEnrichmentService.call(proposal: proposal, admin_user: admin_users(:one))
+
+    proposal.reload
+    critic = proposal.agent_details["description_critic"]
+    assert_equal "pass", critic["verdict"], critic["issues"].inspect
+    assert_no_match(GENERIC_WEB_PRESENCE_MATCH, proposal.final_changes["description"])
+    assert_operator proposal.final_changes["description"].split.size, :>=, 12
+  end
+
+  GENERIC_WEB_PRESENCE_MATCH = /web presence|primary web|for publishing information|online access to (?:its|their) services/i
+
   test "source_tier ranks registry over profile over owned over other" do
     company = companies(:one) # example.com
     assert_equal :registry, CompanyProposalEnrichmentService.source_tier("https://opencorporates.com/companies/x")
@@ -279,7 +377,7 @@ class CompanyProposalWorkflowTest < ActiveSupport::TestCase
     proposal = queued_proposal
     proposal.update!(
       final_changes: proposal.final_changes.merge(
-        "description" => "A neutral reviewed description for a new legal technology company.",
+        "description" => "A neutral reviewed description covering what this new legal technology company builds and the legal teams it serves.",
         "category_id" => categories(:one).id,
         "business_model_id" => business_models(:one).id,
         "target_client_id" => target_clients(:one).id
@@ -293,6 +391,19 @@ class CompanyProposalWorkflowTest < ActiveSupport::TestCase
       file.write(candidate_import_csv)
       file.close
       yield file.path
+    end
+  end
+
+  def with_env(vars)
+    previous = {}
+    vars.each do |key, value|
+      previous[key] = ENV[key]
+      ENV[key] = value
+    end
+    yield
+  ensure
+    previous.each do |key, value|
+      value.nil? ? ENV.delete(key) : ENV[key] = value
     end
   end
 

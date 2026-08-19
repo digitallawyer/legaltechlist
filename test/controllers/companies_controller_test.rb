@@ -324,6 +324,16 @@ class CompaniesControllerTest < ActionController::TestCase
     assert_select ".company-source-inactive-dot", minimum: 1
   end
 
+  test "show names the acquirer for an acquired company" do
+    @company.update_columns(status: "acquired", acquirer_name: "LawVu", acquirer_url: "https://lawvu.com")
+
+    get :show, params: { slug: @company }
+
+    assert_response :success
+    assert_select ".company-status-note", text: /acquired by LawVu/i
+    assert_select ".company-status-note a[href=?]", "https://lawvu.com", text: "LawVu"
+  end
+
   test "index company links include list context for show navigation" do
     get :index, params: { sort: "name_asc", category: [@company.category_id, companies(:two).category_id] }
 

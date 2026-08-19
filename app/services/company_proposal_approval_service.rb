@@ -11,7 +11,12 @@ class CompanyProposalApprovalService
   end
 
   def call
-    validate_base_proposal!
+    raise ArgumentError, "Rejected proposals cannot be approved" if proposal.rejected?
+    # Idempotent recovery: if this proposal already minted a company, don't try to
+    # create a second one. Promote the existing invisible draft to visible when a
+    # publish is requested; otherwise return the existing record unchanged.
+    return promote_existing_company if proposal.company_id.present?
+
     ensure_description!
     validate_proposal!
 
@@ -54,9 +59,18 @@ class CompanyProposalApprovalService
 
   attr_reader :proposal, :admin_user, :duplicate_override, :publish
 
-  def validate_base_proposal!
-    raise ArgumentError, "Rejected proposals cannot be approved" if proposal.rejected?
-    raise ArgumentError, "Proposal has already created a company draft" if proposal.company_id.present?
+  # Publish an already-created draft (or no-op if already visible). Publishing is
+  # still the sensitive action, so it re-checks duplicate and publish blockers.
+  def promote_existing_company
+    company = proposal.company
+
+    if publish && !company.visible?
+      validate_proposal!
+      company.update!(visible: true)
+      proposal.update!(status: "published", admin_user: admin_user, reviewed_at: Time.current, approved_at: Time.current)
+    end
+
+    company
   end
 
   def validate_proposal!

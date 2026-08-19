@@ -33,6 +33,8 @@ module Mcp
             "canonical_domain" => company.canonical_domain.presence || company.canonical_main_domain,
             "founded_year_provenance" => company.founded_year_provenance,
             "founded_date_backfill_status" => founded_date_backfill_status(company),
+            "acquisition" => acquisition_details(company),
+            "url_health" => url_health_details(company),
             "duplicate_name_matches" => name_dupes,
             "duplicate_domain_matches" => domain_dupes
           )
@@ -46,6 +48,42 @@ module Mcp
         return "filled" if company.founded_date.present?
 
         company.founded_year_provenance&.dig("status").presence || "untried"
+      end
+
+      # Acquisition provenance for acquired entries (or any entry carrying acquirer
+      # data), so a curator can see the acquirer and successor link.
+      def self.acquisition_details(company)
+        return nil unless company.acquired? || company.acquirer_name.present? || company.successor_company.present?
+
+        details = company.acquisition_details.is_a?(Hash) ? company.acquisition_details : {}
+        {
+          "acquirer_name" => company.acquirer_name.presence || company.successor_company&.name,
+          "acquirer_url" => company.acquirer_url.presence,
+          # acquired_on mirrors the record_acquisition input field name (backed by the
+          # exit_date column); date_precision distinguishes a year-only value from a full date.
+          "acquired_on" => company.exit_date&.iso8601,
+          "date_precision" => details["date_precision"],
+          "source_url" => details["source_url"],
+          "successor" => (company.successor_company && { "id" => company.successor_company.id, "slug" => company.successor_company.slug, "name" => company.successor_company.name })
+        }.compact
+      end
+
+      # URL-health signal (soft indicator of possible inactivity). "untried" until a
+      # check has run; otherwise the coarse verdict plus consecutive-failure count.
+      def self.url_health_details(company)
+        return { "status" => "untried" } if company.url_checked_at.blank?
+
+        {
+          "status" => company.url_status,
+          "status_code" => company.url_status_code,
+          # Machine-readable cause (bot_blocked / dns_failure / timeout / http_404 / ...)
+          # so an "unknown" verdict can be triaged as "blocks crawlers" vs "actually dead".
+          "reason_code" => CompanyUrlHealthCheckService.reason_code_for(company),
+          "checked_at" => company.url_checked_at&.iso8601,
+          "consecutive_failures" => company.url_consecutive_failures,
+          "final_url" => company.url_health&.dig("final_url"),
+          "reason" => company.url_health&.dig("reason")
+        }.compact
       end
     end
   end

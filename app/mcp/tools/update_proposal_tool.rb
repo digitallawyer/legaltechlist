@@ -28,6 +28,7 @@ module Mcp
 
         proposal.final_changes = proposal.final_changes.merge(applied)
         taxonomy_confirmed = confirm_taxonomy!(proposal) if (applied.keys & TAXONOMY_FIELDS).any?
+        refresh_description_critic!(proposal) if applied.key?("description")
         proposal.save!
         proposal.reload
         quality = CompanyProposalQualityService.call(proposal)
@@ -53,6 +54,22 @@ module Mcp
       rescue StandardError => e
         Rails.logger.debug("[UpdateProposalTool] transient failure for proposal #{id}: #{e.class}: #{e.message}")
         error_response("result" => "error", "retryable" => true, "error" => "Transient failure (#{e.class}); safe to retry: #{e.message}")
+      end
+
+      # Keep the stored critic verdict in sync with an edited description so the
+      # persisted agent_details never disagrees with the live publish gate.
+      def self.refresh_description_critic!(proposal)
+        description = proposal.final_changes["description"]
+        critic = if description.blank?
+          nil
+        else
+          CompanyProposalEnrichmentService.description_critic_for(
+            description,
+            source_description: proposal.source_payload["source_description"],
+            full_source_description: proposal.source_payload["full_source_description"]
+          )
+        end
+        proposal.agent_details = proposal.agent_details.merge("description_critic" => critic)
       end
 
       def self.confirm_taxonomy!(proposal)

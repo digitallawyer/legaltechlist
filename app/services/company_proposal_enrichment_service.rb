@@ -5,6 +5,16 @@ class CompanyProposalEnrichmentService
   MARKETING_TERMS = DescriptionDraftAgent::MARKETING_TERMS
   EARLIEST_PLAUSIBLE_FOUNDING_YEAR = 1970
 
+  # Filler phrasing that describes a website/"web presence" instead of an actual
+  # product or service. Catches generic enrich fallbacks like "operating x.com as
+  # its primary web presence for publishing information and enabling online access".
+  GENERIC_WEB_PRESENCE_PATTERN = /
+    \b(?:web|online)\s+presence\b |
+    \bfor\s+publishing\s+information\b |
+    \bonline\s+access\s+to\s+(?:its|their)\s+services\b |
+    \bprimary\s+web\b
+  /xi
+
   # Official business registries — the most authoritative founding-year source.
   REGISTRY_HOSTS = %w[
     opencorporates.com
@@ -106,9 +116,12 @@ class CompanyProposalEnrichmentService
     text = description.to_s
     issues = []
     issues << "Draft is shorter than expected." if text.split.size < 12
-    issues << "Draft may contain marketing language." if MARKETING_TERMS.any? { |term| text.downcase.include?(term) }
+    # Word-boundary match so real company names that merely contain a term as a
+    # substring (e.g. "BestProfi" containing "best") are not falsely flagged.
+    issues << "Draft may contain marketing language." if MARKETING_TERMS.any? { |term| text.match?(/\b#{Regexp.escape(term)}\b/i) }
     issues << "Draft may copy the source description." if [source_description, full_source_description].compact_blank.any? { |source| text.squish.casecmp?(source.to_s.squish) }
-    issues << "Draft may describe source metadata rather than company facts." if text.match?(/\b(available records|directory metadata|stored profiles|source data|current record)\b/i)
+    issues << "Draft may describe source metadata rather than company facts." if text.match?(/\b(available records|directory metadata|stored profiles|source data|current record|listed in techindex)\b/i)
+    issues << "Draft describes a web presence instead of the company's product or service." if text.match?(GENERIC_WEB_PRESENCE_PATTERN)
     issues << "Draft is too generic for publication." if text.match?(/\bprovides or supports legal technology services\b/i)
     issues
   end
@@ -150,8 +163,7 @@ class CompanyProposalEnrichmentService
   end
 
   def call
-    @research_payload = CompanyProposalResearchService.call(proposal: proposal)
-    @taxonomy_suggestion = CompanyProposalTaxonomySuggestionService.call(source_payload: source_payload, final_changes: proposal.final_changes)
+    load_enrichment_inputs
     final_changes = proposal.final_changes.merge(enriched_changes).merge(taxonomy_changes)
     agent_payload = agent_details(final_changes)
     proposal.update!(
@@ -169,6 +181,31 @@ class CompanyProposalEnrichmentService
   private
 
   attr_reader :proposal, :admin_user
+
+  # Gather description + founded year + taxonomy. When the single-call path is enabled
+  # (default in production), ONE OpenAI Responses web-search call returns all of it and
+  # the taxonomy service just maps names->ids from those suggestions — replacing the
+  # former three separate LLM calls (research + taxonomy + description). Otherwise fall
+  # back to the legacy path (which itself degrades to deterministic rules without a key).
+  def load_enrichment_inputs
+    if single_call_enabled?
+      @enrichment = ProposalEnrichmentAgent.call(proposal: proposal)
+      @research_payload = @enrichment["web_research"].presence || {}
+      @llm_payload = @enrichment.slice("proposed_description", "founded_year", "founded_year_source", "founded_year_evidence_text")
+      @taxonomy_suggestion = CompanyProposalTaxonomySuggestionService.call(
+        source_payload: source_payload,
+        final_changes: proposal.final_changes,
+        llm_suggestions: @enrichment["taxonomy_llm_suggestions"]
+      )
+    else
+      @research_payload = CompanyProposalResearchService.call(proposal: proposal)
+      @taxonomy_suggestion = CompanyProposalTaxonomySuggestionService.call(source_payload: source_payload, final_changes: proposal.final_changes)
+    end
+  end
+
+  def single_call_enabled?
+    llm_enabled? && ENV.fetch("ENRICHMENT_SINGLE_CALL", "true") == "true"
+  end
 
   def enriched_changes
     @enriched_changes ||= {
@@ -191,8 +228,24 @@ class CompanyProposalEnrichmentService
     }.compact_blank
   end
 
+  # Mirror discovery's promote-on-pass rule: use the LLM draft only when it clears
+  # the deterministic critic; otherwise fall back to the house-style description
+  # (which is written to pass). This keeps quality from dipping when discovery left
+  # the description blank and enrichment has to fill it.
   def proposed_description
-    clean_description(llm_payload["proposed_description"].presence || fallback_description)
+    @proposed_description ||= begin
+      llm = clean_description(llm_payload["proposed_description"])
+      fallback = clean_description(fallback_description)
+      llm.present? && description_passes_critic?(llm) ? llm : fallback
+    end
+  end
+
+  def description_passes_critic?(text)
+    self.class.description_critic_for(
+      text,
+      source_description: source_payload["source_description"],
+      full_source_description: source_payload["full_source_description"]
+    )["verdict"] == "pass"
   end
 
   # A single LLM call returns description + a strictly-sourced founding year.
@@ -237,6 +290,10 @@ class CompanyProposalEnrichmentService
     urls.compact_blank.filter_map { |url| self.class.host_for(url) }.uniq
   end
 
+  def existing_founded_date_source
+    (proposal.agent_details || {})["founded_date_source"].presence
+  end
+
   def founded_year_provenance
     return nil if @founded_year_source.blank?
 
@@ -256,21 +313,25 @@ class CompanyProposalEnrichmentService
     { "proposed_description" => content.to_s }
   end
 
+  # House-style deterministic fallback used when the LLM is unavailable or its draft
+  # fails the critic. Each branch is written to clear the critic (>= 12 words, no
+  # marketing/source-meta/web-presence filler) and to read like discovery's crisp,
+  # factual one-liners: what it does + who it serves.
   def fallback_description
     text = source_text.downcase
 
     if text.match?(/\binsurance\b|\bclaims?\b|\bpolic(?:y|ies)\b/)
-      "#{display_name} develops legal technology for analyzing insurance policies and claims documentation."
+      "#{display_name} develops legal technology for analyzing insurance policies and claims documentation, serving insurers, legal teams, and claims professionals."
     elsif text.match?(/\bcontract\b|\bnegotiation\b|\bclm\b/)
-      "#{display_name} develops legal technology for contract review, drafting, negotiation, or lifecycle management."
+      "#{display_name} develops legal technology for contract review, drafting, negotiation, and lifecycle management, serving legal, procurement, and commercial teams."
     elsif text.match?(/\blaw firms?\b|\blegal professionals?\b/)
-      "#{display_name} develops legal AI software for law firms and legal professionals."
+      "#{display_name} develops legal AI software for law firms and legal professionals, supporting research, drafting, and document review workflows."
     elsif text.match?(/\blitigation\b|\bdisputes?\b|\bcase\b/)
-      "#{display_name} develops legal technology for litigation and case-management workflows."
+      "#{display_name} develops legal technology for litigation and case-management workflows, supporting attorneys and legal teams handling disputes and casework."
     elsif text.match?(/\bcompliance\b|\bregulatory\b|\brisk\b/)
-      "#{display_name} develops legal technology for compliance, regulatory, or risk-management workflows."
+      "#{display_name} develops legal technology for compliance, regulatory, and risk-management workflows, serving in-house legal, compliance, and risk teams."
     else
-      "#{display_name} develops legal technology software for legal teams and related professional workflows."
+      "#{display_name} develops legal technology software for legal teams and related professional workflows across the legal services industry."
     end
   end
 
@@ -295,7 +356,10 @@ class CompanyProposalEnrichmentService
         "confidence" => "low",
         "rationale" => description_rationale
       },
-      "founded_date_source" => founded_year_provenance,
+      # Reuse any founding-year provenance already recorded (e.g. cited at discovery
+      # time) instead of overwriting it with nil when enrichment did not re-search —
+      # the year was already found, so we must not lose its source.
+      "founded_date_source" => founded_year_provenance || existing_founded_date_source,
       "description_critic" => description_critic(final_changes["description"])
     }
   end
@@ -309,13 +373,27 @@ class CompanyProposalEnrichmentService
     )
   end
 
-  def description_prompt
+  # The description/founding-year drafting instruction, extracted so tooling (e.g.
+  # a model bake-off) can exercise the exact production prompt without drift.
+  def self.description_instruction
+    "Return JSON with keys proposed_description, founded_year, founded_year_source, and founded_year_evidence_text. proposed_description: a neutral, encyclopedic directory description of 2-4 sentences (about 45-90 words) written in the third person, grounded ONLY in the evidence above. Cover, when the evidence supports it: (1) what the company builds and its deployment/business model (e.g. cloud-based platform, marketplace, managed service); (2) its core capabilities and the legal workflows it addresses; (3) who it serves (law firms, corporate/in-house legal, specific practice areas or industries); and (4) notable named products/modules and integrations. Prefer concrete product/function facts over adjectives. Do NOT copy source descriptions verbatim, and avoid marketing language, superlatives, customer counts, source-meta phrasing, generic 'web presence' filler, and the phrase 'provides or supports'. If the evidence is thin, write a shorter factual description rather than padding with speculation. founded_year: the 4-digit founding year ONLY if a source explicitly states it (check the 'Founded' field on the company's LinkedIn/Crunchbase profile and official business registries such as OpenCorporates or national registries; prefer an official registry over a self-reported profile if they disagree), otherwise null — never guess or estimate. founded_year_source: the exact source URL (from the evidence/web_research above) that states the founded_year, otherwise null. founded_year_evidence_text: a short verbatim snippet from that source that names THIS company and states the year (used to confirm the source is about this company and not a same-named one), otherwise null."
+  end
+
+  def self.description_prompt_for(candidate:, source_evidence:, web_research: {})
     {
+      candidate: candidate,
+      source_evidence: source_evidence,
+      web_research: web_research,
+      instruction: description_instruction
+    }.to_json
+  end
+
+  def description_prompt
+    self.class.description_prompt_for(
       candidate: source_payload.slice("name", "website", "location", "industries", "operating_status", "company_type", "founded_date", "funding_amount_usd", "number_of_funding_rounds", "founders"),
       source_evidence: source_evidence,
-      web_research: research_payload,
-      instruction: "Return JSON with keys proposed_description, founded_year, founded_year_source, and founded_year_evidence_text. proposed_description: one neutral, academic directory sentence of 18-32 words using concrete product/function language grounded only in evidence; do not copy source descriptions; avoid marketing language, source-meta phrasing, customer counts, unverifiable superlatives, and the phrase 'provides or supports'. founded_year: the 4-digit founding year ONLY if a source explicitly states it (check the 'Founded' field on the company's LinkedIn/Crunchbase profile and official business registries such as OpenCorporates or national registries; prefer an official registry over a self-reported profile if they disagree), otherwise null — never guess or estimate. founded_year_source: the exact source URL (from the evidence/web_research above) that states the founded_year, otherwise null. founded_year_evidence_text: a short verbatim snippet from that source that names THIS company and states the year (used to confirm the source is about this company and not a same-named one), otherwise null."
-    }.to_json
+      web_research: research_payload
+    )
   end
 
   def llm_enabled?

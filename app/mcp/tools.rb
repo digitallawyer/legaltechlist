@@ -7,10 +7,12 @@ module Mcp
       [
         # Read / context
         SearchCompaniesTool,
+        ListCompaniesTool,
         GetCompanyTool,
         ListReviewQueueTool,
         GetProposalTool,
         DuplicateCheckTool,
+        ListDuplicateCandidatesTool,
         GetTaxonomyTool,
         GetStatsTool,
         # Discovery
@@ -24,10 +26,15 @@ module Mcp
         ApproveProposalTool,
         RejectProposalTool,
         # Maintenance of existing entries
+        CreateCompanyTool,
         RunCompanyReviewTool,
         ProposeCompanyUpdateTool,
         UpdateCompanyFieldTool,
+        RecordAcquisitionTool,
+        MergeCompaniesTool,
         BackfillFoundedDatesTool,
+        GetBackfillRunTool,
+        CheckUrlHealthTool,
         ApplySafeFieldsTool,
         MarkReviewTool,
         SuggestTaxonomyTool,

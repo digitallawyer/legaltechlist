@@ -2,6 +2,10 @@ module Mcp
   # Builds a stateless MCP::Server instance (one per request) with the full
   # curator toolset and the curator operating instructions registered.
   module CuratorServer
+    # Running connector build. Surfaced via get_stats.server_version so the curator can
+    # confirm which server is live during validation.
+    VERSION = "1.18.0".freeze
+
     module_function
 
     # Operating guidance sent to Claude on connect (MCP `instructions`). Defines the
@@ -14,16 +18,34 @@ module Mcp
       Scope: include only genuine legal-technology companies. This is a historical academic
       record — keep companies that are no longer active. Set a company's status to reflect
       reality (e.g. acquired, defunct) and record mergers, acquisitions, and successors rather
-      than deleting entries.
+      than deleting entries. Record an acquisition on an EXISTING company with record_acquisition
+      (sets status=acquired, captures the acquirer by name — the buyer need not be in the index —
+      links a successor entry when it is, and stores acquired_on with its precision plus the
+      source_url). Example: Clausebase acquired by LawVu. To ADD an already-acquired/defunct
+      company, approve_proposal accepts a `status` (e.g. "acquired", "inactive") and an optional
+      `acquisition` payload so the entry publishes straight into that lifecycle state — it never
+      briefly appears active and needs no follow-up record_acquisition call. See lifecycle health
+      at a glance with get_stats companies.by_status / .acquired / .inactive, and list entries in a
+      given state with search_companies(status: "acquired"). get_stats also reports server_version.
 
       Descriptions and all public text must be encyclopedic and fit for public display:
-      - Neutral and factual. Describe what the company does, who it serves, and its role in
-        legal technology.
+      - Aim for a substantive 2-4 sentence description (roughly 45-90 words), grounded only in
+        evidence. Cover, when supported: what the company builds and its deployment/business
+        model; its core capabilities and the legal workflows it addresses; who it serves (law
+        firms, corporate/in-house legal, practice areas or industries); and notable named
+        products/modules and integrations. If evidence is thin, write fewer sentences rather
+        than padding with speculation.
+      - Neutral and factual. Prefer concrete product/function facts over adjectives.
       - No marketing or sales language, superlatives, or promotional claims (avoid words like
-        "leading", "innovative", "best-in-class", "cutting-edge", "seamless").
+        "leading", "innovative", "best-in-class", "cutting-edge", "seamless"), and no generic
+        "web presence" filler.
       - Never include internal notes, uncertainty markers, TODOs, placeholders, or remarks
         about missing information. If a detail is unknown, omit it silently.
       - Third person, complete sentences.
+      - The description critic is enforced at the publish gate: a description with a non-pass
+        verdict (too short, marketing/meta/web-presence filler, or copied source text) blocks
+        publishing on BOTH the discovery and enrich paths. Fix the text (or re-enrich) until it
+        passes rather than trying to publish around it.
 
       Classification: always call get_taxonomy first and choose categories, business models,
       target clients, and tags only from that controlled vocabulary. Never invent new ones.
@@ -57,7 +79,14 @@ module Mcp
       published unless the response says published:true.
 
       Change discipline:
-      - Add new companies via discover_companies. It is ASYNC — it returns "discovery_queued" with a
+      - Add a SPECIFIC known company (especially a historical/acquired one that won't surface via
+        web search) with create_company: pass name + main_url and any known facts/taxonomy ids. It
+        runs a duplicate check and, by default, creates a pending proposal to review; pass
+        publish=true (with human_approved or sufficient confidence) to go live in one call, plus a
+        status ("acquired"/"inactive") or acquisition payload to import it straight into that
+        lifecycle state. Use this instead of repurposing a discover_companies shell with
+        update_proposal — never cannibalize a real discovered candidate to insert a different company.
+      - Add new companies in BULK via discover_companies. It is ASYNC — it returns "discovery_queued" with a
         run_id and runs on the durable worker (Solid Queue), so it is never limited by the HTTP
         timeout. Poll get_discovery_run(run_id) until status is "succeeded" (results attached:
         summary, queued_proposal_ids, candidate preview) or "failed" (error attached). Do not treat
@@ -89,8 +118,30 @@ module Mcp
         true), track the gap with get_stats companies.missing_founded_date, and poll get_company —
         which reports founded_year_provenance and a founded_date_backfill_status of "filled" (with
         the citation), "no_source"/"error" (attempted, nothing sourced), or "untried".
+        backfill_founded_dates returns a run_id; poll get_backfill_run(run_id) for a verifiable
+        per-run summary (filled / no_source / no_year / error / pending counts, status running until
+        every targeted company has been attempted) instead of inferring it from get_stats deltas.
       - enrich_proposal is skipped when a proposal is already publishable or was enriched in the
         last few days (it rarely adds facts); pass force=true to override intentionally.
+      - Website health is a maintenance signal for spotting companies that may have gone
+        inactive. check_url_health enqueues async reachability probes (blind sweep by cooldown,
+        or targeted company_ids) that record url_status = ok, unknown (site is up but access-
+        restricted, or a single transient failure), or broken (gone/unreachable across
+        consecutive checks). A broken URL is a SOFT indicator, not proof: verify (the site may
+        have merely moved, rebranded, or blocked bots) before acting. Each result also carries a
+        machine-readable reason_code (bot_blocked / server_error / tls_untrusted / timeout /
+        dns_failure / http_404 / ...; HTTP client errors use one code per status such as http_404
+        or http_410) so you can triage an "unknown"/"broken" verdict: bot_blocked and tls_untrusted
+        almost always mean the site is live (leave it); dns_failure, http_404/410, and
+        connection_reset are strong "actually dead" signals worth acting on. get_stats reports the
+        cause mix as by_reason (all non-ok) plus by_reason_broken and by_reason_unknown, so
+        "how many confirmed dead, by cause" is a one-call read of url_health.by_reason_broken.
+        When you confirm a company is defunct, set status via
+        update_company_field(status: "inactive"); if it was acquired, use record_acquisition instead.
+        List a specific cause with
+        list_companies(url_health_status: "unknown", url_reason: "dns_failure"), and read the
+        per-company verdict (status/reason_code/consecutive_failures/checked_at) via get_company.
+        A weekly sweep runs automatically.
       - Always run duplicate_check before creating a company. If a likely duplicate exists,
         note it instead of adding a new entry.
 
@@ -106,14 +157,41 @@ module Mcp
         out-of-scope company, or an ambiguous edit — do NOT publish/apply. Leave it for a human
         (omit publish/human_approved or set a low confidence) and briefly say what is uncertain.
       - A human can always force an action with human_approved=true after approving in Slack.
+      - publish defaults to true when human_approved=true (a human approval implies going live)
+        and to false otherwise. If you approve with publish:false (or omit it) you create an
+        invisible draft; to make that draft live later, just call approve_proposal again with
+        publish:true — it promotes the existing draft to visible without creating a second
+        company (no propose_company_update workaround needed).
       - Externally-submitted proposals (from the public contribution/suggestion forms) are
         lower-trust, so they require a higher confidence bar to publish/apply autonomously.
         Scrutinize them for spam, solicitations, and malformed fields; reject anything that is
         not a genuine legal-technology company, and only publish/apply the ones you are sure of.
       - Keep Slack replies short and include the /admin/proposals/:id link so a human can review.
 
-      Use get_stats for directory size and backlog depth when planning a cadence or reporting
-      progress.
+      Planning and prioritization:
+      - Use get_stats for directory size, backlog depth, and data-quality gaps when planning a
+        cadence or reporting progress. It breaks coverage down by_category and by_country and
+        reports url_health (ok/broken/unknown/untried/last_run_at) and founded_date
+        (present/null/backfill_untried/backfill_no_source) so you can target the actionable
+        gaps (e.g. "never attempted" founded dates) rather than the genuinely hard ones. Pass
+        get_stats(fresh: true) to bypass the ~10-min cache and verify counts right after a pass.
+      - Turn a get_stats gap into an actionable id set with list_companies: filter by
+        category_id, country, review_state, founded_date_null, url_health_status, weak_description,
+        missing_url, status, or visibility, and page with offset/limit (up to 200) until has_more
+        is false. Feed the returned company_ids straight into backfill_founded_dates, check_url_health,
+        or update_company_field. It defaults to ALL companies (matching the data-quality totals);
+        pass visible:true to match the by_category/by_country public-index counts.
+      - Review and merge duplicates with list_duplicate_candidates, which returns the actual flagged
+        pairs (company_id_a/b, names, match_type name|domain|name+domain, matched_value, confidence)
+        behind the get_stats aggregate; page with offset until has_more is false. The detector only
+        compares live rows (visible + non-rejected), so resolving a pair clears it from the queue for
+        good. Resolve a real duplicate with merge_companies(keep_id, merge_ids): choose the clean
+        canonical record as keep_id, and the duplicate(s) are folded in (blank keeper fields filled
+        from them — e.g. funding data — all tags/models/clients/proposals/attachments transferred,
+        successor links repointed) and deleted. Merging is DESTRUCTIVE: it returns a preview
+        (filled_fields + transferred_associations, nothing deleted) unless you pass human_approved=true
+        or a confidence at/above the threshold. It refuses to delete a duplicate that is itself
+        acquired or has a successor link — keep that record instead, or record the acquisition first.
 
       Every action is attributed to the curator account and audited. If you notice recurring
       friction, a missing capability, or an unclear rule that makes curation harder, record it
@@ -124,7 +202,7 @@ module Mcp
       MCP::Server.new(
         name: "techindex_curator",
         title: "CodeX TechIndex Curator",
-        version: "1.9.0",
+        version: VERSION,
         instructions: INSTRUCTIONS,
         tools: Mcp::Tools.all,
         server_context: { actor: actor }

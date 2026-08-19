@@ -52,15 +52,8 @@ class CompanyFoundedYearResearchService
 
   def default_search_client
     lambda do |prompt|
-      chat = RubyLLM.chat(model: research_model, provider: :openai_responses, assume_model_exists: true).with_params(tools: [RubyLLM::ResponsesAPI::BuiltInTools.web_search(search_context_size: "medium")])
-      response = Timeout.timeout(timeout_seconds) { chat.ask(prompt) }
-      output = response.raw&.body&.fetch("output", []) || []
-      citations = RubyLLM::ResponsesAPI::BuiltInTools.extract_citations(output.flat_map { |item| Array(item["content"]) })
-      search_calls = RubyLLM::ResponsesAPI::BuiltInTools.parse_web_search_results(output)
-      citation_urls = Array(citations).filter_map { |citation| citation["url"] }
-      call_urls = Array(search_calls).flat_map { |call| Array(call[:results] || call["results"]) }.filter_map { |result| result[:url] || result["url"] }
-
-      { content: response.content.to_s, search_urls: (citation_urls + call_urls).compact.uniq }
+      result = WebSearchAgent.search(prompt, model: research_model, timeout: timeout_seconds)
+      result.slice(:content, :search_urls)
     end
   end
 

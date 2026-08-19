@@ -1,8 +1,10 @@
 module Mcp
   module Tools
     class ApplySafeFieldsTool < BaseTool
-      # Mirror of Admin::AgentReviewsController::SAFE_APPLY_FIELDS: the only fields a
-      # curator may write directly on an existing company.
+      # Mirror of Admin::AgentReviewsController::METADATA_APPLY_FIELDS: the bookkeeping
+      # fields a curator may write directly on an existing company. Public text is
+      # deliberately excluded here — the admin apply control can publish a description
+      # only behind a live critic verdict, and that gate has no equivalent in this tool.
       SAFE_FIELDS = %w[quality_status verification_verdict quality_score canonical_domain fingerprint].freeze
 
       tool_name "apply_safe_fields"
