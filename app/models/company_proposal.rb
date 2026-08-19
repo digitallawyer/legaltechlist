@@ -98,8 +98,20 @@ class CompanyProposal < ActiveRecord::Base
     CompanyProposalQualityService.call(self)
   end
 
+  # The stored report from the last enrichment, used by list views to avoid recomputing
+  # for every row. Reports written before the verification gate existed are treated as
+  # absent rather than trusted: they would tell a reviewer a record is ready while the
+  # detail view blocks it. Ignoring them makes the lists self-heal as records are
+  # re-enriched, with no backfill needed.
+  QUALITY_REPORT_REQUIRED_KEY = "verification_state".freeze
+
   def cached_quality_report
-    agent_details.is_a?(Hash) ? agent_details["quality"] : nil
+    return nil unless agent_details.is_a?(Hash)
+
+    report = agent_details["quality"]
+    return nil unless report.is_a?(Hash) && report[QUALITY_REPORT_REQUIRED_KEY].present?
+
+    report
   end
 
   def publish_ready?
