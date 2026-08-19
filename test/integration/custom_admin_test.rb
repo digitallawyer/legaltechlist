@@ -63,23 +63,46 @@ class CustomAdminTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_admin_user_session_path
   end
 
-  test "quality dashboard is available to signed-in admin users" do
+  # The standalone quality dashboard was removed: every metric it showed is a
+  # filter over the companies list, and that list already prints the counts in
+  # its own header. These guard against the signals silently going missing.
+  test "companies list header carries the data-quality signals and links to each filter" do
     sign_in admin_users(:one)
 
-    get custom_admin_quality_path
+    get custom_admin_companies_path
 
     assert_response :success
-    assert_select "h1", "Quality Dashboard"
-    assert_select ".admin-quality-label", text: "Missing URLs"
-    assert_select ".admin-quality-label", text: "Duplicate-domain candidates"
+    assert_select ".admin-table-summary", text: /Missing URLs/
+    assert_select ".admin-table-summary", text: /Weak descriptions/
+    assert_select ".admin-table-summary", text: /Duplicate domains/
+    assert_select ".admin-table-summary", text: /Duplicate names/
+    assert_select ".admin-table-summary", text: /Not reviewed/
+    assert_select ".admin-table-summary", text: /Unknown taxonomy/
+    assert_select ".admin-table-summary a[href=?]", custom_admin_companies_path(review_signal: "missing_url")
+    assert_select ".admin-table-summary a[href=?]", custom_admin_companies_path(review_signal: "weak_description")
+    assert_select ".admin-table-summary a[href=?]", custom_admin_companies_path(review_signal: "duplicate_domain")
+    assert_select ".admin-table-summary a[href=?]", custom_admin_companies_path(review_signal: "duplicate_name")
+    assert_select ".admin-table-summary a[href=?]", custom_admin_companies_path(review_state: "not_reviewed")
   end
 
-  test "company review index redirects to proposal review" do
+  test "removed duplicate admin pages no longer route" do
     sign_in admin_users(:one)
 
-    get custom_admin_company_reviews_path
+    ["/admin/quality", "/admin/review/companies", "/admin/agent-reviews", "/admin/pieter"].each do |path|
+      get path
+      assert_response :not_found, "#{path} should no longer be served"
+    end
+  end
 
-    assert_redirected_to custom_admin_company_proposals_path
+  test "admin nav no longer offers a separate quality tab" do
+    sign_in admin_users(:one)
+
+    get custom_admin_companies_path
+
+    assert_response :success
+    assert_select "nav a", text: "Quality", count: 0
+    assert_select "nav a", "Companies"
+    assert_select "nav a", "Activity"
   end
 
   test "description review queue is available on companies tab" do
@@ -242,11 +265,11 @@ class CustomAdminTest < ActionDispatch::IntegrationTest
 
   test "agent review pages show evidence and proposed corrections without writes" do
     sign_in admin_users(:one)
-    run = PipelineRun.create!(name: "Agent review sample", run_type: "company_review", status: "succeeded", agent_name: "CompanyVerifierAgent", records_processed: 1, details: { "company_id" => companies(:one).id, "evidence" => [{ "title" => "Company website", "url" => "https://example.com", "summary" => "Public website confirms the company exists." }], "description_draft" => { "proposed_description" => "ExampleCo provides legal technology software for law firms.", "mode" => "deterministic_fallback" }, "description_critic" => { "verdict" => "revise", "issues" => ["Needs stronger evidence."], "rationale" => "The draft needs more support.", "suggested_revision" => "ExampleCo provides legal technology software for law firms.", "mode" => "deterministic_fallback" }, "review_coordinator" => { "status" => "needs_description_revision", "reasons" => ["Critic requires revision."], "disagreements" => ["Draft passed initial checks but critic requested revision."], "recommended_actions" => ["Revise the description before approving."], "mode" => "deterministic_fallback" }, "duplicate_review" => { "overall_recommendation" => "related_entities", "rationale" => "Records share a domain but need human review.", "pair_reviews" => [{ "candidate_company_id" => companies(:two).id, "relationship" => "related", "confidence" => "low", "reasons" => ["Canonical domains match."] }], "unresolved_questions" => ["Confirm whether these are product or company records."], "mode" => "deterministic_fallback" }, "proposed_corrections" => { "proposed_description" => "ExampleCo provides legal technology software for law firms.", "description_critic_verdict" => "revise", "coordinator_status" => "needs_description_revision" }, "risks" => ["Needs human verification"] })
+    run = PipelineRun.create!(name: "Agent review sample", run_type: "company_agent_review", status: "succeeded", agent_name: "CompanyVerifierAgent", records_processed: 1, details: { "company_id" => companies(:one).id, "evidence" => [{ "title" => "Company website", "url" => "https://example.com", "summary" => "Public website confirms the company exists." }], "description_draft" => { "proposed_description" => "ExampleCo provides legal technology software for law firms.", "mode" => "deterministic_fallback" }, "description_critic" => { "verdict" => "revise", "issues" => ["Needs stronger evidence."], "rationale" => "The draft needs more support.", "suggested_revision" => "ExampleCo provides legal technology software for law firms.", "mode" => "deterministic_fallback" }, "review_coordinator" => { "status" => "needs_description_revision", "reasons" => ["Critic requires revision."], "disagreements" => ["Draft passed initial checks but critic requested revision."], "recommended_actions" => ["Revise the description before approving."], "mode" => "deterministic_fallback" }, "duplicate_review" => { "overall_recommendation" => "related_entities", "rationale" => "Records share a domain but need human review.", "pair_reviews" => [{ "candidate_company_id" => companies(:two).id, "relationship" => "related", "confidence" => "low", "reasons" => ["Canonical domains match."] }], "unresolved_questions" => ["Confirm whether these are product or company records."], "mode" => "deterministic_fallback" }, "proposed_corrections" => { "proposed_description" => "ExampleCo provides legal technology software for law firms.", "description_critic_verdict" => "revise", "coordinator_status" => "needs_description_revision" }, "risks" => ["Needs human verification"] })
 
-    get custom_admin_agent_reviews_path
+    get custom_admin_pipeline_runs_path(activity: "agent_reviews")
     assert_response :success
-    assert_select "h1", "Agent Reviews"
+    assert_select "h1", "Activity"
     assert_select ".admin-section-tabs a.active", "Agent Reviews"
     assert_select ".admin-section-tabs a", "All Runs"
     assert_select "td a", text: /Agent review sample/
@@ -256,6 +279,7 @@ class CustomAdminTest < ActionDispatch::IntegrationTest
     assert_select "h1", "Agent review sample"
     assert_select "h2", "Description Draft"
     assert_select "span", "Review only"
+    assert_select ".alert-warning", text: /does not clear the publication gate/
     assert_select "p", text: "ExampleCo provides legal technology software for law firms."
     assert_select "h2", "Review Coordinator"
     assert_select "li", "Critic requires revision."
@@ -269,20 +293,22 @@ class CustomAdminTest < ActionDispatch::IntegrationTest
   end
 
   test "agent review apply requires authentication" do
-    run = PipelineRun.create!(name: "Agent review sample", run_type: "company_review", status: "succeeded", records_processed: 1, details: { "company_id" => companies(:one).id, "proposed_corrections" => { "quality_status" => "needs_review" } })
+    run = PipelineRun.create!(name: "Agent review sample", run_type: "company_agent_review", status: "succeeded", records_processed: 1, details: { "company_id" => companies(:one).id, "proposed_corrections" => { "quality_status" => "needs_review" } })
 
     post apply_custom_admin_agent_review_path(run), params: { fields: ["quality_status"] }
 
     assert_redirected_to new_admin_user_session_path
   end
 
-  test "agent review apply updates only selected safe fields and never description" do
+  # A packet with no critic verdict authorises no description, however the form is
+  # posted. This is the fail-closed case: metadata still applies, public text does not.
+  test "agent review apply writes selected metadata and refuses a description with no critic verdict" do
     sign_in admin_users(:one)
     company = companies(:one)
     original_description = company.description
-    run = PipelineRun.create!(name: "Agent review sample", run_type: "company_review", status: "succeeded", records_processed: 1, details: { "company_id" => company.id, "proposed_corrections" => { "quality_status" => "needs_review", "verification_verdict" => "needs_human_review", "quality_score" => 60, "proposed_description" => "Do not auto-apply this description." } })
+    run = PipelineRun.create!(name: "Agent review sample", run_type: "company_agent_review", status: "succeeded", records_processed: 1, details: { "company_id" => company.id, "proposed_corrections" => { "quality_status" => "needs_review", "verification_verdict" => "needs_human_review", "quality_score" => 60, "proposed_description" => "Do not auto-apply this description." } })
 
-    post apply_custom_admin_agent_review_path(run), params: { fields: ["quality_status", "quality_score", "proposed_description"] }
+    post apply_custom_admin_agent_review_path(run), params: { fields: ["quality_status", "quality_score", "description"] }
 
     assert_redirected_to custom_admin_agent_review_path(run)
     company.reload
@@ -293,14 +319,88 @@ class CustomAdminTest < ActionDispatch::IntegrationTest
     assert_equal original_description, company.description
     assert_equal "applied", run.details["admin_decision"]["decision"]
     assert_equal({ "quality_status" => "needs_review", "quality_score" => 60 }, run.details["admin_decision"]["applied_changes"])
+    assert_nil run.details["admin_decision"]["description_source"]
+  end
+
+  # The gap this closes: the critic passed a specific string, so a human can publish
+  # exactly that string from the review page instead of copying it into the edit form.
+  test "agent review apply publishes a critic-approved description and records its source" do
+    sign_in admin_users(:one)
+    company = companies(:one)
+    approved = "ExampleCo builds contract lifecycle management software for corporate legal teams, covering drafting, approval workflows and clause libraries."
+    run = PipelineRun.create!(name: "Agent review sample", run_type: "company_agent_review", status: "succeeded", records_processed: 1, details: { "company_id" => company.id, "description_critic" => { "verdict" => "pass", "issues" => [], "suggested_revision" => "" }, "proposed_corrections" => { "proposed_description" => approved } })
+
+    get custom_admin_agent_review_path(run)
+    assert_response :success
+    assert_select "span.badge", "Ready to apply"
+    assert_select "label[for='field_description']", text: /Description/
+
+    post apply_custom_admin_agent_review_path(run), params: { fields: ["description"] }
+
+    assert_redirected_to custom_admin_agent_review_path(run)
+    company.reload
+    run.reload
+    assert_equal approved, company.description
+    assert_equal({ "description" => approved }, run.details["admin_decision"]["applied_changes"])
+    assert_equal "critic-approved draft", run.details["admin_decision"]["description_source"]
+  end
+
+  # On a revise verdict the draft is NOT what gets published: the critic's own
+  # narrower rewrite is. This is the stella case from the production audit.
+  test "agent review apply publishes the critic's revision rather than the rejected draft" do
+    sign_in admin_users(:one)
+    company = companies(:one)
+    rejected_draft = "ExampleCo builds legal software with cited answers, source previews, self-hosting options and browser-based editing tools."
+    revision = "ExampleCo provides legal workspace software for law firms, with tools for matter management, document review and drafting."
+    run = PipelineRun.create!(name: "Agent review sample", run_type: "company_agent_review", status: "succeeded", records_processed: 1, details: { "company_id" => company.id, "description_critic" => { "verdict" => "revise", "issues" => ["Capabilities are not evidence-backed."], "suggested_revision" => revision }, "proposed_corrections" => { "proposed_description" => rejected_draft } })
+
+    post apply_custom_admin_agent_review_path(run), params: { fields: ["description"] }
+
+    company.reload
+    run.reload
+    assert_equal revision, company.description
+    refute_equal rejected_draft, company.description
+    assert_equal "critic's suggested revision", run.details["admin_decision"]["description_source"]
+  end
+
+  # Second gate: even a critic-blessed string must clear the same deterministic
+  # description gate the publish path enforces, computed live at apply time.
+  test "agent review apply refuses a critic-approved description that fails the live publication gate" do
+    sign_in admin_users(:one)
+    company = companies(:one)
+    original_description = company.description
+    marketing = "ExampleCo is the leading provider of best-in-class legal technology for law firms everywhere."
+    run = PipelineRun.create!(name: "Agent review sample", run_type: "company_agent_review", status: "succeeded", records_processed: 1, details: { "company_id" => company.id, "description_critic" => { "verdict" => "pass", "issues" => [], "suggested_revision" => "" }, "proposed_corrections" => { "proposed_description" => marketing } })
+
+    get custom_admin_agent_review_path(run)
+    assert_response :success
+    assert_select ".alert-warning", text: /does not clear the publication gate/
+
+    post apply_custom_admin_agent_review_path(run), params: { fields: ["description"] }
+
+    assert_redirected_to custom_admin_agent_review_path(run)
+    assert_equal original_description, company.reload.description
+    assert_nil run.reload.details["admin_decision"]
+  end
+
+  test "agent review apply reports why nothing could be applied" do
+    sign_in admin_users(:one)
+    company = companies(:one)
+    run = PipelineRun.create!(name: "Agent review sample", run_type: "company_agent_review", status: "succeeded", records_processed: 1, details: { "company_id" => company.id, "description_critic" => { "verdict" => "reject", "issues" => [], "suggested_revision" => "" }, "proposed_corrections" => { "proposed_description" => "Unusable." } })
+
+    post apply_custom_admin_agent_review_path(run), params: { fields: ["description"] }
+
+    assert_redirected_to custom_admin_agent_review_path(run)
+    assert_match(/critic returned reject/, flash[:alert])
+    assert_nil run.reload.details["admin_decision"]
   end
 
   test "agent review reject and follow up record decisions without mutating company" do
     sign_in admin_users(:one)
     company = companies(:one)
     original_attributes = company.attributes.slice("quality_status", "verification_verdict", "quality_score", "description")
-    rejected_run = PipelineRun.create!(name: "Rejectable review", run_type: "company_review", status: "succeeded", records_processed: 1, details: { "company_id" => company.id, "proposed_corrections" => { "quality_status" => "needs_review" } })
-    follow_up_run = PipelineRun.create!(name: "Follow-up review", run_type: "company_review", status: "succeeded", records_processed: 1, details: { "company_id" => company.id, "proposed_corrections" => { "quality_status" => "needs_review" } })
+    rejected_run = PipelineRun.create!(name: "Rejectable review", run_type: "company_agent_review", status: "succeeded", records_processed: 1, details: { "company_id" => company.id, "proposed_corrections" => { "quality_status" => "needs_review" } })
+    follow_up_run = PipelineRun.create!(name: "Follow-up review", run_type: "company_agent_review", status: "succeeded", records_processed: 1, details: { "company_id" => company.id, "proposed_corrections" => { "quality_status" => "needs_review" } })
 
     post reject_custom_admin_agent_review_path(rejected_run)
     assert_redirected_to custom_admin_agent_review_path(rejected_run)

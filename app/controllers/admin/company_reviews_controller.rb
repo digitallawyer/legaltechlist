@@ -1,9 +1,5 @@
 module Admin
   class CompanyReviewsController < BaseController
-    def index
-      redirect_to custom_admin_company_proposals_path
-    end
-
     def show
       @company = Company.includes(:category, :secondary_category, :successor_company, :business_models, :target_clients, :target_client, :tags).find(params[:id])
       @duplicate_domain_companies = duplicate_domain_companies

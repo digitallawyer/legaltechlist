@@ -19,6 +19,9 @@
                     | Duplicate domains 
                     = link_to number_with_delimiter(@company_summary_counts[:duplicate_domain]), custom_admin_companies_path(review_signal: "duplicate_domain"), aria: { label: "Show duplicate domain candidates" }
                 span.admin-table-summary-item
+                    | Duplicate names 
+                    = link_to number_with_delimiter(@company_summary_counts[:duplicate_name]), custom_admin_companies_path(review_signal: "duplicate_name"), aria: { label: "Show duplicate name candidates" }
+                span.admin-table-summary-item
                     | Not reviewed 
                     = link_to number_with_delimiter(@company_summary_counts[:not_reviewed]), custom_admin_companies_path(review_state: "not_reviewed"), aria: { label: "Show not reviewed companies" }
                 span.admin-table-summary-item

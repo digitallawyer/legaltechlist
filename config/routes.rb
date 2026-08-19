@@ -24,8 +24,6 @@ Rails.application.routes.draw do
   devise_for :admin_users, path: "admin", path_names: { sign_in: "login", sign_out: "logout" }
   get 'admin', to: redirect('/admin/app/companies'), as: :admin_root
   get 'admin/app', to: redirect('/admin/app/companies'), as: :custom_admin_root
-  get 'admin/quality', to: 'admin/quality#index', as: :custom_admin_quality
-  get 'admin/review/companies', to: 'admin/company_reviews#index', as: :custom_admin_company_reviews
   post 'admin/review/companies/next-description-review', to: 'admin/company_reviews#create_next_description_review', as: :custom_admin_next_description_review
   post 'admin/review/companies/next-duplicate-domain-review', to: 'admin/company_reviews#create_next_duplicate_domain_review', as: :custom_admin_next_duplicate_domain_review
   get 'admin/review/companies/:id', to: 'admin/company_reviews#show', as: :custom_admin_company_review
@@ -45,7 +43,6 @@ Rails.application.routes.draw do
   post 'admin/proposals/:id/enrich', to: 'admin/company_proposals#enrich', as: :enrich_custom_admin_company_proposal
   post 'admin/proposals/:id/approve', to: 'admin/company_proposals#approve', as: :approve_custom_admin_company_proposal
   post 'admin/proposals/:id/reject', to: 'admin/company_proposals#reject', as: :reject_custom_admin_company_proposal
-  get 'admin/agent-reviews', to: 'admin/agent_reviews#index', as: :custom_admin_agent_reviews
   get 'admin/agent-reviews/:id', to: 'admin/agent_reviews#show', as: :custom_admin_agent_review
   post 'admin/agent-reviews/:id/apply', to: 'admin/agent_reviews#apply', as: :apply_custom_admin_agent_review
   post 'admin/agent-reviews/:id/reject', to: 'admin/agent_reviews#reject', as: :reject_custom_admin_agent_review
@@ -114,7 +111,6 @@ Rails.application.routes.draw do
   get 'statistics/founders_journey/download', to: redirect('/statistics', status: 301)
 
   get 'static_pages/home'
-  get 'admin/pieter', to: 'admin/pieter#index'
 
   # Add tag routes
   get 'tags/:tag', to: 'companies#index', as: :tag
