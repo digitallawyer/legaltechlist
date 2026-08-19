@@ -91,6 +91,25 @@ class ProposalEvidenceGateTest < ActiveSupport::TestCase
     assert(report["blockers"].any? { |b| b.include?("could not be retrieved") && b.include?("linkedin_requires_sign_in") })
   end
 
+  # Lists read a cached report so they do not recompute per row. A report written before
+  # the verification gate existed would claim a record is ready while the detail view
+  # blocks it, so it must not be trusted.
+  test "a cached report predating the verification gate is ignored rather than trusted" do
+    proposal = proposal_with(enriched: false)
+    proposal.update!(agent_details: proposal.agent_details.merge("quality" => { "publish_ready" => true, "score" => 100, "blockers" => [] }))
+
+    assert_nil proposal.cached_quality_report
+    refute CompanyProposalQualityService.call(proposal)["publish_ready"]
+  end
+
+  test "a current cached report is still reused" do
+    proposal = proposal_with(agent_details: fetched_page)
+    fresh = CompanyProposalQualityService.call(proposal)
+    proposal.update!(agent_details: proposal.agent_details.merge("quality" => fresh))
+
+    assert_equal fresh, proposal.reload.cached_quality_report
+  end
+
   test "completeness and verification are reported as separate facts" do
     report = CompanyProposalQualityService.call(proposal_with(enriched: false))
 
