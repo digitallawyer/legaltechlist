@@ -19,7 +19,7 @@ class CompanyImportWorkerServiceTest < ActiveSupport::TestCase
     end
 
     assert_difference "Company.count", 1 do
-      assert_equal 1, CompanyImportWorkerService.drain(run_id: run.id, batch_limit: 1)
+      with_site_evidence { assert_equal 1, CompanyImportWorkerService.drain(run_id: run.id, batch_limit: 1) }
     end
 
     first_row = run.company_import_rows.find_by!(row_number: 1)
@@ -70,7 +70,7 @@ class CompanyImportWorkerServiceTest < ActiveSupport::TestCase
     row = run.company_import_rows.first
     row.update!(status: "processing", locked_at: 30.minutes.ago)
 
-    assert_equal 1, CompanyImportWorkerService.drain(run_id: run.id, batch_limit: 1)
+    with_site_evidence { assert_equal 1, CompanyImportWorkerService.drain(run_id: run.id, batch_limit: 1) }
 
     assert_equal "completed", row.reload.status
   end

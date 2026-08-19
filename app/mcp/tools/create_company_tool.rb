@@ -92,6 +92,17 @@ module Mcp
           duplicate_signals: { "name_matches" => Array(normalized["name_matches"]), "domain_matches" => Array(normalized["domain_matches"]), "recommended_action" => normalized["recommended_action"] },
           reviewer_notes: "Created via create_company (known company, no web discovery)."
         )
+        # This tool takes the company's details on trust from the caller, so retrieve
+        # its site to give the record at least one independently checked source. A site
+        # that cannot be retrieved leaves the record unverified and unpublishable, which
+        # is the right outcome rather than an exemption from the gate.
+        site_evidence = SiteEvidenceFetcherService.call(
+          main_url: changes["main_url"],
+          linkedin_url: changes["linkedin_url"],
+          crunchbase_url: changes["crunchbase_url"]
+        )
+        proposal.agent_details = (proposal.agent_details || {}).merge("site_evidence" => site_evidence)
+        proposal.enriched_at ||= Time.current
         proposal.save!
 
         audit!(action: "create_company", summary: "Created proposal #{proposal.id} for #{name}", records_processed: 1, details: { "proposal_id" => proposal.id, "source_identifier" => source_identifier, "will_publish" => should_publish })

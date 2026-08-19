@@ -19,8 +19,9 @@ class ProposalEnrichmentAgent < RubyLLM::Agent
     new(**kwargs).call
   end
 
-  def initialize(proposal:)
+  def initialize(proposal:, site_evidence: nil)
     @proposal = proposal
+    @site_evidence = site_evidence
   end
 
   def call
@@ -47,7 +48,7 @@ class ProposalEnrichmentAgent < RubyLLM::Agent
 
   private
 
-  attr_reader :proposal
+  attr_reader :proposal, :site_evidence
 
   def enabled?
     defined?(RubyLLM::ResponsesAPI::BuiltInTools) &&
@@ -133,6 +134,18 @@ class ProposalEnrichmentAgent < RubyLLM::Agent
     source_payload["website"].presence || proposal.final_changes["main_url"]
   end
 
+  # Text actually retrieved from the company's own site and profiles.
+  def retrieved_pages
+    SiteEvidenceFetcherService.evidence_text(site_evidence).first(4)
+  end
+
+  # Named explicitly so the model is told what could NOT be checked, rather than
+  # silently filling the gap from the candidate's self-description.
+  def retrieval_failures
+    Array(site_evidence && site_evidence["pages"]).reject { |page| page["status"] == "fetched" }
+                                                 .map { |page| "#{page['label']}: #{page['status']}#{" (#{page['reason']})" if page['reason'].present?}" }
+  end
+
   def research_query
     [proposal.display_name, subject_website, "legal technology"].compact_blank.join(" ")
   end
@@ -149,6 +162,8 @@ class ProposalEnrichmentAgent < RubyLLM::Agent
         source_short_description: source_payload["source_description"],
         source_full_description: source_payload["full_source_description"]
       },
+      retrieved_pages: retrieved_pages,
+      retrieval_failures: retrieval_failures,
       allowed_categories: Category.order(:name).pluck(:name),
       allowed_business_models: MethodologyHelper::REVENUE_MODEL_NAMES,
       allowed_target_clients: TaxonomyNormalizationService::CANONICAL_TARGET_CLIENTS,
@@ -160,8 +175,16 @@ class ProposalEnrichmentAgent < RubyLLM::Agent
 
   def instruction
     <<~TEXT.squish
-      Use web search to research this legal-technology company, then return a single JSON
-      object (no prose) matching output_shape. proposed_description: a neutral, encyclopedic
+      Research this legal-technology company and return a single JSON object (no prose)
+      matching output_shape. retrieved_pages holds text fetched from the company's OWN
+      site and profiles — treat it as the strongest evidence and prefer it over search
+      results and over the candidate's self-description wherever they disagree. Use web
+      search to corroborate and to fill gaps. State a product capability ONLY if
+      retrieved_pages or a search result supports it; retrieval_failures lists what could
+      not be checked, and you must not substitute assumptions for those gaps — write less
+      instead. Confirm you are describing the SAME company as the candidate (name and
+      domain must agree with the evidence you use); if the evidence is about a different
+      company, ignore it rather than blending the two. proposed_description: a neutral, encyclopedic
       directory description of 2-4 sentences (~45-90 words), third person, grounded ONLY in
       what search results show. Cover, when supported: what the company builds and its
       deployment/business model; its core capabilities and the legal workflows it addresses;

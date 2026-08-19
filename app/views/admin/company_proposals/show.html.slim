@@ -165,7 +165,12 @@
                 h2.h6.mb-0 Required before publish
                 span.badge(class=(@quality_report["publish_ready"] ? "text-bg-success" : "text-bg-warning"))= @quality_report["publish_ready"] ? "Ready" : "Blocked"
             .card-body.py-3
-                p.text-muted.small.mb-2= "#{@quality_report['score']}% complete"
+                .d-flex.flex-wrap.gap-2.mb-2
+                    span.badge.text-bg-light= "#{@quality_report['score']}% fields complete"
+                    - if @quality_report["verification_state"] == "evidence_backed"
+                        span.badge.text-bg-success= "Evidence-backed (#{@quality_report['independent_evidence_count']} source#{'s' unless @quality_report['independent_evidence_count'] == 1})"
+                    - else
+                        span.badge.text-bg-warning Unverified — nothing retrieved
                 .admin-proposal-completeness
                     - CompanyProposalQualityService::REQUIRED_FIELDS.each do |field|
                         - present = @final_changes[field].present?
@@ -189,23 +194,49 @@
                                 li= warning
 
         .card.border-0.shadow-sm
-            .card-header.bg-white.py-2
-                h2.h6.mb-0 Duplicate signals
-            .card-body.py-3
+            .card-header.bg-white.py-2.d-flex.justify-content-between.align-items-center
+                h2.h6.mb-0 Duplicate check
                 - if @company_proposal.duplicate_blocking?
-                    .admin-kicker.mb-1 Name matches
-                    - if Array(@duplicate_signals["name_matches"]).any?
-                        ul.small.mb-2
-                            - Array(@duplicate_signals["name_matches"]).each do |match|
-                                li= "#{match['name']} (#{match['canonical_domain'] || match['main_url']})"
-                    - else
-                        p.text-muted.small.mb-2 None
-                    .admin-kicker.mb-1 Domain matches
-                    - if Array(@duplicate_signals["domain_matches"]).any?
-                        ul.small.mb-0
-                            - Array(@duplicate_signals["domain_matches"]).each do |match|
-                                li= "#{match['name']} (#{match['canonical_domain'] || match['main_url']})"
-                    - else
-                        p.text-muted.small.mb-0 None
+                    span.badge.text-bg-danger Match found
                 - else
-                    p.text-muted.small.mb-0 No duplicate signals recorded.
+                    span.badge.text-bg-success No match
+            .card-body.py-3
+                - company_matches = @company_proposal.duplicate_matches
+                - proposal_matches = @company_proposal.duplicate_proposal_matches
+                - if company_matches.any?
+                    .admin-kicker.mb-2 Already in the index
+                    - company_matches.each do |match|
+                        .border.rounded.p-2.mb-2
+                            .small.fw-semibold
+                                = link_to "#{match['name']} (##{match['id']})", custom_admin_company_review_path(match["id"])
+                                - unless match["visible"]
+                                    span.badge.text-bg-secondary.ms-1 Draft
+                            .text-muted.small.mb-2
+                                = match["canonical_domain"].presence || match["main_url"]
+                                span.ms-1= "· matched on #{match['match_type'].to_s.humanize.downcase}"
+                            = form_with url: reject_custom_admin_company_proposal_path(@company_proposal), method: :post, local: true do
+                                = hidden_field_tag :duplicate_of_company_id, match["id"]
+                                = button_tag "Keep that entry, reject this", type: "submit", class: "btn btn-sm btn-outline-danger", data: { turbo_confirm: "Reject this proposal and record #{match['name']} as the canonical record?" }
+                - if proposal_matches.any?
+                    .admin-kicker.mb-2 Also in the review queue
+                    - proposal_matches.each do |match|
+                        .border.rounded.p-2.mb-2
+                            .small.fw-semibold= link_to "#{match['name']} (proposal ##{match['proposal_id']})", custom_admin_company_proposal_path(match["proposal_id"])
+                            .text-muted.small.mb-2
+                                = "#{match['status'].to_s.humanize} · matched on #{match['match_type'].to_s.humanize.downcase}"
+                                = match["is_older"] ? " · created first" : " · created later"
+                            = form_with url: reject_custom_admin_company_proposal_path(@company_proposal), method: :post, local: true do
+                                = hidden_field_tag :duplicate_of_proposal_id, match["proposal_id"]
+                                = button_tag "Keep that one, reject this", type: "submit", class: "btn btn-sm btn-outline-danger", data: { turbo_confirm: "Reject this proposal and record proposal ##{match['proposal_id']} as the canonical record?" }
+                - if company_matches.empty? && proposal_matches.empty?
+                    p.text-muted.small.mb-0
+                        | Checked the index and the open queue just now — nothing matches this name or domain.
+                - if @company_proposal.agent_details.dig("canonical_record").present?
+                    - canonical = @company_proposal.agent_details["canonical_record"]
+                    .alert.alert-secondary.py-2.small.mt-2.mb-0
+                        strong Resolved:
+                        - if canonical["company_id"].present?
+                            = link_to " company ##{canonical['company_id']}", custom_admin_company_review_path(canonical["company_id"])
+                        - elsif canonical["proposal_id"].present?
+                            = link_to " proposal ##{canonical['proposal_id']}", custom_admin_company_proposal_path(canonical["proposal_id"])
+                        = " kept as canonical by #{canonical['resolved_by']}."

@@ -54,8 +54,44 @@ class CompanyProposal < ActiveRecord::Base
     proposed_changes.slice(*EDITABLE_COMPANY_FIELDS).merge(final_changes.slice(*EDITABLE_COMPANY_FIELDS))
   end
 
+  # Duplicate state resolved against the index and the open queue as they are NOW,
+  # not as they were at intake. The stored duplicate_signals column is kept in sync
+  # as a cache so list/index queries can still filter on it, but no decision is ever
+  # taken from it directly: it was a months-stale snapshot that let duplicates through.
+  def current_duplicate_signals(refresh: false)
+    return @current_duplicate_signals if @current_duplicate_signals && !refresh
+
+    @current_duplicate_signals = ProposalDuplicateDetectorService.call(
+      proposal: self,
+      extra_domains: site_evidence_domains
+    )
+  end
+
+  # Recompute and persist, so the review queue's stored counts match what the gate sees.
+  def refresh_duplicate_signals!
+    signals = current_duplicate_signals(refresh: true)
+    update_columns(duplicate_signals: signals) if persisted? && duplicate_signals != signals
+    signals
+  end
+
   def duplicate_blocking?
-    Array(duplicate_signals["name_matches"]).any? || Array(duplicate_signals["domain_matches"]).any?
+    current_duplicate_signals["blocking"] == true
+  end
+
+  def duplicate_matches
+    signals = current_duplicate_signals
+    Array(signals["name_matches"]) + Array(signals["domain_matches"])
+  end
+
+  def duplicate_proposal_matches
+    Array(current_duplicate_signals["proposal_matches"])
+  end
+
+  # Domains discovered by actually fetching the candidate's site, which is what lets
+  # the detector spot a rebrand whose declared URL differs from the stored entry's.
+  def site_evidence_domains
+    pages = Array(agent_details.dig("site_evidence", "pages"))
+    pages.filter_map { |page| Company.canonical_domain_for(page["final_url"].presence || page["url"]) }.uniq
   end
 
   def quality_report
