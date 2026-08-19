@@ -166,14 +166,19 @@ class CompanyProposalEnrichmentService
     load_enrichment_inputs
     final_changes = proposal.final_changes.merge(enriched_changes).merge(taxonomy_changes)
     agent_payload = agent_details(final_changes)
+    # enriched_at has to be set before the quality report is computed, or the report
+    # reads the record as never-researched and blocks on its own enrichment run.
+    proposal.assign_attributes(final_changes: final_changes, agent_details: agent_payload, enriched_at: Time.current)
+    quality = CompanyProposalQualityService.call(proposal)
     proposal.update!(
-      status: "ready_for_review",
+      status: enriched_status(quality),
       final_changes: final_changes,
       proposed_changes: proposal.proposed_changes.merge(enriched_changes),
-      agent_details: agent_payload.merge("quality" => CompanyProposalQualityService.call(proposal.tap { |record| record.final_changes = final_changes; record.agent_details = agent_payload })),
+      agent_details: agent_payload.merge("quality" => quality),
       admin_user: admin_user,
       enriched_at: Time.current
     )
+    proposal.refresh_duplicate_signals!
 
     proposal
   end
@@ -188,8 +193,9 @@ class CompanyProposalEnrichmentService
   # former three separate LLM calls (research + taxonomy + description). Otherwise fall
   # back to the legacy path (which itself degrades to deterministic rules without a key).
   def load_enrichment_inputs
+    @site_evidence = fetch_site_evidence
     if single_call_enabled?
-      @enrichment = ProposalEnrichmentAgent.call(proposal: proposal)
+      @enrichment = ProposalEnrichmentAgent.call(proposal: proposal, site_evidence: @site_evidence)
       @research_payload = @enrichment["web_research"].presence || {}
       @llm_payload = @enrichment.slice("proposed_description", "founded_year", "founded_year_source", "founded_year_evidence_text")
       @taxonomy_suggestion = CompanyProposalTaxonomySuggestionService.call(
@@ -201,6 +207,27 @@ class CompanyProposalEnrichmentService
       @research_payload = CompanyProposalResearchService.call(proposal: proposal)
       @taxonomy_suggestion = CompanyProposalTaxonomySuggestionService.call(source_payload: source_payload, final_changes: proposal.final_changes)
     end
+  end
+
+  # Retrieve the candidate's own website and profile pages. Recorded whatever the
+  # outcome: a blocked or unreachable site is a finding a reviewer needs, and is not
+  # the same thing as never having looked.
+  def fetch_site_evidence
+    SiteEvidenceFetcherService.call(
+      main_url: proposal.final_changes["main_url"].presence || source_payload["website"],
+      linkedin_url: proposal.final_changes["linkedin_url"].presence || source_payload["linkedin_url"],
+      crunchbase_url: proposal.final_changes["crunchbase_url"].presence || source_payload["crunchbase_url"]
+    )
+  rescue StandardError => e
+    Rails.logger.debug("[CompanyProposalEnrichmentService] site fetch failed for proposal #{proposal&.id}: #{e.class}: #{e.message}")
+    { "mode" => "error", "pages" => [], "error" => e.class.name }
+  end
+
+  # Where enrichment lands the record. A record nothing could be independently checked
+  # against is not ready for a human to sign off on, so it goes back to the queue as
+  # needing revision instead of being announced as ready for review.
+  def enriched_status(quality)
+    quality["verification_state"] == "unverified" ? "needs_revision" : "ready_for_review"
   end
 
   def single_call_enabled?
@@ -350,6 +377,7 @@ class CompanyProposalEnrichmentService
         "Final publication requires a separate visible toggle."
       ],
       "web_research" => research_payload,
+      "site_evidence" => @site_evidence,
       "taxonomy_suggestion" => taxonomy_suggestion,
       "description_draft" => {
         "proposed_description" => final_changes["description"],

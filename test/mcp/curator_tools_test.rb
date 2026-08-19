@@ -1,4 +1,5 @@
 require "test_helper"
+require "minitest/mock"
 
 module Mcp
   class CuratorToolsTest < ActiveSupport::TestCase
@@ -209,7 +210,7 @@ module Mcp
 
     test "update_proposal confirming taxonomy clears the low-confidence taxonomy blocker" do
       proposal = ready_proposal
-      proposal.update!(agent_details: { "taxonomy_suggestion" => { "accepted" => false } })
+      proposal.update!(agent_details: proposal.agent_details.merge("taxonomy_suggestion" => { "accepted" => false }))
       before = CompanyProposalQualityService.call(proposal.reload)
       assert_not before["publish_ready"], before["blockers"].inspect
       assert before["blockers"].any? { |blocker| blocker =~ /low-confidence taxonomy/i }, before["blockers"].inspect
@@ -618,11 +619,13 @@ module Mcp
     end
 
     test "create_company publishes a live company with human approval" do
-      result = call(Mcp::Tools::CreateCompanyTool,
-                    name: "Publishable LegalCo", main_url: "https://publishablelegalco.example",
-                    location: "Boston, MA", description: "Publishable LegalCo builds cloud-based contract review and analytics software used by corporate legal teams and law firms.",
-                    category_id: categories(:one).id, business_model_ids: [business_models(:one).id], target_client_ids: [target_clients(:one).id],
-                    publish: true, human_approved: true)
+      result = with_site_fetched("https://publishablelegalco.example") do
+        call(Mcp::Tools::CreateCompanyTool,
+             name: "Publishable LegalCo", main_url: "https://publishablelegalco.example",
+             location: "Boston, MA", description: "Publishable LegalCo builds cloud-based contract review and analytics software used by corporate legal teams and law firms.",
+             category_id: categories(:one).id, business_model_ids: [business_models(:one).id], target_client_ids: [target_clients(:one).id],
+             publish: true, human_approved: true)
+      end
       assert result["published"], result.inspect
       company = Company.find(result["company_id"])
       assert company.visible?
@@ -630,17 +633,31 @@ module Mcp
     end
 
     test "create_company imports an acquired company in one call" do
-      result = call(Mcp::Tools::CreateCompanyTool,
-                    name: "Acquired LegalCo", main_url: "https://acquiredlegalco.example",
-                    location: "Austin, TX", description: "Acquired LegalCo built litigation analytics and case management tools used by law firms and corporate legal departments.",
-                    category_id: categories(:one).id, business_model_ids: [business_models(:one).id], target_client_ids: [target_clients(:one).id],
-                    publish: true, human_approved: true,
-                    acquisition: { "acquirer_name" => "MegaLegal", "acquired_on" => "2022" })
+      result = with_site_fetched("https://acquiredlegalco.example") do
+        call(Mcp::Tools::CreateCompanyTool,
+             name: "Acquired LegalCo", main_url: "https://acquiredlegalco.example",
+             location: "Austin, TX", description: "Acquired LegalCo built litigation analytics and case management tools used by law firms and corporate legal departments.",
+             category_id: categories(:one).id, business_model_ids: [business_models(:one).id], target_client_ids: [target_clients(:one).id],
+             publish: true, human_approved: true,
+             acquisition: { "acquirer_name" => "MegaLegal", "acquired_on" => "2022" })
+      end
       assert result["published"]
       company = Company.find(result["company_id"])
       assert_equal "acquired", company.status
       assert_equal "MegaLegal", company.acquirer_name
       assert company.visible?
+    end
+
+    test "create_company will not publish a company whose site cannot be retrieved" do
+      result = call(Mcp::Tools::CreateCompanyTool,
+                    name: "Unreachable LegalCo", main_url: "https://unreachablelegalco.example",
+                    location: "Boston, MA", description: "Unreachable LegalCo builds contract analytics software used by corporate legal teams and law firms.",
+                    category_id: categories(:one).id, business_model_ids: [business_models(:one).id], target_client_ids: [target_clients(:one).id],
+                    publish: true, human_approved: true)
+
+      assert_equal "blocked", result["result"]
+      assert_match(/No independently retrieved evidence/, result["error"])
+      assert_nil result["company_id"]
     end
 
     test "create_company rejects an acquisition payload without publish" do
@@ -964,6 +981,10 @@ module Mcp
       JSON.parse(tool.call(server_context: @context, **args).to_h[:content].first[:text])
     end
 
+    def with_site_fetched(url)
+      SiteEvidenceFetcherService.stub(:call, researched_agent_details(url: url)["site_evidence"]) { yield }
+    end
+
     def pending_proposal
       CompanyProposal.create!(
         status: "pending",
@@ -995,7 +1016,9 @@ module Mcp
           "business_model_id" => business_models(:one).id,
           "target_client_id" => target_clients(:one).id
         },
-        duplicate_signals: {}
+        duplicate_signals: {},
+        enriched_at: Time.current,
+        agent_details: researched_agent_details(url: "https://ready.example")
       )
     end
   end

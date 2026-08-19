@@ -169,7 +169,14 @@ class CompanyCandidateRowProcessorServiceTest < ActiveSupport::TestCase
     assert proposal, "expected a discovery proposal to be created"
     assert_equal drafted, proposal.final_changes["description"]
     assert_equal "pass", proposal.agent_details.dig("description_critic", "verdict")
-    assert CompanyProposalQualityService.call(proposal)["publish_ready"], "confident discovery candidate should be publish-ready without enrichment"
+
+    # The drafted description clears the critic and every required field is filled, but
+    # nothing has been retrieved for this candidate, so it is complete rather than
+    # verified and cannot publish on that basis alone.
+    report = CompanyProposalQualityService.call(proposal)
+    assert_empty report["missing_publish_blocking_fields"]
+    assert_equal "unverified", report["verification_state"]
+    refute report["publish_ready"]
   end
 
   test "weak drafted description is left for enrichment" do

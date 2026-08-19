@@ -36,7 +36,9 @@ class CompanyProposalWorkflowTest < ActiveSupport::TestCase
 
     proposal.reload
     assert_equal original_company_count, Company.count
-    assert_equal "ready_for_review", proposal.status
+    # Nothing could be retrieved for this candidate, so enrichment sends it back as
+    # needing revision instead of escalating it to a human as ready to review.
+    assert_equal "needs_revision", proposal.status
     assert proposal.final_changes["description"].present?
     assert_not_equal proposal.source_payload["source_description"], proposal.final_changes["description"]
     assert_no_match(/provides or supports/i, proposal.final_changes["description"])
@@ -155,7 +157,7 @@ class CompanyProposalWorkflowTest < ActiveSupport::TestCase
   end
 
   test "approval can publish the company when requested" do
-    proposal = ready_proposal
+    proposal = mark_researched!(ready_proposal)
 
     company = CompanyProposalApprovalService.call(proposal: proposal, admin_user: admin_users(:one), publish: true)
 
@@ -174,7 +176,7 @@ class CompanyProposalWorkflowTest < ActiveSupport::TestCase
   end
 
   test "batch publish only publishes gate-passing proposals" do
-    proposal = ready_proposal
+    proposal = mark_researched!(ready_proposal)
 
     results = CompanyProposalBatchService.call(proposals: CompanyProposal.where(id: proposal.id), admin_user: admin_users(:one), action: "publish")
 
@@ -222,8 +224,12 @@ class CompanyProposalWorkflowTest < ActiveSupport::TestCase
   end
 
   test "duplicate proposals require explicit approval override" do
-    proposal = ready_proposal
-    proposal.update!(duplicate_signals: { "name_matches" => [{ "id" => companies(:one).id, "name" => companies(:one).name }], "domain_matches" => [] })
+    proposal = mark_researched!(ready_proposal)
+    # Make it a real duplicate of a live entry. Writing duplicate_signals by hand no
+    # longer has any effect: the gate resolves duplicates against the index itself.
+    companies(:one).update!(name: proposal.final_changes["name"], main_url: proposal.final_changes["main_url"])
+    companies(:one).update_columns(canonical_domain: companies(:one).canonical_main_domain, quality_status: nil)
+    proposal.update!(duplicate_signals: {})
 
     assert_no_difference "Company.count" do
       assert_raises(ArgumentError) do
@@ -241,8 +247,10 @@ class CompanyProposalWorkflowTest < ActiveSupport::TestCase
 
     assert_difference "Company.count", 1 do
       assert_difference "CompanyProposal.count", 3 do
-        with_candidate_import_csv do |path|
-          run = CompanyCandidateImportService.call(file: path, admin_user: admin_users(:one), notes: "Import automation test")
+        with_site_evidence do
+          with_candidate_import_csv do |path|
+            run = CompanyCandidateImportService.call(file: path, admin_user: admin_users(:one), notes: "Import automation test")
+          end
         end
       end
     end

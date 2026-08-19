@@ -24,6 +24,10 @@ class CompanyProposalQualityService
       "warnings" => warnings,
       "usable_web_evidence_count" => usable_web_results.size,
       "usable_source_evidence_count" => usable_source_evidence_count,
+      "fetched_page_count" => fetched_pages.size,
+      "independent_evidence_count" => independent_evidence_count,
+      "verification_state" => verification_state,
+      "duplicate_signals" => proposal.current_duplicate_signals,
       "checked_at" => Time.current.utc.iso8601
     }
   end
@@ -56,12 +60,40 @@ class CompanyProposalQualityService
   def blockers
     @blockers ||= begin
       values = []
-      values << "Resolve duplicate signals before publishing." if proposal.duplicate_blocking?
+      values << duplicate_blocker if proposal.duplicate_blocking?
       values << "Complete required fields before publishing: #{missing_publish_blocking_fields.map(&:humanize).to_sentence}." if missing_publish_blocking_fields.any?
       values << "Review low-confidence taxonomy before publishing." if low_confidence_taxonomy?
       values << description_blocker if description_blocker
       values << "Possible spam or malformed public submission — requires human review before publishing." if spam_suspected?
+      values << "This record has not been researched yet. Run Enrich before publishing." if not_researched?
+      values << unverified_blocker if unverified_blocker
       values
+    end
+  end
+
+  # Name the duplicate rather than announcing that a signal exists, so a reviewer can
+  # act without opening a second tab to work out what matched.
+  def duplicate_blocker
+    proposal.current_duplicate_signals["recommended_action"].presence || "Resolve the duplicate match before publishing."
+  end
+
+  # A proposal that was never enriched has had no research applied to it at all, yet
+  # scored as publish-ready purely because its fields were populated at intake.
+  def not_researched?
+    proposal.enriched_at.blank?
+  end
+
+  # Self-reported links (the submitter's own website and profile URLs) establish that a
+  # company claims to exist, not that anything was checked. Publication requires at
+  # least one independently retrieved source: a page enrichment actually fetched, or a
+  # search citation. This is what "no evidence attached" meant in practice.
+  def unverified_blocker
+    return nil if independent_evidence_count.positive?
+
+    if fetch_blocked?
+      "The company's own site could not be retrieved (#{fetch_block_reasons.to_sentence}), so nothing here is independently verified. Confirm the record by hand before publishing."
+    else
+      "No independently retrieved evidence supports this record — only self-reported links. Run Enrich to fetch the company's site before publishing."
     end
   end
 
@@ -143,7 +175,6 @@ class CompanyProposalQualityService
   def warnings
     values = []
     values << "Founding year is missing; publishing is allowed, but add a sourced year later when one is found (never fabricate)." if changes["founded_date"].blank?
-    values << "No usable source or web evidence is attached." if usable_web_results.empty? && usable_source_evidence_count.zero?
     values << "No enrichment critic verdict is recorded." if proposal.agent_details.dig("description_critic", "verdict").blank?
     values << "Taxonomy was not auto-accepted." if taxonomy_suggestion.present? && !taxonomy_suggestion["accepted"]
     values
@@ -187,6 +218,36 @@ class CompanyProposalQualityService
     @usable_web_results ||= Array(proposal.agent_details.dig("web_research", "results")).select do |result|
       result["url"].present? || result["title"].present? || result["snippet"].present?
     end
+  end
+
+  # Pages enrichment actually retrieved from the company's own site or profiles.
+  def site_evidence_pages
+    @site_evidence_pages ||= Array(proposal.agent_details.dig("site_evidence", "pages"))
+  end
+
+  def fetched_pages
+    @fetched_pages ||= site_evidence_pages.select { |page| page["status"] == "fetched" && page["text"].to_s.strip.present? }
+  end
+
+  def fetch_blocked?
+    fetched_pages.empty? && site_evidence_pages.any? { |page| page["status"].in?(%w[blocked error]) }
+  end
+
+  def fetch_block_reasons
+    site_evidence_pages.select { |page| page["status"].in?(%w[blocked error]) }
+                       .map { |page| page["reason"].presence || page["status"] }
+                       .uniq.first(3)
+  end
+
+  def independent_evidence_count
+    @independent_evidence_count ||= fetched_pages.size + usable_web_results.size
+  end
+
+  # Deliberately separate from the completeness score. The score answers "are the
+  # fields filled in"; this answers "did anyone check" — and only the second is a
+  # reason to trust the record.
+  def verification_state
+    independent_evidence_count.positive? ? "evidence_backed" : "unverified"
   end
 
   def usable_source_evidence_count

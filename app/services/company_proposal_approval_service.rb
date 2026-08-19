@@ -20,6 +20,8 @@ class CompanyProposalApprovalService
     ensure_description!
     validate_proposal!
 
+    guard_against_existing_company!
+
     company = Company.new(company_attributes)
     company.visible = publish
     company.quality_status = "needs_review"
@@ -73,9 +75,34 @@ class CompanyProposalApprovalService
     company
   end
 
+  # Duplicate state is resolved against the index and the open queue as they are now,
+  # not as they were when the proposal was created. The message names the match so the
+  # operator can act on it without going hunting.
   def validate_proposal!
-    raise ArgumentError, "Resolve duplicate signals or confirm override before approval" if proposal.duplicate_blocking? && !duplicate_override
+    # Force a fresh resolution rather than reusing anything computed earlier in this
+    # process: approval is the moment the answer has to be current, and a sibling
+    # proposal may have been resolved (or created) since it was last looked at.
+    signals = proposal.current_duplicate_signals(refresh: true)
+    if signals["blocking"] && !duplicate_override
+      raise ArgumentError, "Resolve the duplicate before approval: #{signals['recommended_action']}"
+    end
     raise ArgumentError, "Resolve publish blockers before publication: #{publish_blockers.to_sentence}" if publish && publish_blockers.any?
+  end
+
+  # Last line of defence, immediately before the row is written. The duplicate check
+  # above works off names and domains; this works off the identity fingerprint the
+  # Company table itself uses, and so also catches a concurrent approval of the same
+  # company from another session or a batch running beside this one.
+  def guard_against_existing_company!
+    return if duplicate_override
+
+    fingerprint = Company.new(company_attributes).calculated_fingerprint
+    return if fingerprint.blank?
+
+    existing = Company.where(fingerprint: fingerprint).first
+    return if existing.nil?
+
+    raise ArgumentError, "#{existing.name} (##{existing.id}) already holds this name and domain. Keep that entry and reject this proposal, or approve with the duplicate override if they are genuinely different companies."
   end
 
   def publish_blockers

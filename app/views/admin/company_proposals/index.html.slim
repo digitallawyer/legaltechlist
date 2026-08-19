@@ -7,11 +7,6 @@
             .d-flex.flex-wrap.justify-content-between.align-items-center.gap-2
                 h1.h4.mb-0 Review
                 .d-flex.flex-wrap.align-items-center.gap-2
-                    .admin-table-summary
-                        - @review_cockpit_counts.each do |label, count|
-                            span.admin-table-summary-item
-                                = "#{label.humanize} "
-                                strong= number_with_delimiter(count)
                     = link_to upload_custom_admin_companies_csv_path, class: "btn btn-sm btn-outline-primary rounded-pill px-3" do
                         i.fas.fa-upload.me-2
                         | Review CSV Candidates

@@ -621,17 +621,21 @@ class CustomAdminTest < ActionDispatch::IntegrationTest
     assert_select "button", "Publish selected"
     assert_no_match(/Batch actions/, response.body)
     assert_select "td", text: /Review Proposal/
-    assert_select ".admin-table-summary-item", text: /Ready/
+    assert_select ".admin-filter-toolbar a", text: /Pending review/
+    assert_select ".admin-table-summary-item", false, "the lifetime-total header row was removed; the filter pills are the work list"
 
     get custom_admin_company_proposal_path(proposal)
     assert_response :success
     assert_select "h1", "Review Proposal"
     assert_select "button", "Enrich"
 
-    post enrich_custom_admin_company_proposal_path(proposal)
+    with_site_evidence(url: "https://review-proposal.example") do
+      post enrich_custom_admin_company_proposal_path(proposal)
+    end
     assert_redirected_to custom_admin_company_proposal_path(proposal)
     assert_equal "ready_for_review", proposal.reload.status
     assert proposal.final_changes["description"].present?
+    assert_equal "evidence_backed", CompanyProposalQualityService.call(proposal)["verification_state"]
 
     reviewed_description = "Review Proposal develops workflow software for legal teams reviewing intake, matter information, and related operational records."
     patch custom_admin_company_proposal_path(proposal), params: { company_proposal: { reviewer_notes: "Reviewed by admin.", final_changes: { name: "Review Proposal", main_url: "https://review-proposal.example", location: "Chicago, IL", founded_date: "2024", status: "active", description: reviewed_description, category_id: categories(:one).id, business_model_id: business_models(:one).id, target_client_id: target_clients(:one).id, source: "LegalTechAtlas CSV", source_url: "https://review-proposal.example" } } }

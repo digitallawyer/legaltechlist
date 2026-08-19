@@ -5,7 +5,6 @@ module Admin
       @company_proposals = proposals_scope.recent.page(params[:page]).per(25)
       @proposal_quality_reports = proposal_quality_reports_for(@company_proposals)
       @status_counts = proposal_filter_counts
-      @review_cockpit_counts = review_cockpit_counts
     end
 
     def show
@@ -71,36 +70,63 @@ module Admin
       @company_proposal.update!(
         status: "rejected",
         admin_user: current_admin_user,
-        rejection_reason: params[:rejection_reason].presence || "Rejected from admin proposal review.",
+        rejection_reason: params[:rejection_reason].presence || default_rejection_reason,
         reviewed_at: Time.current,
-        rejected_at: Time.current
+        rejected_at: Time.current,
+        agent_details: @company_proposal.agent_details.merge(canonical_record_payload).compact
       )
 
       SlackNotifier.contribution_decision(@company_proposal, decision: "rejected", admin_user: current_admin_user, note: @company_proposal.rejection_reason)
 
-      redirect_to custom_admin_company_proposal_path(@company_proposal), notice: "Proposal rejected without changing company data."
+      redirect_to custom_admin_company_proposal_path(@company_proposal), notice: rejection_notice
     end
 
     private
+
+    # Rejecting a duplicate is only half the decision — which record survives is the
+    # other half, and it has to be recorded or the next reviewer cannot tell that this
+    # was resolved rather than merely discarded.
+    def canonical_record_payload
+      company_id = params[:duplicate_of_company_id].presence
+      proposal_id = params[:duplicate_of_proposal_id].presence
+      return {} if company_id.blank? && proposal_id.blank?
+
+      {
+        "canonical_record" => {
+          "company_id" => company_id&.to_i,
+          "proposal_id" => proposal_id&.to_i,
+          "resolved_by" => current_admin_user.email,
+          "resolved_at" => Time.current.utc.iso8601
+        }.compact
+      }
+    end
+
+    def canonical_label
+      if (company_id = params[:duplicate_of_company_id].presence)
+        company = Company.find_by(id: company_id)
+        return company ? "#{company.name} (##{company.id})" : "company ##{company_id}"
+      end
+      return "proposal ##{params[:duplicate_of_proposal_id]}" if params[:duplicate_of_proposal_id].presence
+
+      nil
+    end
+
+    def default_rejection_reason
+      label = canonical_label
+      label ? "Duplicate of #{label}; that record is canonical." : "Rejected from admin proposal review."
+    end
+
+    def rejection_notice
+      label = canonical_label
+      label ? "Rejected as a duplicate. #{label} is recorded as the canonical record." : "Proposal rejected without changing company data."
+    end
 
     def load_proposal
       @company_proposal = CompanyProposal.find(params[:id])
       @source_payload = @company_proposal.source_payload || {}
       @final_changes = @company_proposal.editable_changes
-      @duplicate_signals = @company_proposal.duplicate_signals || {}
+      @duplicate_signals = @company_proposal.refresh_duplicate_signals!
       @agent_details = @company_proposal.agent_details || {}
-    end
-
-    def review_cockpit_counts
-      quality_reports = proposal_quality_reports_for(CompanyProposal.all)
-      {
-        "ready" => quality_reports.count { |_id, report| report["publish_ready"] },
-        "needs_revision" => CompanyProposal.where(status: "needs_revision").count,
-        "duplicate_blocked" => duplicate_scope.count,
-        "missing_taxonomy" => quality_reports.count { |_id, report| taxonomy_fields_missing?(report) },
-        "missing_description" => quality_reports.count { |_id, report| Array(report["missing_required_fields"]).include?("description") },
-        "published" => CompanyProposal.published.count
-      }
     end
 
     def proposals_scope
@@ -144,7 +170,11 @@ module Admin
     end
 
     def duplicate_scope
-      CompanyProposal.where("jsonb_array_length(COALESCE(duplicate_signals->'name_matches', '[]'::jsonb)) > 0 OR jsonb_array_length(COALESCE(duplicate_signals->'domain_matches', '[]'::jsonb)) > 0")
+      CompanyProposal.where(
+        "jsonb_array_length(COALESCE(duplicate_signals->'name_matches', '[]'::jsonb)) > 0 " \
+        "OR jsonb_array_length(COALESCE(duplicate_signals->'domain_matches', '[]'::jsonb)) > 0 " \
+        "OR jsonb_array_length(COALESCE(duplicate_signals->'proposal_matches', '[]'::jsonb)) > 0"
+      )
     end
 
     def missing_taxonomy_scope
