@@ -211,12 +211,20 @@
                                 = link_to "#{match['name']} (##{match['id']})", custom_admin_company_review_path(match["id"])
                                 - unless match["visible"]
                                     span.badge.text-bg-secondary.ms-1 Draft
+                                - if match["confidence"] == ProposalDuplicateDetectorService::CONFIDENCE_POSSIBLE
+                                    span.badge.text-bg-warning.ms-1 Possible
+                                - else
+                                    span.badge.text-bg-danger.ms-1 Confirmed
                             .text-muted.small.mb-2
                                 = match["canonical_domain"].presence || match["main_url"]
                                 span.ms-1= "· matched on #{match['match_type'].to_s.humanize.downcase}"
-                            = form_with url: reject_custom_admin_company_proposal_path(@company_proposal), method: :post, local: true do
-                                = hidden_field_tag :duplicate_of_company_id, match["id"]
-                                = button_tag "Keep that entry, reject this", type: "submit", class: "btn btn-sm btn-outline-danger", data: { turbo_confirm: "Reject this proposal and record #{match['name']} as the canonical record?" }
+                                - if Array(match["shared_profiles"]).any?
+                                    span.ms-1= "· shared #{Array(match['shared_profiles']).to_sentence} profile"
+                            .d-flex.flex-wrap.gap-2
+                                = link_to "Compare records", compare_duplicate_custom_admin_company_proposal_path(@company_proposal, company_id: match["id"]), class: "btn btn-sm btn-primary"
+                                = form_with url: reject_custom_admin_company_proposal_path(@company_proposal), method: :post, local: true, class: "d-inline" do
+                                    = hidden_field_tag :duplicate_of_company_id, match["id"]
+                                    = button_tag "Keep that entry, reject this", type: "submit", class: "btn btn-sm btn-outline-danger", data: { turbo_confirm: "Reject this proposal and record #{match['name']} as the canonical record?" }
                 - if proposal_matches.any?
                     .admin-kicker.mb-2 Also in the review queue
                     - proposal_matches.each do |match|

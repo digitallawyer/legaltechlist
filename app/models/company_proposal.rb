@@ -69,7 +69,15 @@ class CompanyProposal < ActiveRecord::Base
 
   # Recompute and persist, so the review queue's stored counts match what the gate sees.
   def refresh_duplicate_signals!
-    signals = current_duplicate_signals(refresh: true)
+    current_duplicate_signals(refresh: true)
+    persist_duplicate_signals!
+  end
+
+  # Write back whatever has already been resolved this request, without recomputing.
+  # Used when a list has just asked each row for its duplicate state: the answer is in
+  # hand, and persisting it keeps the stored column converging on the live one.
+  def persist_duplicate_signals!
+    signals = current_duplicate_signals
     update_columns(duplicate_signals: signals) if persisted? && duplicate_signals != signals
     signals
   end

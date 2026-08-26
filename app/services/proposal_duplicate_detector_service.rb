@@ -47,6 +47,18 @@ class ProposalDuplicateDetectorService
 
   BLOCKING_MATCH_TYPES = %w[exact_domain exact_name redirect_domain core_name].freeze
 
+  # How far the evidence actually goes. Both tiers still require a human to resolve
+  # before approval — the Avokati AI pair that reached the public site matched on name
+  # alone — but the reviewer is told which of the two they are looking at, and the
+  # system never asserts "duplicate" on a name coincidence.
+  #
+  #   confirmed  same canonical domain, a domain that redirects to it, or a matching
+  #              name corroborated by a shared LinkedIn or Crunchbase profile.
+  #   possible   a name match with nothing else agreeing, or a shared domain with
+  #              materially different names (one company, likely two products).
+  CONFIDENCE_CONFIRMED = "confirmed".freeze
+  CONFIDENCE_POSSIBLE = "possible".freeze
+
   def self.call(**kwargs)
     new(**kwargs).call
   end
@@ -69,6 +81,7 @@ class ProposalDuplicateDetectorService
       "proposal_matches" => proposal_hits,
       "recommended_action" => recommended_action(company_hits, proposal_hits),
       "blocking" => (company_hits + proposal_hits).any? { |hit| hit["match_type"].in?(BLOCKING_MATCH_TYPES) },
+      "confidence" => overall_confidence(company_hits + proposal_hits),
       "checked_at" => Time.current.utc.iso8601
     }
   end
@@ -153,9 +166,53 @@ class ProposalDuplicateDetectorService
         "canonical_domain" => row[:domain],
         "visible" => row[:visible],
         "match_type" => match_type,
-        "matched_value" => matched_value_for(match_type, row)
+        "matched_value" => matched_value_for(match_type, row),
+        "confidence" => company_confidence(match_type, row),
+        "shared_profiles" => shared_profiles(row)
       }
     end.first(10)
+  end
+
+  # A shared LinkedIn or Crunchbase profile is the cheapest reliable corroboration that
+  # two records are the same company rather than two companies with one name.
+  def shared_profiles(row)
+    %w[linkedin crunchbase].select do |kind|
+      mine = profile_key(changes["#{kind}_url"].presence || proposal.source_payload["#{kind}_url"])
+      theirs = profile_key(row[:"#{kind}_url"])
+      mine.present? && mine == theirs
+    end
+  end
+
+  def profile_key(url)
+    path = URI.parse(url.to_s.strip).path.to_s.downcase.delete_suffix("/")
+    path.split("/").reject(&:blank?).last.presence
+  rescue URI::InvalidURIError
+    nil
+  end
+
+  def company_confidence(match_type, row)
+    case match_type
+    when "redirect_domain"
+      CONFIDENCE_CONFIRMED
+    when "exact_domain"
+      # One domain can host more than one product. Treat a shared domain as confirmed
+      # only when the names agree too; otherwise flag it as possibly a sibling product.
+      names_agree?(row) ? CONFIDENCE_CONFIRMED : CONFIDENCE_POSSIBLE
+    else
+      shared_profiles(row).any? ? CONFIDENCE_CONFIRMED : CONFIDENCE_POSSIBLE
+    end
+  end
+
+  def names_agree?(row)
+    return true if normalized_name.present? && row[:normalized] == normalized_name
+
+    candidate_core.present? && row[:core] == candidate_core
+  end
+
+  def overall_confidence(hits)
+    return nil if hits.empty?
+
+    hits.any? { |hit| hit["confidence"] == CONFIDENCE_CONFIRMED } ? CONFIDENCE_CONFIRMED : CONFIDENCE_POSSIBLE
   end
 
   def company_match_type(row)
@@ -182,13 +239,15 @@ class ProposalDuplicateDetectorService
   def company_index
     Rails.cache.fetch("proposal_duplicates/company_index/#{Company.duplicate_candidate_cache_version}", expires_in: CACHE_TTL) do
       Company.where("companies.quality_status IS DISTINCT FROM ?", "rejected")
-             .pluck(:id, :name, :canonical_domain, :main_url, :visible, Arel.sql("companies.url_health->>'final_url'"))
-             .map do |id, name, canonical_domain, main_url, visible, final_url|
+             .pluck(:id, :name, :canonical_domain, :main_url, :visible, Arel.sql("companies.url_health->>'final_url'"), :linkedin_url, :crunchbase_url)
+             .map do |id, name, canonical_domain, main_url, visible, final_url, linkedin_url, crunchbase_url|
         {
           id: id,
           name: name,
           main_url: main_url,
           visible: visible,
+          linkedin_url: linkedin_url,
+          crunchbase_url: crunchbase_url,
           domain: canonical_domain.presence || Company.canonical_domain_for(main_url),
           final_domain: Company.canonical_domain_for(final_url),
           normalized: Company.normalized_name_value(name),
@@ -259,14 +318,18 @@ class ProposalDuplicateDetectorService
 
     parts = []
     if (company_hit = company_hits.first)
-      parts << case rebrand?(company_hit) ? "redirect_domain" : company_hit["match_type"]
-               when "redirect_domain"
-                 "#{company_hit['name']} (##{company_hit['id']}) already covers #{company_hit['matched_value']} — this looks like a rebrand, so update that entry instead of creating a new one."
-               when "core_name"
-                 "#{company_hit['name']} (##{company_hit['id']}) matches on name once suffixes are ignored — confirm whether it is the same company before approving."
-               else
-                 "#{company_hit['name']} (##{company_hit['id']}) is already in the index — keep that entry and reject this proposal, or merge the two."
-               end
+      label = "#{company_hit['name']} (##{company_hit['id']})"
+      parts << if rebrand?(company_hit)
+        "#{label} already covers #{company_hit['matched_value']} — this looks like a rebrand, so update that entry rather than creating a new one. Compare the two records to see what this proposal adds."
+      elsif company_hit["confidence"] == CONFIDENCE_POSSIBLE && company_hit["match_type"] == "exact_domain"
+        "#{label} shares this website but has a different name — it may be a different product from the same company. Compare the two records before treating this as a duplicate."
+      elsif company_hit["confidence"] == CONFIDENCE_POSSIBLE
+        "Possibly the same company as #{label}, matched on name alone with nothing else agreeing. Compare the two records to confirm before resolving."
+      else
+        corroboration = Array(company_hit["shared_profiles"]).presence
+        basis = corroboration ? "name and a shared #{corroboration.to_sentence} profile" : "website"
+        "#{label} is already in the index (matched on #{basis}). Compare the two records to see whether this proposal has anything the existing entry lacks, then keep one."
+      end
     end
 
     if (proposal_hit = proposal_hits.first)
