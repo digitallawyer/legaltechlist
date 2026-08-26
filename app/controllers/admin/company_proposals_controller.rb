@@ -65,6 +65,30 @@ module Admin
       redirect_to custom_admin_company_proposals_path(status: params[:status]), alert: e.message
     end
 
+    # Item 3: detection and resolution are separate steps. Before resolving a duplicate,
+    # show the reviewer how the two records actually compare.
+    def compare_duplicate
+      load_proposal
+      @target = duplicate_target
+      return redirect_to custom_admin_company_proposal_path(@company_proposal), alert: "No matching company to compare against." unless @target
+
+      @comparison = DuplicateComparisonService.call(proposal: @company_proposal, company: @target)
+    end
+
+    def merge_duplicate
+      load_proposal
+      target = duplicate_target
+      return redirect_to custom_admin_company_proposal_path(@company_proposal), alert: "No matching company to merge into." unless target
+
+      result = DuplicateMergeService.call(proposal: @company_proposal, company: target, fields: params[:fields], admin_user: current_admin_user)
+      SlackNotifier.contribution_decision(@company_proposal, decision: "rejected", admin_user: current_admin_user, note: @company_proposal.rejection_reason)
+
+      redirect_to custom_admin_company_review_path(target.id),
+                  notice: "Merged #{result['applied'].keys.map(&:humanize).map(&:downcase).to_sentence} into #{target.name}. The duplicate proposal was rejected and this record is canonical."
+    rescue ArgumentError => e
+      redirect_to compare_duplicate_custom_admin_company_proposal_path(@company_proposal), alert: e.message
+    end
+
     def reject
       load_proposal
       @company_proposal.update!(
@@ -78,7 +102,7 @@ module Admin
 
       SlackNotifier.contribution_decision(@company_proposal, decision: "rejected", admin_user: current_admin_user, note: @company_proposal.rejection_reason)
 
-      redirect_to custom_admin_company_proposal_path(@company_proposal), notice: rejection_notice
+      redirect_to custom_admin_company_proposals_path(status: params[:return_status].presence || "pending_review"), notice: rejection_notice
     end
 
     private
@@ -121,6 +145,16 @@ module Admin
       label ? "Rejected as a duplicate. #{label} is recorded as the canonical record." : "Proposal rejected without changing company data."
     end
 
+    # The company this proposal is being compared against: the one the reviewer named,
+    # otherwise the highest-confidence match the detector found.
+    def duplicate_target
+      return Company.find_by(id: params[:company_id]) if params[:company_id].present?
+
+      matches = @company_proposal.duplicate_matches
+      best = matches.find { |match| match["confidence"] == ProposalDuplicateDetectorService::CONFIDENCE_CONFIRMED } || matches.first
+      Company.find_by(id: best&.dig("id"))
+    end
+
     def load_proposal
       @company_proposal = CompanyProposal.find(params[:id])
       @source_payload = @company_proposal.source_payload || {}
@@ -135,6 +169,8 @@ module Admin
         CompanyProposal.pending_review
       when "duplicate"
         duplicate_scope
+      when "resolved_duplicates"
+        resolved_duplicate_scope
       when "missing_taxonomy"
         missing_taxonomy_scope
       when "auto_drafted"
@@ -157,7 +193,7 @@ module Admin
     def proposal_filter_counts
       {
         "pending_review" => CompanyProposal.pending_review.count,
-        "duplicate" => duplicate_scope.count,
+        "duplicate" => duplicate_blocking_ids.size,
         "missing_taxonomy" => missing_taxonomy_scope.count,
         "ready" => ready_proposal_ids.size,
         "auto_drafted" => CompanyProposal.approved_to_draft.where.not(company_id: nil).count,
@@ -165,16 +201,33 @@ module Admin
         "user_contributions" => CompanyProposal.user_contributions.pending_review.count,
         "user_suggestions" => CompanyProposal.user_suggestions.pending_review.count,
         "published" => CompanyProposal.published.count,
+        "resolved_duplicates" => resolved_duplicate_scope.count,
         "rejected" => CompanyProposal.rejected.count
       }
     end
 
+    # Open proposals whose duplicate state is blocking RIGHT NOW.
+    #
+    # This used to select on the stored duplicate_signals column with no status filter,
+    # which was wrong twice over: the view returned 890 rejected and 66 published rows
+    # alongside 13 pieces of open work, and the column is only rewritten when a record
+    # is opened or enriched, so 11 proposals their own detail page was blocking never
+    # appeared here at all. Resolving live over open work makes the overview and the
+    # detail page agree by construction.
     def duplicate_scope
-      CompanyProposal.where(
-        "jsonb_array_length(COALESCE(duplicate_signals->'name_matches', '[]'::jsonb)) > 0 " \
-        "OR jsonb_array_length(COALESCE(duplicate_signals->'domain_matches', '[]'::jsonb)) > 0 " \
-        "OR jsonb_array_length(COALESCE(duplicate_signals->'proposal_matches', '[]'::jsonb)) > 0"
-      )
+      CompanyProposal.where(id: duplicate_blocking_ids)
+    end
+
+    def duplicate_blocking_ids
+      @duplicate_blocking_ids ||= CompanyProposal.pending_review.select do |proposal|
+        proposal.duplicate_blocking?.tap { proposal.persist_duplicate_signals! }
+      end.map(&:id)
+    end
+
+    # Duplicates that have been resolved. Kept out of every active queue but findable,
+    # with the canonical record they were resolved in favour of.
+    def resolved_duplicate_scope
+      CompanyProposal.rejected.where("agent_details ? 'canonical_record'")
     end
 
     def missing_taxonomy_scope

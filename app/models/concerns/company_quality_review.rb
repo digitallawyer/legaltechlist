@@ -4,6 +4,7 @@ module CompanyQualityReview
   REVIEW_STATE_LABELS = {
     "not_reviewed" => "Not reviewed",
     "in_review" => "In review",
+    "awaiting_contributor" => "Awaiting contributor",
     "verified" => "Verified",
     "rejected" => "Rejected"
   }.freeze
@@ -13,6 +14,7 @@ module CompanyQualityReview
   QUALITY_STATUS_OPTIONS = {
     "" => "Unspecified",
     "needs_review" => "Needs review",
+    "awaiting_contributor" => "Awaiting contributor",
     "verified" => "Verified",
     "source_verified" => "Source verified",
     "rejected" => "Rejected"
@@ -24,6 +26,7 @@ module CompanyQualityReview
     "human_rejected" => "Human rejected",
     "human_approved_candidate" => "Human approved (candidate)",
     "needs_human_review" => "Needs human review",
+    "awaiting_contributor_update" => "Awaiting contributor update",
     "likely_valid_needs_human_confirmation" => "Likely valid",
     "manual_review_required" => "Manual review required",
     "automated_import_draft" => "Automated import draft",
@@ -38,6 +41,9 @@ module CompanyQualityReview
     scope :review_state_in_review, -> { where(quality_status: "needs_review") }
     scope :review_state_verified, -> { where(quality_status: %w[verified source_verified]) }
     scope :review_state_rejected, -> { where(quality_status: "rejected") }
+    # Parked with the contributor. Deliberately its own state so it leaves the active
+    # reviewer queues instead of falling back into "not reviewed".
+    scope :review_state_awaiting_contributor, -> { where(quality_status: CompanyReviewMarkService::RETURNED_STATUS) }
 
     scope :with_review_state, ->(state) {
       case state.to_s
@@ -45,6 +51,7 @@ module CompanyQualityReview
       when "in_review" then review_state_in_review
       when "verified" then review_state_verified
       when "rejected" then review_state_rejected
+      when "awaiting_contributor" then review_state_awaiting_contributor
       else all
       end
     }
@@ -52,6 +59,7 @@ module CompanyQualityReview
 
   def review_state
     return "rejected" if quality_status == "rejected"
+    return "awaiting_contributor" if quality_status == CompanyReviewMarkService::RETURNED_STATUS
     return "verified" if quality_status.in?(%w[verified source_verified])
     return "in_review" if quality_status == "needs_review"
 

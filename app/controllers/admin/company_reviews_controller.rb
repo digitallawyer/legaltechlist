@@ -42,7 +42,20 @@ module Admin
     def mark_review
       company = Company.find(params[:id])
       decision = params[:decision].to_s
-      CompanyReviewMarkService.call(company: company, decision: decision, admin_user: current_admin_user)
+      CompanyReviewMarkService.call(
+        company: company,
+        decision: decision,
+        admin_user: current_admin_user,
+        instructions: params[:contributor_instructions],
+        fields: params[:contributor_fields]
+      )
+
+      # A record handed back to its contributor has left this reviewer's queue, so land
+      # on the queue rather than the record they no longer need to act on.
+      if decision == "return_to_contributor"
+        return redirect_to custom_admin_companies_path(review_state: "awaiting_contributor"),
+                           notice: "#{company.name} was returned to its contributor and is no longer in the review queue."
+      end
 
       redirect_to custom_admin_company_review_path(company.id), notice: mark_review_notice(decision, company.name)
     rescue ArgumentError => e

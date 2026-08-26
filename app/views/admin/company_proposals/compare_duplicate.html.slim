@@ -1,0 +1,92 @@
+- content_for :title, "Compare #{@company_proposal.display_name}"
+
+.mb-3
+    .d-flex.flex-wrap.align-items-center.gap-2.mb-1
+        h1.h3.mb-0= "Compare: #{@company_proposal.display_name}"
+        - if @comparison["verification_state"] == "evidence_backed"
+            span.admin-status-pill.text-bg-success Evidence-backed
+        - else
+            span.admin-status-pill.text-bg-warning Unverified
+    p.text-muted.mb-0
+        | Proposal ##{@company_proposal.id} against
+        = " "
+        = link_to "#{@comparison['company_name']} (##{@comparison['company_id']})", custom_admin_company_review_path(@comparison["company_id"])
+        | , the record already in the index.
+
+.alert.alert-info.py-2.small
+    strong= @comparison["recommendation"]["summary"]
+
+.card.border-0.shadow-sm.mb-3
+    .card-header.bg-white.py-2
+        h2.h6.mb-0 Field by field
+    .table-responsive
+        table.table.table-sm.align-middle.mb-0
+            thead
+                tr
+                    th Field
+                    th= "This proposal"
+                    th= @comparison["company_name"]
+                    th.admin-nowrap Difference
+            tbody
+                - @comparison["rows"].each do |row|
+                    - next if row["verdict"] == "both_blank"
+                    tr
+                        td.small.fw-semibold= row["label"]
+                        td.small= truncate(row["proposal_value"].to_s, length: 260).presence || content_tag(:span, "Blank", class: "text-muted")
+                        td.small= truncate(row["company_value"].to_s, length: 260).presence || content_tag(:span, "Blank", class: "text-muted")
+                        td.admin-nowrap
+                            - case row["verdict"]
+                            - when "identical"
+                                span.badge.text-bg-light Same
+                            - when "only_here"
+                                - if row["mergeable"]
+                                    span.badge.text-bg-success Proposal adds this
+                                - else
+                                    span.badge.text-bg-secondary Only in proposal
+                            - when "only_there"
+                                span.badge.text-bg-light Only in the index
+                            - when "conflict"
+                                span.badge.text-bg-warning Disagree
+
+.row.g-3
+    .col-lg-7
+        - if @comparison["mergeable_fields"].any?
+            .card.border-0.shadow-sm
+                .card-header.bg-white.py-2
+                    h2.h6.mb-0 Merge what the proposal adds
+                .card-body.py-3
+                    p.text-muted.small
+                        | Only gaps are offered. A value already in the index is never replaced from here — where the two disagree, decide by hand.
+                    = form_with url: merge_duplicate_custom_admin_company_proposal_path(@company_proposal), method: :post, local: true do
+                        = hidden_field_tag :company_id, @comparison["company_id"]
+                        - @comparison["rows"].select { |row| row["mergeable"] }.each do |row|
+                            .form-check.mb-2
+                                = check_box_tag "fields[]", row["key"], true, class: "form-check-input", id: "merge_#{row['key']}"
+                                = label_tag "merge_#{row['key']}", row["label"], class: "form-check-label small fw-semibold"
+                                .text-muted.small= truncate(row["proposal_value"].to_s, length: 180)
+                                - if row["evidence"].any?
+                                    .small
+                                        - row["evidence"].each do |url|
+                                            = link_to truncate(url, length: 48), url, target: "_blank", rel: "noopener", class: "me-2"
+                        = submit_tag "Merge selected, then reject this proposal", class: "btn btn-success mt-2", data: { turbo_confirm: "Fill those fields on #{@comparison['company_name']} and reject this proposal in its favour?" }
+        - else
+            .card.border-0.shadow-sm
+                .card-body.py-3
+                    p.text-muted.small.mb-0
+                        - if @comparison["verification_state"] != "evidence_backed"
+                            | Nothing can be merged from an unverified proposal. Run Enrich first if you believe it has something to add.
+                        - else
+                            | This proposal has nothing the existing record is missing.
+
+    .col-lg-5
+        .card.border-0.shadow-sm
+            .card-header.bg-white.py-2
+                h2.h6.mb-0 Keep the existing record
+            .card-body.py-3
+                p.text-muted.small
+                    | Rejects this proposal and records #{@comparison['company_name']} as canonical. The proposal, its reason and its history stay retrievable under Resolved duplicates.
+                = form_with url: reject_custom_admin_company_proposal_path(@company_proposal), method: :post, local: true do
+                    = hidden_field_tag :duplicate_of_company_id, @comparison["company_id"]
+                    = hidden_field_tag :return_status, "duplicate"
+                    = submit_tag "Reject this proposal", class: "btn btn-outline-danger", data: { turbo_confirm: "Reject this proposal and keep #{@comparison['company_name']}?" }
+                = link_to "Back to the proposal", custom_admin_company_proposal_path(@company_proposal), class: "btn btn-link btn-sm ps-0 mt-2"
