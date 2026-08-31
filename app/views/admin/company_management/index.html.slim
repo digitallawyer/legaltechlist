@@ -53,9 +53,15 @@
                         | Export CSV
             - if @active_filter_count.positive?
                 = link_to "Reset", custom_admin_companies_path, class: "btn btn-sm btn-link text-muted text-decoration-none"
+    .card-body.border-bottom.py-2
+        = form_with url: batch_agent_review_custom_admin_companies_path, method: :post, local: true, id: "company-batch-review-form", html: { data: { batch_form: true, batch_input: "company_ids[]" } } do
+            .admin-proposal-batch-actions.d-none data-batch-actions=""
+                span.text-muted.small.me-2= "Runs an agent review on each selected record, up to #{Admin::CompanyManagementController::BATCH_REVIEW_LIMIT}. Nothing is approved, published or rejected."
+                = submit_tag "Run agent review", class: "btn btn-sm btn-outline-primary rounded-pill px-3", data: { turbo_confirm: "Queue an agent review for each selected company?" }
     .table-responsive
         table.table.table-hover.align-middle.mb-0.admin-table.is-compact.is-company-list
             colgroup
+                col.admin-col-checkbox
                 col.admin-col-company
                 col.admin-col-url
                 col.admin-col-category
@@ -66,6 +72,7 @@
                 col.admin-col-actions
             thead
                 tr
+                    th.admin-table-checkbox-col= check_box_tag :select_all_companies, "1", false, class: "form-check-input", form: "company-batch-review-form", data: { batch_select_all: true }, aria: { label: "Select all companies on this page" }
                     th Company
                     th URL
                     th.admin-nowrap Category
@@ -85,6 +92,7 @@
                     - issue_chips << { label: "Duplicate name", tone: "danger" } if @duplicate_name_company_ids.include?(company.id)
                     - issue_chips << { label: "Unknown taxonomy", tone: "muted" } if taxonomy_unknown
                     tr
+                        td.admin-table-checkbox-col= check_box_tag "company_ids[]", company.id, false, class: "form-check-input", form: "company-batch-review-form", aria: { label: "Select #{company.name}" }
                         td.admin-description
                             = link_to custom_admin_company_review_path(company.id), class: "admin-primary-link", aria: { label: "Review #{company.name}" } do
                                 .admin-company-cell
@@ -133,5 +141,7 @@
                                         | Delete
                 - if @companies.empty?
                     tr
-                        td.text-muted.text-center colspan="8" No companies match these filters.
+                        td.text-muted.text-center colspan="9" No companies match these filters.
     = render "shared/pagination", collection: @companies, count_label: "companies", wrapper_class: "card-footer bg-white app-pagination-footer"
+
+= render "shared/batch_selection_script"

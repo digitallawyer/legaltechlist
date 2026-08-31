@@ -1,0 +1,51 @@
+/ The apply control. Usable from the standalone review page and from the company draft.
+/ Locals: packet (AgentReviewPacket), return_to (nil or "company")
+
+.card.border-0.shadow-sm.mb-3
+    .card-header.bg-white.py-2
+        h2.h6.mb-0 Apply corrections
+    .card-body.py-3
+        - if packet.company.blank?
+            p.text-muted.small.mb-0 This review is not linked to a company.
+        - elsif packet.applicable_corrections.present?
+            = form_with url: apply_custom_admin_agent_review_path(packet.pipeline_run), method: :post, local: true do
+                = hidden_field_tag :return_to, return_to if return_to.present?
+                .table-responsive.mb-3
+                    table.table.table-sm.align-middle
+                        thead
+                            tr
+                                th Apply
+                                th Field
+                                th Current
+                                th Proposed
+                        tbody
+                            - packet.applicable_corrections.each do |field, value|
+                                tr
+                                    td= check_box_tag "fields[]", field, true, id: "field_#{field}_#{packet.id}"
+                                    td
+                                        label.form-check-label for="field_#{field}_#{packet.id}"= field.humanize
+                                        - if field == "description" && packet.description_apply_source.present?
+                                            .text-muted.small= packet.description_apply_source.capitalize
+                                    td.text-muted= truncate(packet.company.public_send(field).to_s, length: 140).presence || "Blank"
+                                    td.fw-semibold= truncate(value.to_s, length: 240).presence || "Blank"
+                = submit_tag "Apply selected corrections", class: "btn btn-primary w-100", data: { turbo_confirm: "Apply the selected corrections to this company?" }
+        - else
+            p.text-muted.small.mb-0 No corrections from this review can be applied.
+
+        - if packet.description_apply_block.present?
+            .alert.alert-warning.py-2.small.mt-3.mb-0
+                strong.d-block.mb-1 Description not applied
+                = packet.description_apply_block
+                - if packet.company
+                    = " "
+                    = link_to "Edit the company", edit_custom_admin_company_path(packet.company.id), class: "fw-semibold"
+
+        .d-grid.gap-2.mt-3
+            = button_to "Reject review output", reject_custom_admin_agent_review_path(packet.pipeline_run), method: :post, params: { return_to: return_to }.compact, class: "btn btn-outline-danger btn-sm", form: { data: { turbo_confirm: "Reject this review output without changing company data?" } }
+            = button_to "Mark needs follow-up", follow_up_custom_admin_agent_review_path(packet.pipeline_run), method: :post, params: { return_to: return_to }.compact, class: "btn btn-outline-secondary btn-sm"
+
+        - if packet.review_only_corrections.present?
+            .alert.alert-secondary.mt-3.mb-0.small
+                strong Context only:
+                = " #{packet.review_only_corrections.keys.map(&:humanize).to_sentence}."
+                |  These record the agents' reasoning rather than values to write.
