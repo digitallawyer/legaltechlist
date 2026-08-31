@@ -1,6 +1,6 @@
 - content_for :title, "Review"
 
-= form_with url: batch_custom_admin_company_proposals_path, method: :post, local: true, html: { data: { proposal_batch_form: true } } do
+= form_with url: batch_custom_admin_company_proposals_path, method: :post, local: true, html: { data: { batch_form: true, batch_input: "proposal_ids[]" } } do
     = hidden_field_tag :status, @status
     .card.border-0.shadow-sm.admin-compact-card
         .card-header.bg-white
@@ -14,7 +14,7 @@
             .admin-filter-toolbar
                 - @status_counts.each do |status, count|
                     = link_to "#{status.humanize} #{number_with_delimiter(count)}", custom_admin_company_proposals_path(status: status), class: "btn btn-sm #{@status == status ? 'btn-primary' : 'btn-outline-secondary'} rounded-pill px-3"
-                .admin-proposal-batch-actions.d-none data-proposal-batch-actions=""
+                .admin-proposal-batch-actions.d-none data-batch-actions=""
                     = button_tag "Re-enrich selected", type: "submit", name: "batch_action", value: "reenrich", class: "btn btn-sm btn-outline-primary rounded-pill px-3"
                     = button_tag "Mark needs revision", type: "submit", name: "batch_action", value: "mark_needs_revision", class: "btn btn-sm btn-outline-warning rounded-pill px-3"
                     = button_tag "Publish selected", type: "submit", name: "batch_action", value: "publish", class: "btn btn-sm btn-success rounded-pill px-3", data: { turbo_confirm: "Only publish proposals that pass all readiness gates?" }
@@ -22,7 +22,7 @@
             table.table.table-hover.align-middle.mb-0.admin-table.is-compact
                 thead
                     tr
-                        th.admin-table-checkbox-col= check_box_tag :select_all_proposals, "1", false, class: "form-check-input", data: { proposal_select_all: true }, aria: { label: "Select all proposals on this page" }
+                        th.admin-table-checkbox-col= check_box_tag :select_all_proposals, "1", false, class: "form-check-input", data: { batch_select_all: true }, aria: { label: "Select all proposals on this page" }
                         th Candidate
                         th.admin-nowrap Readiness
                         th Issues
@@ -85,56 +85,4 @@
                             td.text-muted colspan="6" No proposals in this queue.
         = render "shared/pagination", collection: @company_proposals, count_label: "proposals", wrapper_class: "card-footer bg-white app-pagination-footer"
 
-javascript:
-    (function() {
-        function updateSelectAllState(selectAll, checkboxes) {
-            if (!selectAll) return;
-            let checkedCount = Array.from(checkboxes).filter(function(checkbox) { return checkbox.checked; }).length;
-            selectAll.checked = checkboxes.length > 0 && checkedCount === checkboxes.length;
-            selectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
-        }
-
-        function updateBatchActionsVisibility(batchActions, checkboxes) {
-            if (!batchActions) return;
-            let anyChecked = Array.from(checkboxes).some(function(checkbox) { return checkbox.checked; });
-            batchActions.classList.toggle("d-none", !anyChecked);
-        }
-
-        function bindProposalBatchForm(form) {
-            if (form.dataset.proposalBatchBound) return;
-            form.dataset.proposalBatchBound = "true";
-
-            let batchActions = form.querySelector("[data-proposal-batch-actions]");
-            let checkboxes = form.querySelectorAll('input[name="proposal_ids[]"]');
-            let selectAll = form.querySelector("[data-proposal-select-all]");
-
-            function refreshState() {
-                updateBatchActionsVisibility(batchActions, checkboxes);
-                updateSelectAllState(selectAll, checkboxes);
-            }
-
-            checkboxes.forEach(function(checkbox) {
-                checkbox.addEventListener("change", refreshState);
-            });
-
-            if (selectAll) {
-                selectAll.addEventListener("change", function() {
-                    checkboxes.forEach(function(checkbox) {
-                        checkbox.checked = selectAll.checked;
-                    });
-                    selectAll.indeterminate = false;
-                    refreshState();
-                });
-            }
-
-            refreshState();
-        }
-
-        function bindProposalBatchForms() {
-            document.querySelectorAll("[data-proposal-batch-form]").forEach(bindProposalBatchForm);
-        }
-
-        document.addEventListener("turbo:load", bindProposalBatchForms);
-        document.addEventListener("turbo:render", bindProposalBatchForms);
-        bindProposalBatchForms();
-    })();
+= render "shared/batch_selection_script"

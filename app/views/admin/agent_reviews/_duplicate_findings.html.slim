@@ -1,0 +1,50 @@
+/ Duplicate-review findings, rendered wherever the reviewer is.
+/ Locals: packet (AgentReviewPacket)
+
+- duplicate_review = packet.duplicate_review
+- recommendation = duplicate_review["overall_recommendation"].presence || "not run"
+.card.border-0.shadow-sm.mb-3
+    .card-header.bg-white.d-flex.justify-content-between.align-items-center
+        h2.h5.mb-0 Duplicate review
+        - if recommendation == "likely_duplicate_group"
+            span.badge.bg-danger= recommendation.humanize
+        - elsif recommendation == "likely_distinct"
+            span.badge.bg-success= recommendation.humanize
+        - else
+            span.badge.bg-warning.text-dark= recommendation.humanize
+    .card-body
+        - if duplicate_review.present?
+            - if duplicate_review["rationale"].present?
+                p.mb-3= duplicate_review["rationale"]
+            - if Array(duplicate_review["pair_reviews"]).any?
+                .table-responsive.mb-3
+                    table.table.table-sm.align-middle.mb-0
+                        thead
+                            tr
+                                th Compared with
+                                th Relationship
+                                th Confidence
+                                th Reasons
+                        tbody
+                            - Array(duplicate_review["pair_reviews"]).each do |review|
+                                - candidate = Company.find_by(id: review["candidate_company_id"])
+                                tr
+                                    td
+                                        - if candidate
+                                            = link_to "#{candidate.name} (##{candidate.id})", custom_admin_company_review_path(candidate.id)
+                                        - else
+                                            = review["candidate_company_id"]
+                                    td
+                                        span.badge.text-bg-light= review["relationship"].to_s.humanize
+                                    td= review["confidence"].to_s.humanize
+                                    td
+                                        ul.small.mb-0
+                                            - Array(review["reasons"]).each do |reason|
+                                                li= reason
+            - if Array(duplicate_review["unresolved_questions"]).any?
+                .text-uppercase.text-muted.small.fw-semibold Unresolved questions
+                ul.mb-0
+                    - Array(duplicate_review["unresolved_questions"]).each do |question|
+                        li= question
+        - else
+            p.text-muted.mb-0 No duplicate review output recorded.

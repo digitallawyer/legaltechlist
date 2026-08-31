@@ -45,6 +45,10 @@ module CompanyQualityReview
     # reviewer queues instead of falling back into "not reviewed".
     scope :review_state_awaiting_contributor, -> { where(quality_status: CompanyReviewMarkService::RETURNED_STATUS) }
 
+    # The publishing workload: everything except records already decided (verified or
+    # rejected) and records parked with their contributor.
+    scope :needs_publishing_review, -> { where(quality_status: [nil, "", "needs_review"]) }
+
     scope :with_review_state, ->(state) {
       case state.to_s
       when "not_reviewed" then review_state_not_reviewed

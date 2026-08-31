@@ -24,7 +24,7 @@ module Admin
       @categories = Category.order(:name)
       @business_models = BusinessModel.canonical.order(:name)
       @target_clients = TargetClient.canonical.order(:name)
-      @review_state_options = Company::REVIEW_STATE_FILTER_OPTIONS
+      @review_state_options = Company::REVIEW_STATE_FILTER_OPTIONS.merge("all" => "All records")
       @review_signal_options = REVIEW_SIGNALS
       @updated_since_options = UPDATED_SINCE_OPTIONS
       metrics = AdminDashboardMetrics.load
@@ -33,6 +33,34 @@ module Admin
       @company_summary_counts = metrics[:company_summary_counts]
       @active_filter_count = active_filter_count
       @companies = filtered_companies.page(params[:page]).per(25)
+    end
+
+    # Item 5: run the same agent review across a handful of drafts at once. Capped,
+    # queued one job per company so a failure is contained, and it never approves,
+    # publishes or rejects anything — it only produces findings for a human to read.
+    BATCH_REVIEW_LIMIT = 10
+
+    def batch_agent_review
+      ids = Array(params[:company_ids]).map(&:to_s).reject(&:blank?).uniq
+      return redirect_back(fallback_location: custom_admin_companies_path, alert: "Select at least one company to review.") if ids.empty?
+      if ids.size > BATCH_REVIEW_LIMIT
+        return redirect_back(fallback_location: custom_admin_companies_path,
+                             alert: "Select at most #{BATCH_REVIEW_LIMIT} companies per batch — you selected #{ids.size}.")
+      end
+
+      companies = Company.where(id: ids)
+      # Skip anything already queued or mid-review, so double-submitting a selection
+      # cannot start the same work twice.
+      in_flight = PipelineRun.where(run_type: "company_agent_review", status: %w[pending running])
+                             .where("details->>'company_id' IN (?)", companies.map { |c| c.id.to_s })
+                             .filter_map { |run| run.details["company_id"].to_i }.to_set
+
+      queued, skipped = companies.partition { |company| !in_flight.include?(company.id) }
+      queued.each { |company| CompanyAgentReviewJob.perform_later(company.id, current_admin_user.email) }
+
+      notice = "Queued agent reviews for #{queued.size} #{'company'.pluralize(queued.size)}. Each runs on its own — open a record to read its findings."
+      notice += " #{skipped.size} already had a review in progress and #{skipped.size == 1 ? 'was' : 'were'} skipped." if skipped.any?
+      redirect_back(fallback_location: custom_admin_companies_path, notice: notice)
     end
 
     def new
@@ -133,10 +161,20 @@ module Admin
       scope = scope.where(category_id: @filters[:category_id]) if @filters[:category_id].present?
       scope = scope.where(business_model_id: @filters[:business_model_id]) if @filters[:business_model_id].present?
       scope = scope.where(target_client_id: @filters[:target_client_id]) if @filters[:target_client_id].present?
-      scope = scope.with_review_state(@filters[:review_state]) if @filters[:review_state].present?
+      scope = apply_review_state(scope)
       scope = apply_review_signal(scope)
       scope = scope.where(updated_at: @filters[:updated_since].to_i.days.ago..) if @filters[:updated_since].in?(UPDATED_SINCE_OPTIONS.keys)
       scope
+    end
+
+    # No explicit choice means the working queue: records still needing a decision
+    # before publication. "all" is the escape hatch for browsing the whole index.
+    def apply_review_state(scope)
+      case @filters[:review_state].presence
+      when nil then scope.needs_publishing_review
+      when "all" then scope
+      else scope.with_review_state(@filters[:review_state])
+      end
     end
 
     def apply_review_signal(scope)

@@ -1,0 +1,66 @@
+/ Row-selection behaviour for any admin batch form. Shared so the proposal queue and
+/ the company queue do not carry two copies of the same script.
+/
+/ A form opts in with data-batch-form and data-batch-input="<checkbox name>"; the
+/ select-all box carries data-batch-select-all, and the action bar data-batch-actions.
+javascript:
+    (function() {
+        function updateSelectAllState(selectAll, checkboxes) {
+            if (!selectAll) return;
+            let checkedCount = Array.from(checkboxes).filter(function(checkbox) { return checkbox.checked; }).length;
+            selectAll.checked = checkboxes.length > 0 && checkedCount === checkboxes.length;
+            selectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+        }
+
+        function updateBatchActionsVisibility(batchActions, checkboxes) {
+            if (!batchActions) return;
+            let anyChecked = Array.from(checkboxes).some(function(checkbox) { return checkbox.checked; });
+            batchActions.classList.toggle("d-none", !anyChecked);
+        }
+
+        function bindBatchForm(form) {
+            if (form.dataset.batchBound) return;
+            form.dataset.batchBound = "true";
+
+            let inputName = form.dataset.batchInput;
+            if (!inputName) return;
+
+            let batchActions = form.querySelector("[data-batch-actions]");
+            // Checkboxes may live inside the form, or outside it and joined by the HTML5
+            // `form` attribute — the company list does the latter, because its rows
+            // already contain button_to forms and HTML forbids nesting them.
+            let checkboxes = Array.from(document.querySelectorAll('input[name="' + inputName + '"]'))
+                .filter(function(checkbox) { return checkbox.form === form; });
+            let selectAll = Array.from(document.querySelectorAll("[data-batch-select-all]"))
+                .find(function(box) { return box.form === form; }) || form.querySelector("[data-batch-select-all]");
+
+            function refreshState() {
+                updateBatchActionsVisibility(batchActions, checkboxes);
+                updateSelectAllState(selectAll, checkboxes);
+            }
+
+            checkboxes.forEach(function(checkbox) {
+                checkbox.addEventListener("change", refreshState);
+            });
+
+            if (selectAll) {
+                selectAll.addEventListener("change", function() {
+                    checkboxes.forEach(function(checkbox) {
+                        checkbox.checked = selectAll.checked;
+                    });
+                    selectAll.indeterminate = false;
+                    refreshState();
+                });
+            }
+
+            refreshState();
+        }
+
+        function bindBatchForms() {
+            document.querySelectorAll("[data-batch-form]").forEach(bindBatchForm);
+        }
+
+        document.addEventListener("turbo:load", bindBatchForms);
+        document.addEventListener("turbo:render", bindBatchForms);
+        bindBatchForms();
+    })();

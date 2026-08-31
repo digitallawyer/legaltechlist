@@ -1,0 +1,92 @@
+/ Agent-review findings. Rendered on the standalone review page and inline on the
+/ company draft, so running a review never costs the reviewer their place.
+/ Locals: packet (AgentReviewPacket)
+
+- coordinator = packet.review_coordinator
+- coordinator_status = coordinator["status"].presence || "not run"
+.card.border-0.shadow-sm.mb-3
+    .card-header.bg-white.d-flex.justify-content-between.align-items-center
+        h2.h5.mb-0 What the review found
+        - if coordinator_status == "ready_for_human_review"
+            span.badge.bg-success= coordinator_status.humanize
+        - elsif coordinator_status == "do_not_publish"
+            span.badge.bg-danger= coordinator_status.humanize
+        - else
+            span.badge.bg-warning.text-dark= coordinator_status.humanize
+    .card-body
+        - if coordinator.present?
+            - if Array(coordinator["reasons"]).any?
+                .text-uppercase.text-muted.small.fw-semibold Why
+                ul.mb-3
+                    - Array(coordinator["reasons"]).each do |reason|
+                        li= reason
+            - if Array(coordinator["disagreements"]).any?
+                .text-uppercase.text-muted.small.fw-semibold Where the agents disagreed
+                ul.mb-3
+                    - Array(coordinator["disagreements"]).each do |disagreement|
+                        li= disagreement
+            - if Array(coordinator["recommended_actions"]).any?
+                .text-uppercase.text-muted.small.fw-semibold Suggested next steps
+                ul.mb-3
+                    - Array(coordinator["recommended_actions"]).each do |action|
+                        li= action
+        - else
+            p.text-muted.mb-0 No coordinator output recorded.
+
+- if packet.description_draft.present? || packet.proposed_corrections["proposed_description"].present?
+    .card.border-0.shadow-sm.mb-3
+        .card-header.bg-white.d-flex.justify-content-between.align-items-center
+            h2.h5.mb-0 Description
+            - if packet.applicable_corrections.key?("description")
+                span.badge.bg-success Ready to apply
+            - else
+                span.badge.bg-warning.text-dark Review only
+        .card-body
+            - if packet.company
+                .mb-3
+                    .text-uppercase.text-muted.small.fw-semibold Current
+                    p.mb-0= packet.company.description.presence || "Blank"
+            .mb-3
+                .text-uppercase.text-muted.small.fw-semibold Proposed
+                p.mb-0.fw-semibold= packet.description_draft["proposed_description"].presence || packet.proposed_corrections["proposed_description"].presence || "No proposed description recorded."
+            - critic = packet.description_critic
+            - if critic.present?
+                .border-top.pt-2
+                    .d-flex.align-items-center.gap-2.mb-1
+                        .text-uppercase.text-muted.small.fw-semibold Critic
+                        - if critic["verdict"] == "pass"
+                            span.badge.bg-success Pass
+                        - else
+                            span.badge.bg-warning.text-dark= critic["verdict"].to_s.humanize.presence || "Not run"
+                    - if critic["rationale"].present?
+                        p.small.text-muted.mb-1= critic["rationale"]
+                    - if Array(critic["issues"]).any?
+                        ul.small.mb-1
+                            - Array(critic["issues"]).each do |issue|
+                                li= issue
+                    - if critic["suggested_revision"].present?
+                        .small
+                            .text-uppercase.text-muted.small.fw-semibold Suggested revision
+                            p.mb-0= critic["suggested_revision"]
+
+- if packet.evidence.any?
+    .card.border-0.shadow-sm.mb-3
+        .card-header.bg-white.py-2
+            h2.h6.mb-0 Evidence used
+        .card-body.py-3
+            ul.small.mb-0
+                - packet.evidence.each do |item|
+                    li
+                        - if item["url"].present?
+                            = link_to item["title"].presence || item["url"], item["url"], target: "_blank", rel: "noopener"
+                        - else
+                            = item["title"]
+                        - if item["summary"].present?
+                            .text-muted= item["summary"]
+
+- if packet.risks.any?
+    .alert.alert-warning.py-2.small.mb-3
+        strong.d-block.mb-1 Risks flagged
+        ul.mb-0
+            - packet.risks.each do |risk|
+                li= risk

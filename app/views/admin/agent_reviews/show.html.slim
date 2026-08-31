@@ -4,23 +4,28 @@
     div
         h1.h3.mb-1= @pipeline_run.name
         p.text-muted.mb-0 Review the evidence, apply the corrections you agree with, or reject and follow up without changing the record.
-    = link_to "Back to activity", custom_admin_pipeline_runs_path(activity: "agent_reviews"), class: "btn btn-outline-secondary"
+    .d-flex.gap-2
+        - if @company
+            = link_to custom_admin_company_review_path(@company.id), class: "btn btn-primary" do
+                i.fas.fa-arrow-left.me-1
+                | Back to company draft
+        = link_to "Activity", custom_admin_pipeline_runs_path(activity: "agent_reviews"), class: "btn btn-outline-secondary"
 
 .alert.alert-info
     strong You decide what gets applied.
     |  Nothing here changes the company until you select it. A proposed description can only be applied when the critic has approved specific wording, and it is re-checked against the publication gate at the moment you apply it.
 
-- if @details["admin_decision"].present?
+- if @packet.admin_decision.present?
     .alert.alert-secondary
         strong Admin decision:
-        = " #{@details['admin_decision']['decision'].to_s.humanize}"
-        span= " by #{@details['admin_decision']['admin_user_email']} at #{@details['admin_decision']['decided_at']}"
+        = " #{@packet.admin_decision['decision'].to_s.humanize}"
+        span= " by #{@packet.admin_decision['admin_user_email']} at #{@packet.admin_decision['decided_at']}"
 
 .row.g-3
     .col-lg-7
         .card.border-0.shadow-sm.mb-3
             .card-header.bg-white
-                h2.h5.mb-0 Linked Company
+                h2.h5.mb-0 Linked company
             .card-body
                 - if @company
                     .fw-semibold= link_to @company.name, custom_admin_company_review_path(@company.id)
@@ -28,235 +33,19 @@
                 - else
                     p.text-muted.mb-0 This agent output is not linked to a company.
 
-        .card.border-0.shadow-sm.mb-3
-            .card-header.bg-white.d-flex.justify-content-between.align-items-center
-                h2.h5.mb-0 Review Coordinator
-                - coordinator_status = @review_coordinator["status"].presence || "not run"
-                - if coordinator_status == "ready_for_human_review"
-                    span.badge.bg-success= coordinator_status.humanize
-                - elsif coordinator_status == "do_not_publish"
-                    span.badge.bg-danger= coordinator_status.humanize
-                - else
-                    span.badge.bg-warning.text-dark= coordinator_status.humanize
-            .card-body
-                - if @review_coordinator.present?
-                    - if Array(@review_coordinator["reasons"]).any?
-                        .text-uppercase.text-muted.small.fw-semibold Reasons
-                        ul.mb-3
-                            - Array(@review_coordinator["reasons"]).each do |reason|
-                                li= reason
-                    - if Array(@review_coordinator["disagreements"]).any?
-                        .text-uppercase.text-muted.small.fw-semibold Disagreements
-                        ul.mb-3
-                            - Array(@review_coordinator["disagreements"]).each do |disagreement|
-                                li= disagreement
-                    - if Array(@review_coordinator["recommended_actions"]).any?
-                        .text-uppercase.text-muted.small.fw-semibold Recommended actions
-                        ul.mb-3
-                            - Array(@review_coordinator["recommended_actions"]).each do |action|
-                                li= action
-                    .text-muted.small= "Coordinator mode: #{@review_coordinator['mode']}" if @review_coordinator["mode"].present?
-                - else
-                    p.text-muted.mb-0 No coordinator output recorded.
+        == render partial: "admin/agent_reviews/findings", locals: { packet: @packet }
+        - if @packet.duplicate_findings?
+            == render partial: "admin/agent_reviews/duplicate_findings", locals: { packet: @packet }
 
-        .card.border-0.shadow-sm.mb-3
-            .card-header.bg-white.d-flex.justify-content-between.align-items-center
-                h2.h5.mb-0 Duplicate Review
-                - duplicate_recommendation = @duplicate_review["overall_recommendation"].presence || "not run"
-                - if duplicate_recommendation == "likely_duplicate_group"
-                    span.badge.bg-danger= duplicate_recommendation.humanize
-                - elsif duplicate_recommendation == "likely_distinct"
-                    span.badge.bg-success= duplicate_recommendation.humanize
-                - else
-                    span.badge.bg-warning.text-dark= duplicate_recommendation.humanize
-            .card-body
-                - if @duplicate_review.present?
-                    - if @duplicate_review["rationale"].present?
-                        p.mb-3= @duplicate_review["rationale"]
-                    - if Array(@duplicate_review["pair_reviews"]).any?
-                        .table-responsive.mb-3
-                            table.table.table-sm.align-middle.mb-0
-                                thead
-                                    tr
-                                        th Candidate
-                                        th Relationship
-                                        th Confidence
-                                        th Reasons
-                                tbody
-                                    - Array(@duplicate_review["pair_reviews"]).each do |review|
-                                        tr
-                                            td= review["candidate_company_id"]
-                                            td
-                                                span.badge.text-bg-light= review["relationship"].to_s.humanize
-                                            td= review["confidence"].to_s.humanize
-                                            td
-                                                ul.mb-0
-                                                    - Array(review["reasons"]).each do |reason|
-                                                        li= reason
-                    - if Array(@duplicate_review["unresolved_questions"]).any?
-                        .text-uppercase.text-muted.small.fw-semibold Unresolved questions
-                        ul.mb-3
-                            - Array(@duplicate_review["unresolved_questions"]).each do |question|
-                                li= question
-                    .text-muted.small= "Duplicate review mode: #{@duplicate_review['mode']}" if @duplicate_review["mode"].present?
-                - else
-                    p.text-muted.mb-0 No duplicate review output recorded.
-
-        .card.border-0.shadow-sm.mb-3
-            .card-header.bg-white.d-flex.justify-content-between.align-items-center
-                h2.h5.mb-0 Description Draft
-                - if @applicable_corrections&.key?("description")
-                    span.badge.bg-success Ready to apply
-                - else
-                    span.badge.bg-warning.text-dark Review only
-            .card-body
-                - if @company
-                    .mb-3
-                        .text-uppercase.text-muted.small.fw-semibold Current description
-                        p.mb-0= @company.description.presence || "Blank"
-                    .mb-3
-                        .text-uppercase.text-muted.small.fw-semibold Proposed description
-                        p.mb-0.fw-semibold= @description_draft["proposed_description"].presence || @proposed_corrections["proposed_description"].presence || "No proposed description recorded."
-                    - if @description_draft["rationale"].present?
-                        .text-muted.small= @description_draft["rationale"]
-                    - if @description_draft["mode"].present?
-                        .text-muted.small= "Draft mode: #{@description_draft['mode']}"
-                - else
-                    p.text-muted.mb-0 This review is not linked to a company.
-
-        .card.border-0.shadow-sm.mb-3
-            .card-header.bg-white.d-flex.justify-content-between.align-items-center
-                h2.h5.mb-0 Description Critic
-                - critic_verdict = @description_critic["verdict"].presence || "not run"
-                - if critic_verdict == "pass"
-                    span.badge.bg-success= critic_verdict.humanize
-                - else
-                    span.badge.bg-warning.text-dark= critic_verdict.humanize
-            .card-body
-                - if @description_critic.present?
-                    - if @description_critic["rationale"].present?
-                        p.mb-3= @description_critic["rationale"]
-                    - if Array(@description_critic["issues"]).any?
-                        .text-uppercase.text-muted.small.fw-semibold Issues
-                        ul.mb-3
-                            - Array(@description_critic["issues"]).each do |issue|
-                                li= issue
-                    - else
-                        p.text-muted.mb-3 No critic issues recorded.
-                    - if @description_critic["suggested_revision"].present?
-                        .text-uppercase.text-muted.small.fw-semibold Suggested revision
-                        p.mb-3.fw-semibold= @description_critic["suggested_revision"]
-                    .text-muted.small= "Critic mode: #{@description_critic['mode']}" if @description_critic["mode"].present?
-                - else
-                    p.text-muted.mb-0 No critic output recorded.
-
-        .card.border-0.shadow-sm.mb-3
-            .card-header.bg-white
-                h2.h5.mb-0 Evidence
-            .card-body
-                - if @evidence.any?
-                    .list-group.list-group-flush
-                        - @evidence.each do |item|
-                            .list-group-item.px-0
-                                - if item.is_a?(Hash)
-                                    .fw-semibold= item["title"].presence || item["source"].presence || "Evidence item"
-                                    - if item["url"].present?
-                                        = link_to item["url"], item["url"], target: "_blank", rel: "noopener"
-                                    - if item["summary"].present?
-                                        p.mb-0.mt-2= item["summary"]
-                                - else
-                                    = item
-                - else
-                    p.text-muted.mb-0 No evidence recorded.
-
-        .card.border-0.shadow-sm.mb-3
-            .card-header.bg-white
-                h2.h5.mb-0 Evidence Tools
-            .card-body
-                - if @tool_results.present?
-                    .accordion id="evidenceTools"
-                        - @tool_results.each_with_index do |(tool_name, result), index|
-                            .accordion-item
-                                h3.accordion-header id="toolHeading#{index}"
-                                    button.accordion-button.collapsed type="button" data-bs-toggle="collapse" data-bs-target="#toolCollapse#{index}" aria-expanded="false" aria-controls="toolCollapse#{index}"= tool_name.to_s.humanize
-                                .accordion-collapse.collapse id="toolCollapse#{index}" aria-labelledby="toolHeading#{index}" data-bs-parent="#evidenceTools"
-                                    .accordion-body
-                                        pre.bg-light.border.rounded.p-2.small.mb-0= JSON.pretty_generate(result)
-                - else
-                    p.text-muted.mb-0 No evidence tool output recorded.
-
-        .card.border-0.shadow-sm
-            .card-header.bg-white
-                h2.h5.mb-0 Risks
-            .card-body
-                - if @risks.any?
-                    ul.mb-0
-                        - @risks.each do |risk|
-                            li= risk
-                - else
-                    p.text-muted.mb-0 No risks recorded.
+        - if @packet.tool_results.present?
+            .card.border-0.shadow-sm
+                .card-header.bg-white.py-2
+                    button.btn.btn-link.btn-sm.text-decoration-none.text-dark.p-0.fw-semibold type="button" data-bs-toggle="collapse" data-bs-target="#agentReviewToolResults" aria-expanded="false" aria-controls="agentReviewToolResults"
+                        i.fas.fa-chevron-right.me-1
+                        | Technical details
+                #agentReviewToolResults.collapse
+                    .card-body.py-3.border-top
+                        pre.bg-light.border.rounded.p-2.small.mb-0= JSON.pretty_generate(@packet.tool_results)
 
     .col-lg-5
-        .card.border-0.shadow-sm.mb-3
-            .card-header.bg-white
-                h2.h5.mb-0 Apply corrections
-            .card-body
-                - if @company.blank?
-                    p.text-muted.mb-0 This review is not linked to a company.
-                - elsif @applicable_corrections.present?
-                    = form_with url: apply_custom_admin_agent_review_path(@pipeline_run), method: :post, local: true do
-                        .table-responsive.mb-3
-                            table.table.table-sm.align-middle
-                                thead
-                                    tr
-                                        th Apply
-                                        th Field
-                                        th Current
-                                        th Proposed
-                                tbody
-                                    - @applicable_corrections.each do |field, value|
-                                        tr
-                                            td= check_box_tag "fields[]", field, true, id: "field_#{field}"
-                                            td
-                                                label.form-check-label for="field_#{field}"= field.humanize
-                                                - if field == "description" && @description_apply_source.present?
-                                                    .text-muted.small= @description_apply_source.capitalize
-                                            td.text-muted= truncate(@company.public_send(field).to_s, length: 140).presence || "Blank"
-                                            td.fw-semibold= truncate(value.to_s, length: 240).presence || "Blank"
-                        = submit_tag "Apply selected corrections", class: "btn btn-primary w-100", data: { turbo_confirm: "Apply the selected corrections to this company?" }
-                - else
-                    p.text-muted.mb-0 No corrections from this review can be applied.
-
-                - if @description_apply_block.present?
-                    .alert.alert-warning.py-2.small.mt-3.mb-0
-                        strong.d-block.mb-1 Description not applied
-                        = @description_apply_block
-                        - if @company
-                            = " "
-                            = link_to "Edit the company", edit_custom_admin_company_path(@company.id), class: "fw-semibold"
-
-                .d-grid.gap-2.mt-3
-                    = button_to "Reject Review Output", reject_custom_admin_agent_review_path(@pipeline_run), method: :post, class: "btn btn-outline-danger", form: { data: { turbo_confirm: "Reject this agent review without changing company data?" } }
-                    = button_to "Mark Needs Follow-Up", follow_up_custom_admin_agent_review_path(@pipeline_run), method: :post, class: "btn btn-outline-secondary"
-
-        .card.border-0.shadow-sm
-            .card-header.bg-white
-                h2.h5.mb-0 Proposed Corrections
-            .card-body
-                - if @proposed_corrections.present?
-                    dl.mb-0
-                        - @proposed_corrections.each do |field, value|
-                            dt= field.to_s.humanize
-                            dd
-                                - if value.is_a?(Hash) || value.is_a?(Array)
-                                    pre.bg-light.border.rounded.p-2.small= JSON.pretty_generate(value)
-                                - else
-                                    = value
-                - else
-                    p.text-muted.mb-0 No proposed corrections recorded.
-
-                - if @review_only_proposed_corrections.present?
-                    .alert.alert-secondary.mt-3.mb-0.small
-                        strong Context only:
-                        = " #{@review_only_proposed_corrections.keys.map(&:humanize).to_sentence}."
-                        |  These record the agents' reasoning rather than values to write, so they are not offered above.
+        == render partial: "admin/agent_reviews/apply_corrections", locals: { packet: @packet, return_to: params[:return_to] }

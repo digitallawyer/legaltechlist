@@ -223,6 +223,57 @@
                     dt.col-sm-3 Longitude
                     dd.col-sm-9= field_value.call(@company.longitude)
 
+        / Quality-control findings, inline. Running either review reloads this page at
+        / the section it filled in, so the reviewer never leaves the draft.
+        #agent-review.mt-3
+            .d-flex.flex-wrap.justify-content-between.align-items-center.gap-2.mb-2
+                h2.h5.mb-0 Agent review
+                .d-flex.align-items-center.gap-2
+                    - if @agent_review
+                        span.text-muted.small= "Last run #{time_ago_in_words(@agent_review.created_at)} ago"
+                    = button_to(@agent_review ? "Run again" : "Run agent review", custom_admin_company_agent_review_path(@company.id), method: :post, class: "btn btn-sm btn-outline-primary", form: { data: { turbo_confirm: "Run an agent review for #{@company.name}? Nothing is changed until you apply it." } })
+            - if @agent_review&.findings?
+                == render partial: "admin/agent_reviews/findings", locals: { packet: @agent_review }
+                == render partial: "admin/agent_reviews/apply_corrections", locals: { packet: @agent_review, return_to: "company" }
+                p.text-muted.small
+                    = link_to "Open the full review packet", custom_admin_agent_review_path(@agent_review.pipeline_run)
+            - else
+                .card.border-0.shadow-sm.mb-3
+                    .card-body.py-3
+                        p.text-muted.small.mb-0 No agent review has been run for this record yet.
+
+        #duplicate-review
+            .d-flex.flex-wrap.justify-content-between.align-items-center.gap-2.mb-2
+                h2.h5.mb-0 Duplicate review
+                .d-flex.align-items-center.gap-2
+                    - if @duplicate_review
+                        span.text-muted.small= "Last run #{time_ago_in_words(@duplicate_review.created_at)} ago"
+                    = button_to(@duplicate_review ? "Run again" : "Run duplicate review", custom_admin_company_duplicate_review_path(@company.id), method: :post, class: "btn btn-sm btn-outline-primary", form: { data: { turbo_confirm: "Run a duplicate review for #{@company.name}?" } })
+            - if @duplicate_review&.duplicate_findings?
+                == render partial: "admin/agent_reviews/duplicate_findings", locals: { packet: @duplicate_review }
+            - else
+                .card.border-0.shadow-sm.mb-3
+                    .card-body.py-3
+                        p.text-muted.small.mb-0
+                            | No duplicate review has been run for this record. The deterministic Duplicate Check in the sidebar runs on every page load regardless.
+
+        / Reviewer decision, at the end of the reading order Hafez asked for. The same
+        / controls also sit in the header for a reviewer who has already made up their mind.
+        .card.border-0.shadow-sm.mb-3
+            .card-header.bg-white.py-2
+                h2.h5.mb-0 Reviewer decision
+            .card-body.py-3
+                .d-flex.flex-wrap.gap-2
+                    = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "verified" }, class: "btn btn-success", form: { data: { turbo_confirm: "Mark #{@company.name} as verified?" } } do
+                        i.fas.fa-check.me-1
+                        | Mark verified
+                    = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "needs_work" }, class: "btn btn-outline-secondary", form: { data: { turbo_confirm: "Mark #{@company.name} as needing more review?" } } do
+                        | Needs more work
+                    button.btn.btn-outline-warning type="button" data-bs-toggle="collapse" data-bs-target="#returnToContributorPanel" aria-expanded="false" aria-controls="returnToContributorPanel"
+                        | Return to contributor
+                    = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "reject" }, class: "btn btn-outline-danger", form: { data: { turbo_confirm: "Reject and hide #{@company.name}?" } } do
+                        | Reject and hide
+
     .col-lg-4
         .card.border-0.shadow-sm.mb-3
             .card-header.bg-white

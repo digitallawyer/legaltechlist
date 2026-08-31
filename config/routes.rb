@@ -56,6 +56,7 @@ Rails.application.routes.draw do
   patch 'admin/app/resources/:resource/:id', to: 'admin/resources#update', as: :custom_admin_resource_record
   delete 'admin/app/resources/:resource/:id', to: 'admin/resources#destroy'
   get 'admin/app/companies', to: 'admin/company_management#index', as: :custom_admin_companies
+  post 'admin/app/companies/batch-agent-review', to: 'admin/company_management#batch_agent_review', as: :batch_agent_review_custom_admin_companies
   get 'admin/app/companies/new', to: 'admin/company_management#new', as: :new_custom_admin_company
   post 'admin/app/companies/fill-from-url', to: 'admin/company_management#fill_from_url', as: :fill_from_url_custom_admin_company
   post 'admin/app/companies', to: 'admin/company_management#create'

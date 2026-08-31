@@ -149,7 +149,7 @@ class CustomAdminTest < ActionDispatch::IntegrationTest
 
     post custom_admin_company_mark_review_path(company.id), params: { decision: "verified" }
 
-    assert_redirected_to custom_admin_company_review_path(company.id)
+    assert_redirected_to custom_admin_companies_path
     company.reload
     assert_equal "verified", company.quality_status
     assert_equal "human_confirmed", company.verification_verdict
@@ -186,7 +186,8 @@ class CustomAdminTest < ActionDispatch::IntegrationTest
     end
 
     run = PipelineRun.order(:created_at).last
-    assert_redirected_to custom_admin_agent_review_path(run)
+    # The reviewer stays on the company draft; the findings render there.
+    assert_redirected_to custom_admin_company_review_path(company.id, anchor: "agent-review")
     assert_equal "company_agent_review", run.run_type
     assert_equal "agent_proposal_no_public_writes", run.details["mode"]
     assert_equal company.id, run.details["company_id"]
@@ -277,18 +278,18 @@ class CustomAdminTest < ActionDispatch::IntegrationTest
     get custom_admin_agent_review_path(run)
     assert_response :success
     assert_select "h1", "Agent review sample"
-    assert_select "h2", "Description Draft"
+    assert_select "h2", "Description"
     assert_select "span", "Review only"
     assert_select ".alert-warning", text: /does not clear the publication gate/
     assert_select "p", text: "ExampleCo provides legal technology software for law firms."
-    assert_select "h2", "Review Coordinator"
+    assert_select "h2", "What the review found"
     assert_select "li", "Critic requires revision."
-    assert_select "h2", "Description Critic"
+    assert_select "h2", "Description"
     assert_select "li", "Needs stronger evidence."
-    assert_select "h2", "Duplicate Review"
+    assert_select "h2", "Duplicate review"
     assert_select "td", "Related"
-    assert_select "h2", "Evidence"
-    assert_select "h2", "Proposed Corrections"
+    assert_select "h2", "Evidence used"
+    assert_select "h2", "Apply corrections"
     assert_equal companies(:one).description, companies(:one).reload.description
   end
 
@@ -333,7 +334,7 @@ class CustomAdminTest < ActionDispatch::IntegrationTest
     get custom_admin_agent_review_path(run)
     assert_response :success
     assert_select "span.badge", "Ready to apply"
-    assert_select "label[for='field_description']", text: /Description/
+    assert_select "label", text: /Description/
 
     post apply_custom_admin_agent_review_path(run), params: { fields: ["description"] }
 
@@ -615,7 +616,7 @@ class CustomAdminTest < ActionDispatch::IntegrationTest
     assert_select "h1", "Review"
     assert_select ".admin-section-tabs", false
     assert_select ".admin-proposal-batch-actions.d-none"
-    assert_select "input[data-proposal-select-all]"
+    assert_select "input[data-batch-select-all]"
     assert_select "button", "Re-enrich selected"
     assert_select "button", "Mark needs revision"
     assert_select "button", "Publish selected"
