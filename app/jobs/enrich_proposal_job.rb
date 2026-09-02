@@ -11,6 +11,12 @@ class EnrichProposalJob < ApplicationJob
 
     admin_user = AdminUser.find_by(id: admin_user_id) || Mcp::CuratorActor.admin_user!
     CompanyProposalEnrichmentService.call(proposal: proposal, admin_user: admin_user)
+  rescue CompanyProposalEnrichmentService::Locked => e
+    # Not a failure: the record is past the point where enrichment may change it.
+    Rails.logger.info("[EnrichProposalJob] #{e.message}")
+    proposal&.update_columns(agent_details: (proposal.agent_details || {}).merge(
+      "enrichment_skipped" => { "reason" => e.message, "at" => Time.current.utc.iso8601 }
+    ))
   rescue StandardError => e
     Rails.logger.debug("[EnrichProposalJob] enrichment failed for proposal #{proposal_id}: #{e.message}")
     proposal&.update_columns(

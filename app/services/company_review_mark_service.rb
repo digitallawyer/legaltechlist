@@ -76,7 +76,9 @@ class CompanyReviewMarkService
       verification_verdict: "awaiting_contributor_update",
       # Taken off the public site while it is known to be incomplete, but never deleted.
       visible: false,
-      human_reviewed_at: Time.current,
+      # human_reviewed_at is deliberately left alone: it records who reviewed the record,
+      # and handing it back to its contributor is not that. Overwriting it erased an
+      # approval that had been made five minutes earlier.
       quality_reviewed_at: Time.current,
       # History is appended, never replaced, so earlier rounds stay readable.
       quality_review: append_history(request)

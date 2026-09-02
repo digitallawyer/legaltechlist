@@ -54,7 +54,7 @@ class DescriptionVerificationService
     validate(parsed)
   rescue StandardError => e
     Rails.logger.debug("[DescriptionVerificationService] failed for #{company_name}: #{e.class}: #{e.message}")
-    manual_review("The verification step failed to complete (#{e.class.name}). Review this record by hand.")
+    skipped("The verification step could not run (#{e.class.name}), so this description has not been checked. This is a fault on our side, not a finding about the record.")
   end
 
   # What the publish gate needs to know, without it having to understand the payload.

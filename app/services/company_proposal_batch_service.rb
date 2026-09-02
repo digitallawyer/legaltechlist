@@ -29,7 +29,7 @@ class CompanyProposalBatchService
   def perform(proposal)
     case action
     when "reenrich"
-      CompanyProposalEnrichmentService.call(proposal: proposal, admin_user: admin_user)
+      CompanyProposalEnrichmentService.call(proposal: proposal, admin_user: admin_user, force: true)
       { "proposal_id" => proposal.id, "status" => "reenriched" }
     when "mark_needs_revision"
       proposal.update!(status: "needs_revision", admin_user: admin_user, reviewed_at: Time.current)

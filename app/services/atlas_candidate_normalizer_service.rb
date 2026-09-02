@@ -50,16 +50,24 @@ class AtlasCandidateNormalizerService
     row["Organization Name"].to_s.strip
   end
 
+  # Everything that could collide: published entries and unpublished drafts alike.
+  # A rejected record is genuinely out of the way and stays excluded.
+  def matchable
+    Company.where("companies.quality_status IS DISTINCT FROM ?", "rejected")
+  end
+
   def name_match_payloads(normalized_name)
     return [] if normalized_name.blank?
 
-    Company.where.not(name: [nil, ""]).select { |company| company.visible? && company.normalized_name == normalized_name }.first(10).map { |company| company_payload(company) }
+    # Hidden drafts count. Excluding them is what let a second approval mint a duplicate
+    # of a company the first approval had already created but not yet published.
+    matchable.where.not(name: [nil, ""]).select { |company| company.normalized_name == normalized_name }.first(10).map { |company| company_payload(company) }
   end
 
   def domain_match_payloads(canonical_domain)
     return [] if canonical_domain.blank?
 
-    Company.where.not(main_url: [nil, ""]).select { |company| company.visible? && (company.canonical_domain.presence || company.canonical_main_domain) == canonical_domain }.first(10).map { |company| company_payload(company) }
+    matchable.where.not(main_url: [nil, ""]).select { |company| (company.canonical_domain.presence || company.canonical_main_domain) == canonical_domain }.first(10).map { |company| company_payload(company) }
   end
 
   def company_payload(company)
