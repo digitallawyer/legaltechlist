@@ -34,7 +34,15 @@ module Mcp
             "founded_year_provenance" => company.founded_year_provenance,
             "founded_date_backfill_status" => founded_date_backfill_status(company),
             "acquisition" => acquisition_details(company),
-            "url_health" => url_health_details(company),
+            "country" => company.country,
+          "city" => company.city,
+          "automation" => {
+            "do_not_enrich" => company.quality_review.is_a?(Hash) && company.quality_review["do_not_enrich"] == true,
+            "description_locked" => company.quality_review.is_a?(Hash) && company.quality_review["description_locked"] == true,
+            "flag_reasons" => company.quality_review.is_a?(Hash) ? company.quality_review.slice("do_not_enrich_reason", "description_locked_reason") : {}
+          },
+          "field_edits" => company.quality_review.is_a?(Hash) ? Array(company.quality_review["field_edits"]).last(5).reverse : [],
+          "url_health" => url_health_details(company),
             "duplicate_name_matches" => name_dupes,
             "duplicate_domain_matches" => domain_dupes
           )

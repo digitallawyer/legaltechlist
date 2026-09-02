@@ -289,7 +289,7 @@ module Mcp
 
     test "enrich_proposal queues async enrichment and returns a poll contract" do
       proposal = pending_proposal
-      assert_enqueued_with(job: EnrichProposalJob, args: [proposal.id, @curator.id]) do
+      assert_enqueued_with(job: EnrichProposalJob, args: [proposal.id, @curator.id, { force: false }]) do
         result = call(Mcp::Tools::EnrichProposalTool, id: proposal.id)
         assert_equal "enrichment_queued", result["result"]
         assert result["poll"].present?

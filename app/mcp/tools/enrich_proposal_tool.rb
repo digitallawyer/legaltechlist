@@ -12,7 +12,7 @@ module Mcp
       input_schema(
         properties: {
           id: { type: "integer", description: "Proposal id." },
-          force: { type: "boolean", description: "Re-enrich even if the proposal is already publishable or was enriched recently. Default false. Use after sourcing improvements to intentionally refresh." }
+          force: { type: "boolean", description: "Re-enrich even if the proposal is already publishable, was enriched recently, or is protected (already reviewed/approved, description locked, or enrichment turned off for the record). Default false. Overriding a protection rewrites text a human may have settled — the previous description is kept in description_history either way." }
         },
         required: ["id"]
       )
@@ -34,7 +34,7 @@ module Mcp
         end
 
         proposal.update_columns(agent_details: proposal.agent_details.except("enrichment_error")) if proposal.agent_details["enrichment_error"].present?
-        EnrichProposalJob.perform_later(proposal.id, curator.id)
+        EnrichProposalJob.perform_later(proposal.id, curator.id, force: force)
 
         audit!(action: "enrich_proposal", summary: "Queued enrichment for proposal #{id}", records_processed: 1, details: { "proposal_id" => id })
 

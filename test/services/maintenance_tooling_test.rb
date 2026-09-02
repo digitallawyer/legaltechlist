@@ -14,6 +14,15 @@ class MaintenanceToolingTest < ActiveSupport::TestCase
     @context = { admin_user: @admin }
   end
 
+  # A tag whose stored name is already the canonical form, so the vocabulary lookup
+  # resolves to it rather than to whatever an alias would redirect to.
+  def canonical_tag
+    @canonical_tag ||= begin
+      name = TagNormalizationService.canonical_name("privacy")
+      Tag.find_by("LOWER(name) = ?", name) || Tag.create!(name: name)
+    end
+  end
+
   def call_tool(tool, **args)
     JSON.parse(tool.call(server_context: @context, **args).to_h[:content].first[:text])
   end
@@ -220,15 +229,30 @@ class MaintenanceToolingTest < ActiveSupport::TestCase
 
   # ---- 9. taxonomy an enrichment got wrong is now reachable -------------
 
-  test "tags can be corrected and a wrong secondary category can be cleared" do
+  test "tags in the vocabulary are applied and a wrong secondary category can be cleared" do
     @company.update_columns(secondary_category_id: categories(:two).id)
+    known = canonical_tag.name
 
-    call_tool(Mcp::Tools::UpdateCompanyFieldTool, slug: @company.slug,
-              fields: { "all_tags" => "artificial intelligence, cybersecurity, privacy", "secondary_category_id" => nil },
-              reason: "An enrichment dropped cybersecurity and set a secondary category that does not apply.")
+    result = call_tool(Mcp::Tools::UpdateCompanyFieldTool, slug: @company.slug,
+                       fields: { "all_tags" => known, "secondary_category_id" => nil },
+                       reason: "An enrichment set a secondary category that does not apply.")
 
     @company.reload
     assert_nil @company.secondary_category_id, "a wrong secondary category can be cleared"
-    assert_includes @company.tags.map(&:name), "cybersecurity"
+    assert_includes @company.tags.map(&:name), known
+    assert_empty result["rejected_tags"]
+  end
+
+  # The vocabulary is closed. A name outside it used to be created as a new tag, or
+  # folded into a different one by an alias, with no way to tell either had happened.
+  test "a tag outside the vocabulary is reported rather than invented" do
+    result = call_tool(Mcp::Tools::UpdateCompanyFieldTool, slug: @company.slug,
+                       fields: { "all_tags" => "#{canonical_tag.name}, not-a-real-vocabulary-tag" },
+                       reason: "Correcting tags after an enrichment.")
+
+    assert_includes result["rejected_tags"], "not-a-real-vocabulary-tag"
+    assert_match(/controlled vocabulary/, result["rejected_tags_note"])
+    refute_includes @company.reload.tags.map(&:name), "not-a-real-vocabulary-tag"
+    assert_equal 0, Tag.where(name: "not-a-real-vocabulary-tag").count, "and no tag was minted"
   end
 end

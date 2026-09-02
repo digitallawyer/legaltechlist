@@ -24,6 +24,15 @@ class TagNormalizationService
     alias_map[key] || key
   end
 
+  # Look up without creating. The write path uses this so an off-vocabulary tag is
+  # reported back rather than quietly minted as a new one or aliased into another.
+  def self.find_existing_canonical(raw)
+    name = canonical_name(raw)
+    return nil if name.blank?
+
+    Tag.find_by("LOWER(name) = ?", name)
+  end
+
   def self.find_or_create_canonical(raw)
     name = canonical_name(raw)
     return nil if name.blank?

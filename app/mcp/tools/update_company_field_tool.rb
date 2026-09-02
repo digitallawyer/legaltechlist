@@ -10,8 +10,8 @@ module Mcp
     # reason recorded, and it sets a lock so the next enrichment cannot silently undo the
     # repair — which is exactly how the SpecterAI restore was lost in August.
     class UpdateCompanyFieldTool < BaseTool
-      FACT_FIELDS = %w[founded_date location founders status].freeze
-      TEXT_FIELDS = %w[description main_url linkedin_url crunchbase_url].freeze
+      FACT_FIELDS = %w[founded_date location founders status country city].freeze
+      TEXT_FIELDS = %w[description main_url linkedin_url crunchbase_url name].freeze
       # Taxonomy an enrichment can get wrong and nothing could then put right: tags were
       # unreachable, and a wrongly-set secondary category could not be cleared at all.
       TAXONOMY_FIELDS = %w[all_tags secondary_category_id].freeze
@@ -32,6 +32,9 @@ module Mcp
               location: { type: "string" },
               founders: { type: "string" },
               status: { type: "string", description: "Lifecycle status, e.g. active, acquired, defunct." },
+              country: { type: "string", description: "Country as an official source states it." },
+              city: { type: "string", description: "City or locality." },
+              name: { type: "string", description: "Company or legal entity name. Requires reason; changes the record identity, so check for duplicates first." },
               description: { type: "string", description: "Public description. Must clear the publication gate; requires reason." },
               main_url: { type: "string", description: "Primary website. Requires reason." },
               linkedin_url: { type: "string", description: "LinkedIn company URL. Requires reason." },
@@ -61,6 +64,11 @@ module Mcp
 
         # An edit to public text has to say why. Without it there is no way for the next
         # reader to tell a considered restore from an accident.
+        blanked = applied.slice(*TEXT_FIELDS, *FACT_FIELDS).select { |_field, value| value.to_s.strip.blank? }
+        if blanked.any?
+          return error_response("result" => "blocked", "retryable" => false, "error" => "Refusing to blank #{blanked.keys.to_sentence}. Send a value, or use secondary_category_id: null if you meant to clear a category.")
+        end
+
         text_edits = applied.slice(*TEXT_FIELDS, *TAXONOMY_FIELDS)
         if text_edits.any? && reason.to_s.strip.blank?
           return error_response("result" => "blocked", "retryable" => false, "error" => "Editing #{text_edits.keys.to_sentence} requires a `reason` explaining the change.")
@@ -89,8 +97,15 @@ module Mcp
 
         other_fields = applied.except("founded_date")
         other_fields.each { |field, value| company.public_send("#{field}=", value) }
-        company.all_tags = applied["all_tags"] if applied.key?("all_tags")
+        rejected_tags = []
+        if applied.key?("all_tags")
+          company.all_tags = applied["all_tags"]
+          rejected_tags = Array(company.rejected_tag_names)
+        end
         company.canonical_domain = company.canonical_main_domain if applied.key?("main_url")
+        # Identity keys are derived, so a name or url change has to rebuild them or the
+        # duplicate detector keeps matching on the old value.
+        company.fingerprint = company.calculated_fingerprint if applied.key?("main_url") || applied.key?("name")
         record_edit!(company, applied: applied, previous: previous, reason: reason, lock: lock_description)
         company.save! if other_fields.any?
         company.founded_date_from_source!(year: applied["founded_date"], source_url: source_url) if applied["founded_date"].present?
@@ -98,6 +113,8 @@ module Mcp
         audit!(action: "update_company_field", summary: "Updated #{applied.keys.join(', ')} on #{company.name}", records_processed: 1, details: { "company_id" => company.id, "applied" => applied, "previous" => previous, "reason" => reason, "source_url" => source_url })
 
         json_response(
+          "rejected_tags" => rejected_tags,
+          "rejected_tags_note" => (rejected_tags.any? ? "These are not in the controlled vocabulary and were not applied. Use get_taxonomy for valid tags." : nil),
           "result" => "updated",
           "company_id" => company.id,
           "company_slug" => company.slug,
