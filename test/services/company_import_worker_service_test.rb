@@ -104,4 +104,20 @@ class CompanyImportWorkerServiceTest < ActiveSupport::TestCase
       Test Company One,https://www.crunchbase.com/organization/test-company-one,"Legal Research, SaaS",2020-01-01,"San Francisco, California, United States","Duplicate of an existing company.",http://example.com,https://www.linkedin.com/company/test-company-one,Active,For Profit,1000000,1,1-10,Existing Founder,"Duplicate of an existing company."
     CSV
   end
+
+  # The rule that closed the autopublish exposure: an unattended publish needs the
+  # description verified, not merely complete.
+  test "a row whose description was not verified is held rather than published" do
+    run = nil
+    with_import_csv do |path|
+      run = CompanyImportSeedService.call(file: path, filename: "worker-test.csv", reviewer: "test@example.com", limit: 1)
+    end
+
+    assert_no_difference "Company.where(visible: true).count" do
+      with_site_evidence(verified: false) { CompanyImportWorkerService.drain(run_id: run.id, batch_limit: 1) }
+    end
+    row = run.company_import_rows.first.reload
+    assert_equal "held", row.status
+    refute_equal "published", row.action
+  end
 end

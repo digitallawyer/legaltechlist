@@ -16,6 +16,12 @@ class CompanyProposalApplyUpdateService
     company = proposal.company
     changes = proposal.final_changes.slice(*CompanyProposal::EDITABLE_COMPANY_FIELDS)
     scalar_changes = changes.except("business_model_ids", "target_client_ids", "all_tags")
+
+    # This path writes straight onto a live company, and it runs autonomously when
+    # MCP_CURATOR_AUTOAPPLY_UPDATES is on. It was the remaining way a description could
+    # be replaced on a public record with no lock respected, no reason recorded and no
+    # history — so the same rules that govern a direct edit apply here.
+    scalar_changes = guard_description!(company, scalar_changes)
     company.assign_attributes(scalar_changes)
     company.visible = true if publish
     company.human_reviewed_at = Time.current
@@ -38,6 +44,31 @@ class CompanyProposalApplyUpdateService
   private
 
   attr_reader :proposal, :admin_user, :publish
+
+  # A locked description is not overwritten by an automated apply. A permitted change
+  # records what it replaced and why, the same as update_company_field.
+  def guard_description!(company, scalar_changes)
+    incoming = scalar_changes["description"].to_s.strip
+    return scalar_changes if incoming.blank? || incoming == company.description.to_s.strip
+
+    if description_locked?(company)
+      raise ArgumentError, "#{company.name}'s description is locked against automated changes. Unlock it, or edit it directly with a reason."
+    end
+
+    review = company.quality_review.is_a?(Hash) ? company.quality_review.deep_dup : {}
+    review["field_edits"] = Array(review["field_edits"]) + [{
+      "at" => Time.current.utc.iso8601,
+      "via" => "apply_user_suggestion",
+      "reason" => "Applied user suggestion #{proposal.id}#{" by #{admin_user.email}" if admin_user.respond_to?(:email)}",
+      "changes" => { "description" => { "from" => company.description, "to" => incoming } }
+    }]
+    company.quality_review = review
+    scalar_changes
+  end
+
+  def description_locked?(company)
+    company.quality_review.is_a?(Hash) && company.quality_review["description_locked"] == true
+  end
 
   def apply_associations!(company, changes)
     revenue_model_ids = Array(changes["business_model_ids"]).map(&:presence).compact

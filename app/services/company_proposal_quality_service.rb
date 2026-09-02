@@ -28,6 +28,7 @@ class CompanyProposalQualityService
       "independent_evidence_count" => independent_evidence_count,
       "verification_state" => verification_state,
       "description_verification" => description_verification,
+      "description_verified" => description_verified?,
       "duplicate_signals" => proposal.current_duplicate_signals,
       "checked_at" => Time.current.utc.iso8601
     }
@@ -103,6 +104,14 @@ class CompanyProposalQualityService
   # not warnings: in both cases the reviewer has to look, so publication waits.
   def description_verification
     @description_verification ||= proposal.agent_details["description_verification"]
+  end
+
+  # True only when verification actually looked and approved. A skipped check is not a
+  # pass: the crash that used to block publishing was, by accident, the only thing
+  # keeping unreviewed machine text off the public index, so removing the block has to
+  # come with an explicit signal that autonomous publication can gate on.
+  def description_verified?
+    description_verification.present? && description_verification["decision"] == DescriptionVerificationService::APPROVE
   end
 
   def verification_blocker
@@ -196,6 +205,7 @@ class CompanyProposalQualityService
     values = []
     values << "Founding year is missing; publishing is allowed, but add a sourced year later when one is found (never fabricate)." if changes["founded_date"].blank?
     values << "No enrichment critic verdict is recorded." if proposal.agent_details.dig("description_critic", "verdict").blank?
+    values << verification_warning if verification_warning
     values << "Taxonomy was not auto-accepted." if taxonomy_suggestion.present? && !taxonomy_suggestion["accepted"]
     values
   end
@@ -268,6 +278,18 @@ class CompanyProposalQualityService
   # reason to trust the record.
   def verification_state
     independent_evidence_count.positive? ? "evidence_backed" : "unverified"
+  end
+
+  # Surfaced as a warning rather than a blocker: a reviewer looking at the record may
+  # publish it on their own judgement, but this is what stops anything autonomous doing
+  # so, and it tells them what was not checked.
+  def verification_warning
+    return nil if description_verified?
+    return nil if changes["description"].blank?
+    return nil if DescriptionVerificationService.blocking?(description_verification)
+
+    reason = description_verification.present? ? description_verification["accuracy_assessment"].presence : "verification has not run"
+    "This description has not been verified against the company's own pages#{" — #{reason}" if reason} It can be published by hand, but not automatically."
   end
 
   def usable_source_evidence_count

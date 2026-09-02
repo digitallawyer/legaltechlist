@@ -95,7 +95,9 @@ class CompanyImportWorkerService
 
   def publish_if_ready(result, quality)
     return result unless result["action"].in?(%w[auto_drafted already_drafted])
-    return result unless quality["publish_ready"] && Array(quality["warnings"]).empty?
+    # Same rule as the curator: an unattended publish needs the description verified,
+    # not merely complete.
+    return result unless quality["publish_ready"] && quality["description_verified"] && Array(quality["warnings"]).empty?
 
     proposal = CompanyProposal.find_by(id: result["proposal_id"])
     company = proposal&.company

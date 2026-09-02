@@ -124,4 +124,111 @@ class MaintenanceToolingTest < ActiveSupport::TestCase
     assert_equal @company.id, match["id"]
     assert_equal false, match["visible"], "and the caller can tell it is only a draft"
   end
+
+  # ---- 6. an unverified description may be published by hand, never by a machine ----
+
+  def gated_proposal(verification)
+    changes = {
+      "name" => "Zephyr Privacy", "main_url" => "https://zephyrprivacy.example",
+      "description" => "Zephyr Privacy builds anonymisation and redaction software for corporate legal teams and public authorities, deployed with EU hosting.",
+      "location" => "Wiesbaden, Germany", "founded_date" => "2019",
+      "category_id" => categories(:one).id,
+      "business_model_id" => business_models(:one).id, "business_model_ids" => [business_models(:one).id],
+      "target_client_id" => target_clients(:one).id, "target_client_ids" => [target_clients(:one).id]
+    }
+    CompanyProposal.create!(
+      status: "ready_for_review", proposal_type: "discovery_candidate", source: "llm_discovery",
+      source_identifier: SecureRandom.uuid, source_payload: {},
+      proposed_changes: changes, final_changes: changes, duplicate_signals: {},
+      enriched_at: Time.current,
+      agent_details: researched_agent_details(url: "https://zephyrprivacy.example").merge("description_verification" => verification)
+    )
+  end
+
+  test "a skipped verification leaves the record publishable by hand but not automatically" do
+    report = CompanyProposalQualityService.call(gated_proposal("decision" => "SKIPPED", "accuracy_assessment" => "The verifier could not run."))
+
+    assert report["publish_ready"], "a reviewer may still publish on their own judgement"
+    refute report["description_verified"], "but nothing autonomous may"
+    assert(report["warnings"].any? { |w| w.include?("has not been verified") })
+  end
+
+  test "an approved verification is the only thing that clears autonomous publication" do
+    approved = CompanyProposalQualityService.call(gated_proposal("decision" => "APPROVE"))
+    assert approved["description_verified"]
+    refute(approved["warnings"].any? { |w| w.include?("has not been verified") })
+
+    revised = CompanyProposalQualityService.call(gated_proposal("decision" => "REVISE"))
+    refute revised["description_verified"], "a revision is not a pass"
+  end
+
+  # ---- 7. approval refuses text the reviewer never read ------------------
+
+  test "an approval is refused when the description changed after it was rendered" do
+    record = gated_proposal("decision" => "APPROVE")
+    stale = CompanyProposalApprovalService.digest_for(record.final_changes["description"])
+    record.update!(final_changes: record.final_changes.merge("description" => "An enrichment replaced this text mid-review, dropping every named customer type."))
+
+    error = assert_raises(ArgumentError) do
+      CompanyProposalApprovalService.call(proposal: record, admin_user: @admin, publish: false, reviewed_description_digest: stale)
+    end
+    assert_match(/description changed after you opened this record/, error.message)
+    assert_nil record.reload.company_id, "nothing was created from text nobody read"
+  end
+
+  test "an approval proceeds when the text is unchanged" do
+    record = gated_proposal("decision" => "APPROVE")
+    digest = CompanyProposalApprovalService.digest_for(record.final_changes["description"])
+
+    company = CompanyProposalApprovalService.call(proposal: record, admin_user: @admin, publish: false, reviewed_description_digest: digest)
+    assert company.persisted?
+  end
+
+  # ---- 8. the auto-apply path obeys the same rules ----------------------
+
+  test "applying a user suggestion cannot overwrite a locked description" do
+    @company.update_columns(quality_review: { "description_locked" => true })
+    suggestion = CompanyProposal.create!(
+      status: "ready_for_review", proposal_type: "user_suggestion", source: "user_suggestion",
+      source_identifier: SecureRandom.uuid, source_payload: {}, company: @company,
+      proposed_changes: {}, final_changes: { "description" => "Replacement text from a suggestion that should not land." },
+      duplicate_signals: {}
+    )
+
+    error = assert_raises(ArgumentError) do
+      CompanyProposalApplyUpdateService.call(proposal: suggestion, admin_user: @admin)
+    end
+    assert_match(/locked against automated changes/, error.message)
+    refute_equal "Replacement text from a suggestion that should not land.", @company.reload.description
+  end
+
+  test "a permitted suggestion records what it replaced and why" do
+    replacement = "Veronto develops privacy and compliance software for corporate legal teams, public authorities and law firms."
+    suggestion = CompanyProposal.create!(
+      status: "ready_for_review", proposal_type: "user_suggestion", source: "user_suggestion",
+      source_identifier: SecureRandom.uuid, source_payload: {}, company: @company,
+      proposed_changes: {}, final_changes: { "description" => replacement }, duplicate_signals: {}
+    )
+    previous = @company.description
+
+    CompanyProposalApplyUpdateService.call(proposal: suggestion, admin_user: @admin)
+
+    edit = @company.reload.quality_review["field_edits"].last
+    assert_equal previous, edit["changes"]["description"]["from"]
+    assert_equal "apply_user_suggestion", edit["via"]
+  end
+
+  # ---- 9. taxonomy an enrichment got wrong is now reachable -------------
+
+  test "tags can be corrected and a wrong secondary category can be cleared" do
+    @company.update_columns(secondary_category_id: categories(:two).id)
+
+    call_tool(Mcp::Tools::UpdateCompanyFieldTool, slug: @company.slug,
+              fields: { "all_tags" => "artificial intelligence, cybersecurity, privacy", "secondary_category_id" => nil },
+              reason: "An enrichment dropped cybersecurity and set a secondary category that does not apply.")
+
+    @company.reload
+    assert_nil @company.secondary_category_id, "a wrong secondary category can be cleared"
+    assert_includes @company.tags.map(&:name), "cybersecurity"
+  end
 end
