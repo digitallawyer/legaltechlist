@@ -83,6 +83,7 @@
                     th.admin-actions
             tbody
                 - @companies.each do |company|
+                    - readiness = @readiness_by_id[company.id]
                     - description_text = company.description.to_s.strip
                     - taxonomy_unknown = company.category.blank? || company.category&.name == "Unknown" || company.revenue_models.empty? || company.target_client.blank? || company.target_client&.name == "Unknown"
                     - issue_chips = []
@@ -94,12 +95,17 @@
                     tr
                         td.admin-table-checkbox-col= check_box_tag "company_ids[]", company.id, false, class: "form-check-input", form: "company-batch-review-form", aria: { label: "Select #{company.name}" }
                         td.admin-description
-                            = link_to custom_admin_company_review_path(company.id), class: "admin-primary-link", aria: { label: "Review #{company.name}" } do
+                            = link_to custom_admin_company_review_path(company.id, queue: queue_context), class: "admin-primary-link", aria: { label: "Review #{company.name}" } do
                                 .admin-company-cell
                                     = image_tag company.logo, class: "admin-company-logo", alt: "#{company.name} logo", loading: "lazy"
                                     .admin-company-copy
                                         .fw-semibold= company.name
                                         .admin-cell-secondary= truncate(description_text, length: 90)
+                                        - if readiness
+                                            .small.mt-1
+                                                - tone = { "high" => "text-bg-success", "medium" => "text-bg-warning", "low" => "text-bg-secondary", "needs_assessment" => "text-bg-light" }[readiness[:level]]
+                                                span.badge(class=tone)= readiness[:label]
+                                                span.text-muted.ms-1= readiness[:reasons].first
                                         - if issue_chips.any?
                                             .d-flex.flex-wrap.gap-2.mt-1
                                                 - issue_chips.each do |issue|
@@ -130,7 +136,7 @@
                                 button.btn.btn-sm.btn-light.border.btn-icon type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Company actions"
                                     i.fas.fa-ellipsis-h
                                 .dropdown-menu.dropdown-menu-end
-                                    = link_to custom_admin_company_review_path(company.id), class: "dropdown-item" do
+                                    = link_to custom_admin_company_review_path(company.id, queue: queue_context), class: "dropdown-item" do
                                         i.fas.fa-eye.me-2
                                         | Review
                                     = link_to edit_custom_admin_company_path(company.id), class: "dropdown-item" do

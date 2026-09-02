@@ -52,13 +52,13 @@
                 | More
                 i.fas.fa-chevron-down.ms-1.small
             .dropdown-menu.dropdown-menu-end
-                = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "needs_work" }, class: "dropdown-item", form: { data: { turbo_confirm: "Mark #{@company.name} as needing more review?" } } do
+                = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "needs_work", queue: @queue }, class: "dropdown-item", form: { data: { turbo_confirm: "Mark #{@company.name} as needing more review?" } } do
                     i.fas.fa-clock.me-2
                     | Needs more work
                 button.dropdown-item type="button" data-bs-toggle="collapse" data-bs-target="#returnToContributorPanel" aria-expanded="false" aria-controls="returnToContributorPanel"
                     i.fas.fa-reply.me-2
                     | Return to contributor
-                = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "reject" }, class: "dropdown-item text-danger", form: { data: { turbo_confirm: "Reject and hide #{@company.name}?" } } do
+                = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "reject", queue: @queue }, class: "dropdown-item text-danger", form: { data: { turbo_confirm: "Reject and hide #{@company.name}?" } } do
                     i.fas.fa-ban.me-2
                     | Reject and hide
                 hr.dropdown-divider
@@ -72,9 +72,12 @@
                 = button_to custom_admin_company_path(@company.id), method: :delete, class: "dropdown-item text-danger", form: { data: { turbo_confirm: "Delete #{@company.name}? This permanently removes the company record from TechIndex." } } do
                     i.fas.fa-trash-alt.me-2
                     | Delete
-        = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "verified" }, class: "btn btn-success", form: { data: { turbo_confirm: "Mark #{@company.name} as verified?" } } do
+        = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "verified", queue: @queue }, class: "btn btn-success", form: { data: { turbo_confirm: "Mark #{@company.name} as verified?" } } do
             i.fas.fa-check.me-1
             | Mark verified
+
+- if @queue.present?
+    p.mb-2= link_to "← Back to the company queue", custom_admin_companies_path(@queue), class: "small text-decoration-none"
 
 - current_request = @company.quality_review.is_a?(Hash) ? @company.quality_review["current_contributor_request"] : nil
 - if current_request.present? && @company.review_state == "awaiting_contributor"
@@ -100,6 +103,7 @@
                 | Use this when the record is plausible but needs the submitter to correct or supply something. It leaves your queue, keeps its history, and comes back for review — never straight to publication. For a record that does not belong in the index, reject it instead.
             = form_with url: custom_admin_company_mark_review_path(@company.id), method: :post, local: true do
                 = hidden_field_tag :decision, "return_to_contributor"
+                == queue_hidden_fields(@queue)
                 .mb-2
                     = label_tag :contributor_instructions, "What does the contributor need to do?", class: "form-label small mb-1"
                     = text_area_tag :contributor_instructions, nil, class: "form-control form-control-sm", rows: 3, required: true, placeholder: "e.g. The website returns a 404 — please provide a current URL, and confirm the founding year."
@@ -264,14 +268,14 @@
                 h2.h5.mb-0 Reviewer decision
             .card-body.py-3
                 .d-flex.flex-wrap.gap-2
-                    = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "verified" }, class: "btn btn-success", form: { data: { turbo_confirm: "Mark #{@company.name} as verified?" } } do
+                    = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "verified", queue: @queue }, class: "btn btn-success", form: { data: { turbo_confirm: "Mark #{@company.name} as verified?" } } do
                         i.fas.fa-check.me-1
                         | Mark verified
-                    = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "needs_work" }, class: "btn btn-outline-secondary", form: { data: { turbo_confirm: "Mark #{@company.name} as needing more review?" } } do
+                    = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "needs_work", queue: @queue }, class: "btn btn-outline-secondary", form: { data: { turbo_confirm: "Mark #{@company.name} as needing more review?" } } do
                         | Needs more work
                     button.btn.btn-outline-warning type="button" data-bs-toggle="collapse" data-bs-target="#returnToContributorPanel" aria-expanded="false" aria-controls="returnToContributorPanel"
                         | Return to contributor
-                    = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "reject" }, class: "btn btn-outline-danger", form: { data: { turbo_confirm: "Reject and hide #{@company.name}?" } } do
+                    = button_to custom_admin_company_mark_review_path(@company.id), method: :post, params: { decision: "reject", queue: @queue }, class: "btn btn-outline-danger", form: { data: { turbo_confirm: "Reject and hide #{@company.name}?" } } do
                         | Reject and hide
 
     .col-lg-4

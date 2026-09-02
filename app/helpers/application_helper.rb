@@ -139,4 +139,10 @@ module ApplicationHelper
     end
     safe_join(["Possible duplicates found: ", safe_join(links, ", ")])
   end
+
+  # Re-submit the originating queue's filters with a form, so completing a record
+  # returns the reviewer to the list they were working through. See ReviewQueueContext.
+  def queue_hidden_fields(queue)
+    safe_join(Array(queue).map { |key, value| hidden_field_tag("queue[#{key}]", value, id: nil) })
+  end
 end

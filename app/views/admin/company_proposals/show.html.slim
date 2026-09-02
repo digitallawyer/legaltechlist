@@ -1,6 +1,9 @@
 - content_for :title, "#{@company_proposal.display_name} Proposal"
 - suggestion_diffs = @company_proposal.user_suggestion? ? proposal_suggestion_diffs(@company_proposal) : []
 
+- if @queue.present?
+    p.mb-2= link_to "← Back to the review queue", custom_admin_company_proposals_path(@queue), class: "small text-decoration-none"
+
 .mb-3
     .d-flex.flex-wrap.align-items-center.gap-2.mb-2
         h1.h3.mb-0= @company_proposal.display_name
@@ -63,6 +66,7 @@
     .card.border-0.shadow-sm.border-danger
         .card-body.py-3
             = form_with url: reject_custom_admin_company_proposal_path(@company_proposal), method: :post, local: true do
+                == queue_hidden_fields(@queue)
                 .mb-2
                     = label_tag :rejection_reason, "Rejection reason", class: "form-label small mb-1"
                     = text_area_tag :rejection_reason, @company_proposal.rejection_reason, class: "form-control form-control-sm", rows: 2
@@ -105,6 +109,54 @@
                     - proposal_changes_for_display(@final_changes).each do |label, value|
                         dt.col-sm-4.text-muted= label
                         dd.col-sm-8= value
+
+        - verification = @agent_details["description_verification"]
+        - if verification.present?
+            .card.border-0.shadow-sm.mb-3
+                .card-header.bg-white.py-2.d-flex.justify-content-between.align-items-center
+                    h2.h6.mb-0 Description verification
+                    - tone = { "APPROVE" => "text-bg-success", "REVISE" => "text-bg-warning", "MANUAL_REVIEW" => "text-bg-warning", "REJECT" => "text-bg-danger" }[verification["decision"]] || "text-bg-secondary"
+                    div
+                        span.badge(class=tone)= verification["decision"].to_s.humanize
+                        span.badge.text-bg-light.ms-1= "#{verification['confidence']} confidence"
+                .card-body.py-3
+                    - if verification["verified_company"].present? || verification["verified_product"].present?
+                        dl.row.small.mb-2
+                            dt.col-sm-4.text-muted Company
+                            dd.col-sm-8= verification["verified_company"].presence || "Not established"
+                            dt.col-sm-4.text-muted Legal tech product
+                            dd.col-sm-8= verification["verified_product"].presence || "Not established"
+                            - if verification["company_product_relationship"].present?
+                                dt.col-sm-4.text-muted Relationship
+                                dd.col-sm-8= verification["company_product_relationship"]
+                    - else
+                        p.small.text-muted.mb-2 The company and product could not be told apart from the retrieved pages.
+                    - if verification["accuracy_assessment"].present?
+                        p.small.mb-2= verification["accuracy_assessment"]
+                    - if Array(verification["issues_found"]).any?
+                        .admin-kicker.mb-1 Issues
+                        ul.small.mb-2
+                            - Array(verification["issues_found"]).each do |issue|
+                                li= issue
+                    - if verification["corrected_description"].present?
+                        .admin-kicker.mb-1 Suggested correction
+                        p.small.fw-semibold.mb-2= verification["corrected_description"]
+                    - if Array(verification["verified_claims"]).any?
+                        .admin-kicker.mb-1 Verified
+                        ul.small.mb-2
+                            - Array(verification["verified_claims"]).each do |claim|
+                                li= claim
+                    - if Array(verification["sources"]).any?
+                        .admin-kicker.mb-1 Pages used
+                        ul.small.mb-2
+                            - Array(verification["sources"]).each do |url|
+                                li= link_to truncate(url, length: 70), url, target: "_blank", rel: "noopener"
+                    - else
+                        p.small.text-muted.mb-2 No page was cited in support of this description.
+                    - if Array(verification["validation_notes"]).any?
+                        .alert.alert-warning.py-2.small.mb-0
+                            - Array(verification["validation_notes"]).each do |note|
+                                div= note
 
         .card.border-0.shadow-sm.mb-3
             .card-header.bg-white.py-2
@@ -224,6 +276,7 @@
                                 = link_to "Compare records", compare_duplicate_custom_admin_company_proposal_path(@company_proposal, company_id: match["id"]), class: "btn btn-sm btn-primary"
                                 = form_with url: reject_custom_admin_company_proposal_path(@company_proposal), method: :post, local: true, class: "d-inline" do
                                     = hidden_field_tag :duplicate_of_company_id, match["id"]
+                                    == queue_hidden_fields(@queue)
                                     = button_tag "Keep that entry, reject this", type: "submit", class: "btn btn-sm btn-outline-danger", data: { turbo_confirm: "Reject this proposal and record #{match['name']} as the canonical record?" }
                 - if proposal_matches.any?
                     .admin-kicker.mb-2 Also in the review queue

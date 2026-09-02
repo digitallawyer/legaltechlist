@@ -1,5 +1,6 @@
 module Admin
   class CompanyProposalsController < BaseController
+    include ReviewQueueContext
     def index
       @status = params[:status].presence || "pending_review"
       @company_proposals = proposals_scope.recent.page(params[:page]).per(25)
@@ -102,7 +103,7 @@ module Admin
 
       SlackNotifier.contribution_decision(@company_proposal, decision: "rejected", admin_user: current_admin_user, note: @company_proposal.rejection_reason)
 
-      redirect_to custom_admin_company_proposals_path(status: params[:return_status].presence || "pending_review"), notice: rejection_notice
+      redirect_to queue_redirect_path(custom_admin_company_proposals_path(status: params[:return_status].presence || "pending_review")), notice: rejection_notice
     end
 
     private
@@ -160,6 +161,7 @@ module Admin
       @source_payload = @company_proposal.source_payload || {}
       @final_changes = @company_proposal.editable_changes
       @duplicate_signals = @company_proposal.refresh_duplicate_signals!
+      @queue = returning_queue_context
       @agent_details = @company_proposal.agent_details || {}
     end
 
