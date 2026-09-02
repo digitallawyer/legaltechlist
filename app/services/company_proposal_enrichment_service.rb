@@ -226,6 +226,28 @@ class CompanyProposalEnrichmentService
   # Where enrichment lands the record. A record nothing could be independently checked
   # against is not ready for a human to sign off on, so it goes back to the queue as
   # needing revision instead of being announced as ready for review.
+  # Entity-aware verification of the description against the company's own pages. Reuses
+  # the evidence already retrieved, so it costs one model call rather than a second fetch.
+  def description_verification(final_changes)
+    return @description_verification if defined?(@description_verification)
+
+    @description_verification = if final_changes["description"].to_s.strip.blank?
+      nil
+    else
+      DescriptionVerificationService.call(
+        company_name: final_changes["name"],
+        company_url: final_changes["main_url"],
+        proposed_description: final_changes["description"],
+        linkedin_url: final_changes["linkedin_url"],
+        crunchbase_url: final_changes["crunchbase_url"],
+        site_evidence: @site_evidence
+      )
+    end
+  rescue StandardError => e
+    Rails.logger.debug("[CompanyProposalEnrichmentService] verification failed for proposal #{proposal&.id}: #{e.class}: #{e.message}")
+    @description_verification = nil
+  end
+
   def enriched_status(quality)
     quality["verification_state"] == "unverified" ? "needs_revision" : "ready_for_review"
   end
@@ -378,6 +400,7 @@ class CompanyProposalEnrichmentService
       ],
       "web_research" => research_payload,
       "site_evidence" => @site_evidence,
+      "description_verification" => description_verification(final_changes),
       "taxonomy_suggestion" => taxonomy_suggestion,
       "description_draft" => {
         "proposed_description" => final_changes["description"],

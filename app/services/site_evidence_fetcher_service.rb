@@ -71,28 +71,35 @@ class SiteEvidenceFetcherService
   # Bounded on purpose: the company's front page carries the product claims, /about
   # carries the founding and location facts, and the profile pages carry the
   # third-party corroboration. Three or four requests, not a crawl.
+  # Pages that establish who the company is, as distinct from what the product does.
+  # A footer, imprint, terms or privacy page names the legal entity when the product
+  # branding does not — which is the whole difficulty in telling Aidvocates Inc. apart
+  # from LEGAION.
+  ENTITY_PATHS = %w[/about /terms /privacy /legal /imprint].freeze
+
   def targets
     list = []
     list << ["website", main_url, false] if main_url
     # Guessed rather than declared: plenty of sites have no /about, and its absence is
     # not a retrieval failure worth reporting to a reviewer.
-    list << ["website_about", about_url, true] if about_url
+    ENTITY_PATHS.each do |path|
+      url = path_url(path)
+      list << ["website#{path.tr('/', '_')}", url, true] if url
+    end
     list << ["linkedin", linkedin_url, false] if linkedin_url
     list << ["crunchbase", crunchbase_url, false] if crunchbase_url
     list
   end
 
-  def about_url
-    return @about_url if defined?(@about_url)
+  def path_url(path)
+    return nil if main_url.blank?
 
-    @about_url = begin
-      uri = URI.parse(normalize(main_url))
-      uri.path = "/about"
-      uri.query = nil
-      uri.to_s
-    rescue StandardError
-      nil
-    end
+    uri = URI.parse(normalize(main_url))
+    uri.path = path
+    uri.query = nil
+    uri.to_s
+  rescue StandardError
+    nil
   end
 
   def page_for(label, url, guessed: false)

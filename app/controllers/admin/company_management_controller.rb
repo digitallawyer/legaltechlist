@@ -2,6 +2,7 @@ require "csv"
 
 module Admin
   class CompanyManagementController < BaseController
+    include ReviewQueueContext
     REVIEW_SIGNALS = {
       "missing_url" => "Missing URL",
       "weak_description" => "Weak description",
@@ -33,6 +34,17 @@ module Admin
       @company_summary_counts = metrics[:company_summary_counts]
       @active_filter_count = active_filter_count
       @companies = filtered_companies.page(params[:page]).per(25)
+      @sort = params[:sort].presence
+      # Readiness is scored for the page on screen, not the whole table: it is a
+      # reading order for the reviewer, and scoring 3,000 rows to show 25 is waste.
+      if @sort == "readiness"
+        @readiness = ReviewReadinessScorer.order(@companies.to_a, duplicate_ids: @duplicate_domain_company_ids + @duplicate_name_company_ids)
+        @companies_in_order = @readiness.map(&:first)
+        @readiness_by_id = @readiness.to_h { |company, score| [company.id, score] }
+      else
+        @companies_in_order = @companies.to_a
+        @readiness_by_id = {}
+      end
     end
 
     # Item 5: run the same agent review across a handful of drafts at once. Capped,
@@ -151,7 +163,7 @@ module Admin
     private
 
     def company_filter_params
-      params.permit(:q, :visibility, :category_id, :business_model_id, :target_client_id, :review_state, :review_signal, :updated_since)
+      params.permit(:q, :visibility, :category_id, :business_model_id, :target_client_id, :review_state, :review_signal, :updated_since, :sort)
     end
 
     def filtered_companies

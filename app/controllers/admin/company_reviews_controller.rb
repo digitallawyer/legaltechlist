@@ -1,11 +1,13 @@
 module Admin
   class CompanyReviewsController < BaseController
+    include ReviewQueueContext
     def show
       @company = Company.includes(:category, :secondary_category, :successor_company, :business_models, :target_clients, :target_client, :tags).find(params[:id])
       @duplicate_domain_companies = duplicate_domain_companies
       @duplicate_name_companies = duplicate_name_companies
       @company_pipeline_runs = PipelineRun.for_company(@company).recent.limit(10)
       @agent_review = AgentReviewPacket.latest_agent_review_for(@company)
+      @queue = returning_queue_context
       @duplicate_review = AgentReviewPacket.latest_duplicate_review_for(@company)
     end
 
@@ -57,12 +59,12 @@ module Admin
       # A record handed back to its contributor has left this reviewer's queue, so land
       # on the queue rather than the record they no longer need to act on.
       if decision == "return_to_contributor"
-        return redirect_to custom_admin_companies_path(review_state: "awaiting_contributor"),
+        return redirect_to queue_redirect_path(custom_admin_companies_path(review_state: "awaiting_contributor")),
                            notice: "#{company.name} was returned to its contributor and is no longer in the review queue."
       end
 
       if decision.in?(%w[verified reject])
-        return redirect_to custom_admin_companies_path,
+        return redirect_to queue_redirect_path(custom_admin_companies_path),
                            notice: "#{mark_review_notice(decision, company.name)} It has left the review queue."
       end
 

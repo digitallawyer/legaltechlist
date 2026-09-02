@@ -27,6 +27,7 @@ class CompanyProposalQualityService
       "fetched_page_count" => fetched_pages.size,
       "independent_evidence_count" => independent_evidence_count,
       "verification_state" => verification_state,
+      "description_verification" => description_verification,
       "duplicate_signals" => proposal.current_duplicate_signals,
       "checked_at" => Time.current.utc.iso8601
     }
@@ -67,6 +68,7 @@ class CompanyProposalQualityService
       values << "Possible spam or malformed public submission — requires human review before publishing." if spam_suspected?
       values << "This record has not been researched yet. Run Enrich before publishing." if not_researched?
       values << unverified_blocker if unverified_blocker
+      values << verification_blocker if verification_blocker
       values
     end
   end
@@ -94,6 +96,24 @@ class CompanyProposalQualityService
       "The company's own site could not be retrieved (#{fetch_block_reasons.to_sentence}), so nothing here is independently verified. Confirm the record by hand before publishing."
     else
       "No independently retrieved evidence supports this record — only self-reported links. Run Enrich to fetch the company's site before publishing."
+    end
+  end
+
+  # The entity-aware verification verdict. MANUAL_REVIEW and REJECT are held decisions,
+  # not warnings: in both cases the reviewer has to look, so publication waits.
+  def description_verification
+    @description_verification ||= proposal.agent_details["description_verification"]
+  end
+
+  def verification_blocker
+    return nil unless DescriptionVerificationService.blocking?(description_verification)
+
+    reason = description_verification["accuracy_assessment"].presence
+    case description_verification["decision"]
+    when DescriptionVerificationService::REJECT
+      "Verification rejected this record for the index#{" — #{reason}" if reason}"
+    else
+      "Verification could not confirm this description#{" — #{reason}" if reason} Check it by hand before publishing."
     end
   end
 
