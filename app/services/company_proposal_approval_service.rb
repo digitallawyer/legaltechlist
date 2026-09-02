@@ -133,7 +133,7 @@ class CompanyProposalApprovalService
   def ensure_description!
     return if proposal.final_changes["description"].present?
 
-    CompanyProposalEnrichmentService.call(proposal: proposal, admin_user: admin_user)
+    CompanyProposalEnrichmentService.call(proposal: proposal, admin_user: admin_user, force: true)
     proposal.reload
   end
 end

@@ -35,9 +35,11 @@ module Admin
 
     def enrich
       load_proposal
-      CompanyProposalEnrichmentService.call(proposal: @company_proposal, admin_user: current_admin_user)
+      CompanyProposalEnrichmentService.call(proposal: @company_proposal, admin_user: current_admin_user, force: true)
 
       redirect_to custom_admin_company_proposal_path(@company_proposal), notice: "Proposal enriched for review. No company records were changed."
+    rescue CompanyProposalEnrichmentService::Locked => e
+      redirect_to custom_admin_company_proposal_path(@company_proposal), alert: e.message
     end
 
     def approve

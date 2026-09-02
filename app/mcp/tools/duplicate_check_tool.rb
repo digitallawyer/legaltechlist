@@ -3,7 +3,7 @@ module Mcp
     class DuplicateCheckTool < BaseTool
       tool_name "duplicate_check"
       title "Duplicate check"
-      description "Check whether a company name/URL already exists in the visible index (name and canonical-domain matching)."
+      description "Check whether a company name/URL already exists in the index, published or as an unpublished draft (name and canonical-domain matching). Each match reports `visible`, so a hidden draft from an earlier approval is distinguishable from a live entry — approving over one of those is what creates duplicates."
       annotations(read_only_hint: true, destructive_hint: false, idempotent_hint: true, title: "Duplicate check")
       input_schema(
         properties: {

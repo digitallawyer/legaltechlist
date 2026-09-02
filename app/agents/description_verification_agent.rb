@@ -6,7 +6,6 @@
 # a search tool would only let it produce URLs the service then throws away.
 class DescriptionVerificationAgent < RubyLLM::Agent
   model "gpt-5.5"
-  instructions
   temperature 0.1
 
   DEFAULT_TIMEOUT_SECONDS = 90

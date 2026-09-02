@@ -157,12 +157,37 @@ class CompanyProposalEnrichmentService
     a == b || a.end_with?(".#{b}") || b.end_with?(".#{a}")
   end
 
-  def initialize(proposal:, admin_user:)
+  def initialize(proposal:, admin_user:, force: false)
     @proposal = proposal
     @admin_user = admin_user
+    @force = ActiveModel::Type::Boolean.new.cast(force)
+  end
+
+  # Refused when the record is no longer enrichment's to change. Three approvals were
+  # lost to this: a background enrich rewrote the description 31 seconds before the
+  # approval landed, so the text that went live was not the text the reviewer read.
+  # Once a human has looked at a record, or it has been approved, or its description was
+  # deliberately repaired, enrichment stops touching it unless asked explicitly.
+  class Locked < StandardError; end
+
+  def locked_reason
+    return "it has already been approved (#{proposal.status})" if proposal.status.in?(%w[approved_to_draft published])
+    return "a human reviewed it at #{proposal.reviewed_at.utc.iso8601}" if proposal.reviewed_at.present?
+    return "its description is locked against automated changes" if description_locked?
+    return "the record was returned to its contributor" if proposal.company&.quality_status == CompanyReviewMarkService::RETURNED_STATUS
+
+    nil
+  end
+
+  def description_locked?
+    proposal.company&.quality_review.is_a?(Hash) && proposal.company.quality_review["description_locked"] == true
   end
 
   def call
+    if !force && (reason = locked_reason)
+      raise Locked, "Enrichment skipped for proposal #{proposal.id}: #{reason}. Pass force to override."
+    end
+
     load_enrichment_inputs
     final_changes = proposal.final_changes.merge(enriched_changes).merge(taxonomy_changes)
     agent_payload = agent_details(final_changes)
@@ -185,7 +210,7 @@ class CompanyProposalEnrichmentService
 
   private
 
-  attr_reader :proposal, :admin_user
+  attr_reader :proposal, :admin_user, :force
 
   # Gather description + founded year + taxonomy. When the single-call path is enabled
   # (default in production), ONE OpenAI Responses web-search call returns all of it and
