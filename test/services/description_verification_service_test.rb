@@ -15,6 +15,13 @@ class DescriptionVerificationServiceTest < ActiveSupport::TestCase
     { "mode" => "http_fetch", "pages" => pages }
   end
 
+  # Set unconditionally and restored afterwards: CI pins OPENAI_API_KEY to "" and a
+  # conditional assignment left it empty there, so these tests only passed on a machine
+  # that happened to have a real key in its environment. The agent is stubbed, so the
+  # values are placeholders — what matters is that the service takes the verified path
+  # identically everywhere.
+  ENV_KEYS = %w[DESCRIPTION_VERIFICATION_USE_LLM OPENAI_API_KEY].freeze
+
   def run_with(model_output, pages: PAGES, **overrides)
     args = {
       company_name: "Aidvocates Inc.", company_url: "https://www.legaion.com",
@@ -22,11 +29,12 @@ class DescriptionVerificationServiceTest < ActiveSupport::TestCase
       site_evidence: evidence(pages)
     }.merge(overrides)
 
+    previous = ENV_KEYS.index_with { |key| ENV[key] }
     ENV["DESCRIPTION_VERIFICATION_USE_LLM"] = "true"
-    ENV["OPENAI_API_KEY"] ||= "test-key"
+    ENV["OPENAI_API_KEY"] = "test-key"
     DescriptionVerificationAgent.stub(:call, model_output) { DescriptionVerificationService.call(**args) }
   ensure
-    ENV.delete("DESCRIPTION_VERIFICATION_USE_LLM")
+    previous&.each { |key, value| value.nil? ? ENV.delete(key) : ENV[key] = value }
   end
 
   def approving_output(**overrides)
