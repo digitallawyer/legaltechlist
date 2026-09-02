@@ -90,7 +90,9 @@ class CompanyLogoFetchTest < ActiveSupport::TestCase
       final_changes: { "name" => company.name, "main_url" => company.main_url }
     )
     result = { "action" => "auto_drafted", "proposal_id" => proposal.id, "company_id" => company.id }
-    quality = { "publish_ready" => true, "warnings" => [] }
+    # Autonomous publication now also requires a verified description, so this stands in
+    # for the quality report of a record whose verification came back APPROVE.
+    quality = { "publish_ready" => true, "description_verified" => true, "warnings" => [] }
 
     with_logo_dev_key("pk_test") do
       with_stubbed_logo_network do

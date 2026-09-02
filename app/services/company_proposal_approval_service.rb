@@ -3,11 +3,22 @@ class CompanyProposalApprovalService
     new(**kwargs).call
   end
 
-  def initialize(proposal:, admin_user:, duplicate_override: false, publish: false)
+  # reviewed_description_digest is the fingerprint of the description the reviewer was
+  # actually looking at when they approved. Guarding only the post-approval window was
+  # the wrong window: every description lost so far was overwritten while the record was
+  # still pending, seconds before the approval landed — 31s, 34s and 194s on the three
+  # records that prompted this. If the text has moved since it was rendered, the
+  # approval is refused rather than applied to something the reviewer never read.
+  def initialize(proposal:, admin_user:, duplicate_override: false, publish: false, reviewed_description_digest: nil)
     @proposal = proposal
     @admin_user = admin_user
     @duplicate_override = duplicate_override
     @publish = publish
+    @reviewed_description_digest = reviewed_description_digest.to_s.presence
+  end
+
+  def self.digest_for(description)
+    Digest::SHA256.hexdigest(description.to_s.strip)
   end
 
   def call
@@ -17,6 +28,7 @@ class CompanyProposalApprovalService
     # publish is requested; otherwise return the existing record unchanged.
     return promote_existing_company if proposal.company_id.present?
 
+    ensure_stale_review!
     ensure_description!
     validate_proposal!
 
@@ -59,7 +71,7 @@ class CompanyProposalApprovalService
 
   private
 
-  attr_reader :proposal, :admin_user, :duplicate_override, :publish
+  attr_reader :proposal, :admin_user, :duplicate_override, :publish, :reviewed_description_digest
 
   # Publish an already-created draft (or no-op if already visible). Publishing is
   # still the sensitive action, so it re-checks duplicate and publish blockers.
@@ -78,6 +90,18 @@ class CompanyProposalApprovalService
   # Duplicate state is resolved against the index and the open queue as they are now,
   # not as they were when the proposal was created. The message names the match so the
   # operator can act on it without going hunting.
+  # Refuse an approval whose subject changed underneath it.
+  def ensure_stale_review!
+    return if reviewed_description_digest.blank?
+
+    current = self.class.digest_for(proposal.final_changes["description"])
+    return if current == reviewed_description_digest
+
+    raise ArgumentError,
+          "The description changed after you opened this record — most likely an enrichment ran while you were reviewing. " \
+          "Reload the proposal and read the current text before approving."
+  end
+
   def validate_proposal!
     # Force a fresh resolution rather than reusing anything computed earlier in this
     # process: approval is the moment the answer has to be current, and a sibling

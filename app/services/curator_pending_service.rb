@@ -88,14 +88,19 @@ class CuratorPendingService
     scope.to_a
   end
 
+  # Autonomous publication additionally requires that the description was actually
+  # verified against the company's own pages. publish_ready alone is a human's bar: it
+  # permits a reviewer to publish on their judgement, and nothing here has judgement.
   def can_autopublish?(quality, budget)
-    publish && Mcp::CuratorPolicy.autopublish_enabled? && quality["publish_ready"] && budget.positive?
+    publish && Mcp::CuratorPolicy.autopublish_enabled? && quality["publish_ready"] &&
+      quality["description_verified"] && budget.positive?
   end
 
   def skip_reason(quality, budget)
     return "publish_disabled_by_request" unless publish
     return "autopublish_kill_switch" unless Mcp::CuratorPolicy.autopublish_enabled?
     return "quality_gate" unless quality["publish_ready"]
+    return "description_not_verified" unless quality["description_verified"]
     return "daily_publish_budget_exhausted" unless budget.positive?
 
     "needs_review"

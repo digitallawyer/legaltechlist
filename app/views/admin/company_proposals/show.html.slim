@@ -46,6 +46,7 @@
                 = button_tag "Apply to Company", type: "submit", name: "publish", value: "0", class: "btn btn-success", data: { turbo_confirm: "Apply this suggestion to #{@company_proposal.company&.name}?" }
         - elsif !@company_proposal.duplicate_blocking?
             = form_with url: approve_custom_admin_company_proposal_path(@company_proposal), method: :post, local: true, class: "d-inline" do
+                = hidden_field_tag :reviewed_description_digest, CompanyProposalApprovalService.digest_for(@final_changes["description"])
                 = button_tag "Approve Draft", type: "submit", name: "publish", value: "0", class: "btn btn-outline-success", data: { turbo_confirm: "Approve this proposal as an invisible draft?" }, disabled: @company_proposal.company_id.present?
                 = button_tag "Publish", type: "submit", name: "publish", value: "1", class: "btn btn-success", data: { turbo_confirm: "Publish this proposal to the public site?" }, disabled: @company_proposal.company_id.present? || !@quality_report["publish_ready"]
 
@@ -58,6 +59,7 @@
                     .form-check.mb-0
                         = check_box_tag :duplicate_override, "1", false, class: "form-check-input", id: "duplicate_override"
                         = label_tag :duplicate_override, "I reviewed duplicates and still want to approve", class: "form-check-label small"
+                    = hidden_field_tag :reviewed_description_digest, CompanyProposalApprovalService.digest_for(@final_changes["description"])
                     .d-flex.gap-2
                         = button_tag "Approve Draft", type: "submit", name: "publish", value: "0", class: "btn btn-sm btn-outline-success", data: { turbo_confirm: "Approve this proposal as an invisible draft?" }, disabled: @company_proposal.company_id.present?
                         = button_tag "Publish", type: "submit", name: "publish", value: "1", class: "btn btn-sm btn-success", data: { turbo_confirm: "Publish this proposal to the public site?" }, disabled: @company_proposal.company_id.present? || !@quality_report["publish_ready"]

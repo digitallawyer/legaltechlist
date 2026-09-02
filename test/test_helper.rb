@@ -62,8 +62,28 @@ class ActiveSupport::TestCase
   # pipeline around enrichment rather than the retrieval itself, so records come out
   # verified the way they do in production. The stand-in domain is deliberately inert so
   # it cannot collide with a fixture company and fake a duplicate match.
-  def with_site_evidence(url: "https://site-evidence.test", &block)
-    SiteEvidenceFetcherService.stub(:call, researched_agent_details(url: url)["site_evidence"], &block)
+  def with_site_evidence(url: "https://site-evidence.test", verified: true, &block)
+    SiteEvidenceFetcherService.stub(:call, researched_agent_details(url: url)["site_evidence"]) do
+      if verified
+        DescriptionVerificationService.stub(:call, approving_verification, &block)
+      else
+        block.call
+      end
+    end
+  end
+
+  # Autonomous publication requires a positive verification verdict, so a test standing
+  # in for a successful enrichment has to stand in for the verification too.
+  def approving_verification
+    {
+      "decision" => "APPROVE", "verified_company" => "Example Co", "verified_product" => "Example Platform",
+      "company_product_relationship" => "Example Co operates the Example Platform.",
+      "accuracy_assessment" => "Claims appear on the retrieved pages.",
+      "verified_claims" => ["legal software"], "issues_found" => [], "corrected_description" => nil,
+      "sources" => ["https://site-evidence.test"], "rejected_sources" => [], "confidence" => "HIGH",
+      "validation_notes" => [], "pages_retrieved" => ["https://site-evidence.test"],
+      "entity_resolved" => true, "mode" => "llm_verified", "generated_at" => Time.current.utc.iso8601
+    }
   end
 
   # Add more helper methods to be used by all tests here...

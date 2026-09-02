@@ -12,7 +12,10 @@ module Mcp
     class UpdateCompanyFieldTool < BaseTool
       FACT_FIELDS = %w[founded_date location founders status].freeze
       TEXT_FIELDS = %w[description main_url linkedin_url crunchbase_url].freeze
-      WRITABLE_FIELDS = (FACT_FIELDS + TEXT_FIELDS).freeze
+      # Taxonomy an enrichment can get wrong and nothing could then put right: tags were
+      # unreachable, and a wrongly-set secondary category could not be cleared at all.
+      TAXONOMY_FIELDS = %w[all_tags secondary_category_id].freeze
+      WRITABLE_FIELDS = (FACT_FIELDS + TEXT_FIELDS + TAXONOMY_FIELDS).freeze
 
       tool_name "update_company_field"
       title "Update company factual field"
@@ -32,7 +35,9 @@ module Mcp
               description: { type: "string", description: "Public description. Must clear the publication gate; requires reason." },
               main_url: { type: "string", description: "Primary website. Requires reason." },
               linkedin_url: { type: "string", description: "LinkedIn company URL. Requires reason." },
-              crunchbase_url: { type: "string", description: "Crunchbase URL. Requires reason." }
+              crunchbase_url: { type: "string", description: "Crunchbase URL. Requires reason." },
+              all_tags: { type: "string", description: "Comma-separated tag list, replacing the current tags. Requires reason." },
+              secondary_category_id: { type: %w[integer string null], description: "Secondary category id, or null/empty to clear it. Requires reason." }
             },
             additionalProperties: false
           },
@@ -47,12 +52,16 @@ module Mcp
         company = find_company(slug)
         return not_found("Company '#{slug}' not found") unless company
 
-        applied = (fields || {}).transform_keys(&:to_s).slice(*WRITABLE_FIELDS).compact
+        raw = (fields || {}).transform_keys(&:to_s).slice(*WRITABLE_FIELDS)
+        # An explicit null clears secondary_category_id, so it must survive `compact`.
+        clearing = raw.key?("secondary_category_id") && raw["secondary_category_id"].blank?
+        applied = raw.compact
+        applied["secondary_category_id"] = nil if clearing
         return not_found("No writable fields provided. Allowed: #{WRITABLE_FIELDS.join(', ')}") if applied.empty?
 
         # An edit to public text has to say why. Without it there is no way for the next
         # reader to tell a considered restore from an accident.
-        text_edits = applied.slice(*TEXT_FIELDS)
+        text_edits = applied.slice(*TEXT_FIELDS, *TAXONOMY_FIELDS)
         if text_edits.any? && reason.to_s.strip.blank?
           return error_response("result" => "blocked", "retryable" => false, "error" => "Editing #{text_edits.keys.to_sentence} requires a `reason` explaining the change.")
         end
@@ -80,6 +89,7 @@ module Mcp
 
         other_fields = applied.except("founded_date")
         other_fields.each { |field, value| company.public_send("#{field}=", value) }
+        company.all_tags = applied["all_tags"] if applied.key?("all_tags")
         company.canonical_domain = company.canonical_main_domain if applied.key?("main_url")
         record_edit!(company, applied: applied, previous: previous, reason: reason, lock: lock_description)
         company.save! if other_fields.any?
