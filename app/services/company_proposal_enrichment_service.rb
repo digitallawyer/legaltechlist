@@ -170,13 +170,41 @@ class CompanyProposalEnrichmentService
   # deliberately repaired, enrichment stops touching it unless asked explicitly.
   class Locked < StandardError; end
 
+  def refuse_if_locked!
+    return if force
+
+    reason = locked_reason
+    raise Locked, "Enrichment skipped for proposal #{proposal.id}: #{reason}. Pass force to override." if reason
+  end
+
+  # Every description this service replaces is kept, so no wording is ever
+  # unrecoverable and a restore is a lookup rather than an archaeology exercise.
+  def record_description_history(payload, from:, to:)
+    return payload if from.to_s.strip.blank? || from.to_s.strip == to.to_s.strip
+
+    history = Array(proposal.agent_details["description_history"])
+    payload.merge("description_history" => history + [{
+      "replaced_at" => Time.current.utc.iso8601,
+      "replaced_by" => "enrichment",
+      "previous" => from
+    }])
+  end
+
   def locked_reason
     return "it has already been approved (#{proposal.status})" if proposal.status.in?(%w[approved_to_draft published])
     return "a human reviewed it at #{proposal.reviewed_at.utc.iso8601}" if proposal.reviewed_at.present?
+    return "enrichment is turned off for this record" if do_not_enrich?
     return "its description is locked against automated changes" if description_locked?
     return "the record was returned to its contributor" if proposal.company&.quality_status == CompanyReviewMarkService::RETURNED_STATUS
 
     nil
+  end
+
+  # Set deliberately by a curator or reviewer on a record that keeps being damaged.
+  # Durable, and readable through get_proposal and get_company so an agent can see it.
+  def do_not_enrich?
+    proposal.agent_details["do_not_enrich"] == true ||
+      (proposal.company&.quality_review.is_a?(Hash) && proposal.company.quality_review["do_not_enrich"] == true)
   end
 
   def description_locked?
@@ -184,27 +212,36 @@ class CompanyProposalEnrichmentService
   end
 
   def call
-    if !force && (reason = locked_reason)
-      raise Locked, "Enrichment skipped for proposal #{proposal.id}: #{reason}. Pass force to override."
+    refuse_if_locked!
+
+    # The web fetch and model calls take 45-90 seconds. Anything decided during that
+    # window — a lock set, an approval landing, a human editing — happened after the
+    # decision to enrich and must be honoured before the write, not before the fetch.
+    load_enrichment_inputs
+    previous_description = proposal.final_changes["description"]
+
+    proposal.with_lock do
+      proposal.reload
+      refuse_if_locked!
+
+      final_changes = proposal.final_changes.merge(enriched_changes).merge(taxonomy_changes)
+      agent_payload = agent_details(final_changes)
+      agent_payload = record_description_history(agent_payload, from: previous_description, to: final_changes["description"])
+      # enriched_at has to be set before the quality report is computed, or the report
+      # reads the record as never-researched and blocks on its own enrichment run.
+      proposal.assign_attributes(final_changes: final_changes, agent_details: agent_payload, enriched_at: Time.current)
+      quality = CompanyProposalQualityService.call(proposal)
+      proposal.update!(
+        status: enriched_status(quality),
+        final_changes: final_changes,
+        proposed_changes: proposal.proposed_changes.merge(enriched_changes),
+        agent_details: agent_payload.merge("quality" => quality).except("enrichment_error", "enrichment_skipped"),
+        admin_user: admin_user,
+        enriched_at: Time.current
+      )
     end
 
-    load_enrichment_inputs
-    final_changes = proposal.final_changes.merge(enriched_changes).merge(taxonomy_changes)
-    agent_payload = agent_details(final_changes)
-    # enriched_at has to be set before the quality report is computed, or the report
-    # reads the record as never-researched and blocks on its own enrichment run.
-    proposal.assign_attributes(final_changes: final_changes, agent_details: agent_payload, enriched_at: Time.current)
-    quality = CompanyProposalQualityService.call(proposal)
-    proposal.update!(
-      status: enriched_status(quality),
-      final_changes: final_changes,
-      proposed_changes: proposal.proposed_changes.merge(enriched_changes),
-      agent_details: agent_payload.merge("quality" => quality),
-      admin_user: admin_user,
-      enriched_at: Time.current
-    )
     proposal.refresh_duplicate_signals!
-
     proposal
   end
 

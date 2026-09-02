@@ -82,8 +82,16 @@ class CompanyProposalQualityService
 
   # A proposal that was never enriched has had no research applied to it at all, yet
   # scored as publish-ready purely because its fields were populated at intake.
+  # Enrichment is one way to research a record; a curator reading the pages themselves
+  # is another. Twenty records were held by this gate whose only exit was the operation
+  # that overwrites the description, so curator-recorded citations satisfy it too.
   def not_researched?
-    proposal.enriched_at.blank?
+    proposal.enriched_at.blank? && curator_recorded_evidence.empty?
+  end
+
+  def curator_recorded_evidence
+    @curator_recorded_evidence ||= Array(proposal.agent_details.dig("web_research", "results"))
+                                   .select { |result| result["recorded_by"] == "curator" }
   end
 
   # Self-reported links (the submitter's own website and profile URLs) establish that a

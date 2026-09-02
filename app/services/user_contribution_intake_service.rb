@@ -13,11 +13,17 @@ class UserContributionIntakeService
   def call
     raise ActiveRecord::RecordInvalid, form unless form.valid?
 
+    # One submission, one proposal. Twins arrived 1, 21 and 49 seconds apart because
+    # identity lived in an expiring cache key rather than on the record, so a double
+    # submit — or a retried request — produced two rows for the same company.
+    existing = CompanyProposal.find_by(source: SOURCE, source_identifier: submission_identity)
+    return existing if existing
+
     proposal = CompanyProposal.create!(
       status: "pending",
       proposal_type: "user_contribution",
       source: SOURCE,
-      source_identifier: SecureRandom.uuid,
+      source_identifier: submission_identity,
       source_payload: form.source_payload,
       proposed_changes: form.proposed_changes,
       final_changes: form.proposed_changes,
@@ -35,6 +41,18 @@ class UserContributionIntakeService
   private
 
   attr_reader :form, :request_ip
+
+  # Stable for the same company from the same submitter, so a repeat lands on the row
+  # that already exists instead of creating a second one.
+  def submission_identity
+    @submission_identity ||= begin
+      key = [
+        Company.canonical_domain_for(form.main_url) || Company.normalized_name_value(form.name),
+        form.contact_email.to_s.strip.downcase
+      ].compact_blank.join("|")
+      key.presence ? Digest::SHA256.hexdigest(key) : SecureRandom.uuid
+    end
+  end
 
   def duplicate_signals
     domain = Company.canonical_domain_for(form.main_url)

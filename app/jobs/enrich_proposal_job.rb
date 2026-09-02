@@ -5,12 +5,12 @@ class EnrichProposalJob < ApplicationJob
   # 30s HTTP router timeout. On success the enrichment service stamps enriched_at
   # (the completion signal callers poll for); on failure we record an
   # enrichment_error marker on agent_details so pollers can detect it.
-  def perform(proposal_id, admin_user_id = nil)
+  def perform(proposal_id, admin_user_id = nil, force: false)
     proposal = CompanyProposal.find_by(id: proposal_id)
     return unless proposal
 
     admin_user = AdminUser.find_by(id: admin_user_id) || Mcp::CuratorActor.admin_user!
-    CompanyProposalEnrichmentService.call(proposal: proposal, admin_user: admin_user)
+    CompanyProposalEnrichmentService.call(proposal: proposal, admin_user: admin_user, force: force)
   rescue CompanyProposalEnrichmentService::Locked => e
     # Not a failure: the record is past the point where enrichment may change it.
     Rails.logger.info("[EnrichProposalJob] #{e.message}")

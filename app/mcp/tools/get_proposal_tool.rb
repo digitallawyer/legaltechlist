@@ -29,6 +29,36 @@ module Mcp
           "final_changes" => proposal.final_changes,
           "duplicate_signals" => proposal.duplicate_signals,
           "duplicate_blocking" => proposal.duplicate_blocking?,
+          # The approval record. These columns always existed; none of them were exposed,
+          # so an agent could not tell an approved record from an unapproved one, nor see
+          # whose decision it was reading.
+          "approval" => {
+            "approved_at" => proposal.approved_at&.iso8601,
+            "reviewed_at" => proposal.reviewed_at&.iso8601,
+            "rejected_at" => proposal.rejected_at&.iso8601,
+            "rejection_reason" => proposal.rejection_reason,
+            "admin_user" => proposal.admin_user&.email,
+            "company_id" => proposal.company_id,
+            "company_visible" => proposal.company&.visible,
+            "canonical_record" => proposal.agent_details["canonical_record"]
+          },
+          # Who sent it in, and what they said. Also always present, also unexposed.
+          "submitter" => {
+            "email" => proposal.submitter_email.presence,
+            "name" => proposal.submitter_name.presence,
+            "message" => proposal.user_message.presence,
+            "issue_type" => proposal.issue_type.presence
+          },
+          # What automated processing is allowed to do to this record.
+          "automation" => {
+            "do_not_enrich" => proposal.agent_details["do_not_enrich"] == true,
+            "do_not_enrich_reason" => proposal.agent_details["do_not_enrich_reason"],
+            "description_locked" => proposal.company&.quality_review.is_a?(Hash) && proposal.company.quality_review["description_locked"] == true,
+            "enrichment_skipped" => proposal.agent_details["enrichment_skipped"]
+          },
+          # Wording an automated pass replaced, newest first, so a restore is a lookup.
+          "description_history" => Array(proposal.agent_details["description_history"]).reverse,
+          "description_verification" => proposal.agent_details["description_verification"],
           "enriched_at" => proposal.enriched_at&.iso8601,
           "enrichment_error" => proposal.agent_details["enrichment_error"],
           "founded_date_source" => proposal.agent_details["founded_date_source"],

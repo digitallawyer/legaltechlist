@@ -103,6 +103,9 @@ class Company < ActiveRecord::Base
   # (visible:false) or rejected-quality; excluding them means hiding/rejecting the loser of
   # a pair drops it from the dup queue instead of re-surfacing forever. IS DISTINCT FROM
   # keeps NULL quality_status rows (they are not "rejected").
+  # Visible only, deliberately: hiding the loser is how a company pair gets resolved, so
+  # a hidden row is a resolved one here. Intake and duplicate_check use a wider scope,
+  # because there an unpublished draft is an unresolved collision, not a resolution.
   scope :dedup_candidates, -> { where(visible: true).where("companies.quality_status IS DISTINCT FROM ?", "rejected") }
   scope :with_normalized_name, ->(normalized_name) {
     return none if normalized_name.blank?
@@ -198,7 +201,19 @@ class Company < ActiveRecord::Base
   end
 
   def self.normalized_name_value(value)
-    value.to_s.downcase.gsub(/[^\p{Alnum}]+/, " ").squish
+    fold_diacritics(value).downcase.gsub(/[^\p{Alnum}]+/, " ").squish
+  end
+
+  # ş → s, ü → u, ö → o. A duplicate that differs only in accents was previously
+  # undetectable: searching "Bilisim" returned nothing while "Bilişim" returned the row.
+  # I18n.transliterate handles the whole class, including letters like ı and ø that
+  # decomposition alone does not touch.
+  def self.fold_diacritics(value)
+    text = value.to_s.dup.force_encoding(Encoding::UTF_8)
+    text = text.scrub("") unless text.valid_encoding?
+    I18n.transliterate(text, replacement: "")
+  rescue StandardError
+    value.to_s
   end
 
   def self.canonical_domain_for(url)
@@ -225,6 +240,9 @@ class Company < ActiveRecord::Base
     raise ArgumentError, "source_url required (cite-only)" unless self.class.valid_http_url?(source_url)
 
     self.founded_date = year.to_s.strip
+    self.quality_review = (quality_review.is_a?(Hash) ? quality_review : {}).merge(
+      "founded_date_source" => { "year" => year.to_s.strip, "source_url" => source_url, "recorded_at" => Time.current.utc.iso8601 }
+    )
     save!
   end
 
@@ -278,6 +296,16 @@ class Company < ActiveRecord::Base
   # Duplicate candidate groups (for list_duplicate_candidates): each entry is
   # { "value" => matched_value, "ids" => [company_id, ...] } for a normalized name /
   # canonical domain shared by more than one company.
+  # Companies whose names reduce to the same identity core once corporate-form and
+  # product suffixes are ignored, regardless of domain. "Deep Law" on deep-law.com and
+  # deep-law.io share no domain and were never compared.
+  def self.duplicate_core_name_groups
+    rows = dedup_candidates.where.not(name: [nil, ""]).pluck(:id, :name)
+    rows.group_by { |_id, name| ProposalDuplicateDetectorService.core_name(name) }
+        .select { |core, group| core.present? && group.size > 1 }
+        .map { |core, group| { "value" => core, "ids" => group.map(&:first).sort } }
+  end
+
   def self.duplicate_name_groups
     rows = dedup_candidates.where.not(name: [nil, ""]).pluck(:id, :name)
     rows.group_by { |_id, name| normalized_name_value(name) }
@@ -411,6 +439,13 @@ class Company < ActiveRecord::Base
   end
 
   def compose_location(city_value, country_value)
+    # city and country have no slot for a sub-national region, so recomposing from them
+    # silently deleted one: "Wiesbaden, Hesse, Germany" came back as "Wiesbaden,
+    # Germany". When the stored location already says more than the two parts do, and
+    # still agrees with them, it is the better value and is kept.
+    detailed = detailed_location_matching(city_value, country_value)
+    return detailed if detailed
+
     if city_value.present? && country_value.present?
       "#{city_value}, #{country_value}"
     elsif country_value.present?
@@ -418,6 +453,17 @@ class Company < ActiveRecord::Base
     elsif city_value.present?
       city_value
     end
+  end
+
+  def detailed_location_matching(city_value, country_value)
+    current = location.to_s.strip
+    return nil if current.blank? || city_value.blank? || country_value.blank?
+
+    parts = current.split(",").map(&:strip).reject(&:blank?)
+    return nil unless parts.size > 2
+    return nil unless parts.first.casecmp?(city_value.to_s.strip) && parts.last.casecmp?(country_value.to_s.strip)
+
+    current
   end
 
   def resolved_country
@@ -439,10 +485,17 @@ class Company < ActiveRecord::Base
     revenue_model_names.to_sentence
   end
 
+  # Rejected names are reported rather than silently created or folded elsewhere.
+  attr_reader :rejected_tag_names
+
   def all_tags=(names)
-    self.tags = names.split(",").filter_map do |name|
-      TagNormalizationService.find_or_create_canonical(name)
+    @rejected_tag_names = []
+    resolved = names.to_s.split(",").filter_map do |name|
+      tag = TagNormalizationService.find_existing_canonical(name)
+      @rejected_tag_names << name.strip if tag.nil? && name.strip.present?
+      tag
     end
+    self.tags = resolved.uniq
   end
 
   def all_tags
