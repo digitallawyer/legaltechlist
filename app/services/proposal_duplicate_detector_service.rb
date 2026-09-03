@@ -42,6 +42,8 @@ class ProposalDuplicateDetectorService
     legal law lex juris justice legaltech lawtech contract contracts case cases
     document documents docs compliance counsel court courts advocate advocates
     attorney attorneys firm firms client clients matter matters practice ip
+    that this these those which with from your their more best first next
+    company companies startup startups service tool tools system data
   ].freeze
   MIN_CORE_LENGTH = 4
 

@@ -30,6 +30,17 @@ class ProposalDuplicateDetectorServiceTest < ActiveSupport::TestCase
     assert_equal "nextphone", ProposalDuplicateDetectorService.core_name("NextPhone Inc.")
   end
 
+  # Found by checking the live index: three scrape artifacts named "Platform that",
+  # "Platform that" and "Online platform that" were grouped as duplicates of each other
+  # on the core "that", which asserts nothing about identity.
+  test "core name refuses to assert identity on a filler word" do
+    assert_nil ProposalDuplicateDetectorService.core_name("Platform that")
+    assert_nil ProposalDuplicateDetectorService.core_name("Online platform that")
+    assert_nil ProposalDuplicateDetectorService.core_name("The company")
+    assert_equal "clausedelta", ProposalDuplicateDetectorService.core_name("ClauseDelta platform"),
+                 "a real name alongside a filler word still resolves"
+  end
+
   test "core name refuses to assert identity on a generic or tiny core" do
     assert_nil ProposalDuplicateDetectorService.core_name("Legal AI")
     assert_nil ProposalDuplicateDetectorService.core_name("Contracts Ltd")
