@@ -173,6 +173,17 @@ module Mcp
       Mcp::Current.reset
     end
 
+    test "an internal error after a write is not reported as safe to retry" do
+      company = companies(:one)
+      response = Mcp::Tools::UpdateCompanyFieldTool.stub(:confirm_saved, ->(*) { raise NoMethodError, "boom" }) do
+        Mcp::Tools::UpdateCompanyFieldTool.call(server_context: @context, slug: company.slug, fields: { "city" => "Oakland" }, reason: "Per company site")
+      end
+      payload = JSON.parse(response.to_h[:content].first[:text])
+      assert_equal false, payload["retryable"]
+      assert_match(/check get_company/, payload["error"])
+      assert_equal "Oakland", company.reload.city, "the write had committed"
+    end
+
     test "search_companies name_only ignores descriptions" do
       companies(:two).update_columns(description: "Our mission is to help Test Company One customers")
       result = call(Mcp::Tools::SearchCompaniesTool, query: "Company One", name_only: true)
