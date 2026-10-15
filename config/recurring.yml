@@ -5,6 +5,11 @@ production:
     schedule: every hour at minute 12
   # Weekly maintenance sweep: probe the least-recently-checked active company URLs so
   # broken links surface as a QC signal without hammering the whole directory at once.
+  # Keeps /admin/proposals fast: the overview reads stored duplicate and readiness
+  # answers, and this refreshes the ones older than ReviewQueueSignals::FRESH_FOR.
+  refresh_review_queue_signals:
+    command: "ReviewQueueSignals.refresh!"
+    schedule: every 10 minutes
   check_company_url_health:
     command: "CompanyUrlHealthCheckService.enqueue_due(limit: 500)"
     schedule: "0 4 * * 0"

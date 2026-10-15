@@ -3,6 +3,7 @@ module Admin
     include ReviewQueueContext
     def index
       @status = params[:status].presence || "pending_review"
+      ReviewQueueSignals.refresh!(limit: ReviewQueueSignals::LIVE_REFRESH_LIMIT)
       @company_proposals = proposals_scope.recent.page(params[:page]).per(25)
       @proposal_quality_reports = proposal_quality_reports_for(@company_proposals)
       @status_counts = proposal_filter_counts
@@ -306,10 +307,11 @@ module Admin
       CompanyProposal.where(id: duplicate_blocking_ids)
     end
 
+    # Read from the stored signals, which ReviewQueueSignals keeps current (stale rows
+    # are refreshed at the top of #index). Resolving every open proposal live here is
+    # what timed the page out.
     def duplicate_blocking_ids
-      @duplicate_blocking_ids ||= CompanyProposal.pending_review.select do |proposal|
-        proposal.duplicate_blocking?.tap { proposal.persist_duplicate_signals! }
-      end.map(&:id)
+      @duplicate_blocking_ids ||= CompanyProposal.pending_review.select { |proposal| ReviewQueueSignals.blocking?(proposal) }.map(&:id)
     end
 
     # Duplicates that have been resolved. Kept out of every active queue but findable,
@@ -323,7 +325,7 @@ module Admin
     end
 
     def ready_proposal_ids
-      @ready_proposal_ids ||= proposal_quality_reports_for(CompanyProposal.pending_review).select { |_id, report| report["publish_ready"] }.keys
+      @ready_proposal_ids ||= CompanyProposal.pending_review.select { |proposal| ReviewQueueSignals.ready?(proposal) }.map(&:id)
     end
 
     def proposal_quality_reports_for(scope)

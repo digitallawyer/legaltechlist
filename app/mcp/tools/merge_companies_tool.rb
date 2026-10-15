@@ -64,6 +64,10 @@ module Mcp
         # A constraint failure is a defect in the merge, not a blip: retrying repeats it.
         # The merge runs in one transaction, so nothing was changed.
         error_response("result" => "error", "retryable" => false, "error" => "Merge rolled back, nothing changed (#{e.class}): #{e.message}")
+      rescue NoMethodError, NameError => e
+        # A defect, not a blip. It can be raised after the write has committed, so a
+        # retry may apply the change twice: check the record before trying again.
+        error_response("result" => "error", "retryable" => false, "error" => "Internal error (#{e.class}): #{e.message}. The change may already be saved; check get_company before retrying.")
       rescue StandardError => e
         Rails.logger.debug("[MergeCompaniesTool] transient failure merging into #{keep_id}: #{e.class}: #{e.message}")
         error_response("result" => "error", "retryable" => true, "error" => "Transient failure (#{e.class}); safe to retry: #{e.message}")

@@ -167,6 +167,10 @@ module Mcp
         )
       rescue ActiveRecord::RecordInvalid => e
         error_response("result" => "blocked", "retryable" => false, "error" => e.message)
+      rescue NoMethodError, NameError => e
+        # A defect, not a blip. It can be raised after the write has committed, so a
+        # retry may apply the change twice: check the record before trying again.
+        error_response("result" => "error", "retryable" => false, "error" => "Internal error (#{e.class}): #{e.message}. The change may already be saved; check get_company before retrying.")
       rescue StandardError => e
         Rails.logger.debug("[UpdateCompanyFieldTool] transient failure for #{slug}: #{e.class}: #{e.message}")
         error_response("result" => "error", "retryable" => true, "error" => "Transient failure (#{e.class}); safe to retry: #{e.message}")
