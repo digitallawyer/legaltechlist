@@ -46,6 +46,7 @@ module Mcp
             additionalProperties: false
           },
           clear_urls: { type: "array", items: { type: "string", enum: CLEARABLE_URL_FIELDS }, description: "URL fields to empty (#{CLEARABLE_URL_FIELDS.join(', ')}). Requires reason. Use for a hijacked or wrong link; to replace a link, set it in fields instead." },
+          clear_founded_date: { type: "boolean", description: "Remove a founding year that has no source (cite-only: a year nobody can source is worse than a blank). Requires reason. To replace a year, set founded_date with source_url instead." },
           source_url: { type: "string", description: "Citation URL supporting the value; required when setting founded_date." },
           reason: { type: "string", description: "Why this edit is being made. Required for description and url fields, and recorded on the company." },
           lock_description: { type: "boolean", description: "Default true when writing a description: stops later automated enrichment overwriting it. Pass false only when the record should stay open to enrichment." }
@@ -53,7 +54,7 @@ module Mcp
         required: %w[slug]
       )
 
-      def self.call(server_context:, slug:, fields: {}, clear_urls: nil, source_url: nil, reason: nil, lock_description: nil)
+      def self.call(server_context:, slug:, fields: {}, clear_urls: nil, clear_founded_date: nil, source_url: nil, reason: nil, lock_description: nil)
         company = find_company(slug)
         return not_found("Company '#{slug}' not found") unless company
 
@@ -70,7 +71,11 @@ module Mcp
         if (conflicting = clear_urls & applied.keys).any?
           return error_response("result" => "blocked", "retryable" => false, "error" => "#{conflicting.to_sentence} is both set and cleared; send one or the other.")
         end
-        return not_found("No writable fields provided. Allowed: #{WRITABLE_FIELDS.join(', ')}") if applied.empty? && clear_urls.empty?
+        clearing_year = ActiveModel::Type::Boolean.new.cast(clear_founded_date) == true
+        if clearing_year && applied.key?("founded_date")
+          return error_response("result" => "blocked", "retryable" => false, "error" => "founded_date is both set and cleared; send one or the other.")
+        end
+        return not_found("No writable fields provided. Allowed: #{WRITABLE_FIELDS.join(', ')}") if applied.empty? && clear_urls.empty? && !clearing_year
 
         # An edit to public text has to say why. Without it there is no way for the next
         # reader to tell a considered restore from an accident.
@@ -79,13 +84,14 @@ module Mcp
           return error_response("result" => "blocked", "retryable" => false, "error" => "Refusing to blank #{blanked.keys.to_sentence}. Send a value, list a URL field in clear_urls (with a reason) to remove a wrong or hijacked link, or use secondary_category_id: null to clear a category.")
         end
 
-        text_edits = applied.slice(*TEXT_FIELDS, *TAXONOMY_FIELDS).keys + clear_urls
+        text_edits = applied.slice(*TEXT_FIELDS, *TAXONOMY_FIELDS).keys + clear_urls + (clearing_year ? ["founded_date"] : [])
         if text_edits.any? && reason.to_s.strip.blank?
           return error_response("result" => "blocked", "retryable" => false, "error" => "Editing #{text_edits.to_sentence} requires a `reason` explaining the change.")
         end
         # Cleared after the blank guard on purpose: an empty value in `fields` is still
         # refused as a probable accident, while clear_urls is the deliberate form.
         clear_urls.each { |field| applied[field] = nil }
+        applied["founded_date"] = nil if clearing_year
 
         if applied["description"].present?
           verdict = CompanyProposalEnrichmentService.description_critic_for(applied["description"])
@@ -130,6 +136,14 @@ module Mcp
         company.fingerprint = company.calculated_fingerprint if applied.key?("main_url") || applied.key?("name")
         record_edit!(company, applied: applied, previous: previous, reason: reason, lock: lock_description)
         company.save! if other_fields.any?
+        if clearing_year
+          # The year and every trace of where it came from go together, so a cleared year
+          # is not left looking sourced.
+          company.quality_review = (company.quality_review.is_a?(Hash) ? company.quality_review : {}).except("founded_date_source")
+          company.founded_date = nil
+          company.founded_year_provenance = nil
+          company.save!
+        end
         company.founded_date_from_source!(year: applied["founded_date"], source_url: source_url) if applied["founded_date"].present?
 
         # Read back rather than reported back. Until now this returned the values it had

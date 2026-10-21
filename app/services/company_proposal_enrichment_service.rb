@@ -104,6 +104,15 @@ class CompanyProposalEnrichmentService
   # Neutralize a drafted description: squish, strip marketing terms and source-meta
   # phrasing. Shared by enrichment and discovery-time drafting so both produce the
   # same house style.
+  # Wording that does not belong in an academic directory entry: a hedge (the entry should
+  # state what the source states, or leave it out), a price or an offer, the company
+  # speaking for itself or to the reader, and what is only planned.
+  HEDGE_PATTERN = /\b(?:appears?\s+to|seems?\s+to|seemingly|aims?\s+to|claims?\s+to|reportedly|supposedly|believed\s+to|is\s+said\s+to|may\s+(?:be|offer|provide|support)|likely\s+to|focus(?:es)?\s+on\s+what\s+appears)\b/i
+  PRICING_PATTERN = /(?:[$€£]\s?\d|\b\d+(?:[.,]\d+)?\s?(?:usd|eur|gbp)\b|\bper\s+(?:month|year|user|seat)\b|\b(?:free\s+trial|pricing\s+(?:plans?|starts?|from|page)|starting\s+at|starts\s+at|one-time\s+fee|subscription\s+from|book\s+a\s+demo|request\s+a\s+demo)\b)/i
+  VOICE_PATTERN = /\b(?:we|our|ours|you|your|yours)\b/i
+  ROADMAP_PATTERN = /\b(?:early\s+access|waitlist|coming\s+soon|beta\s+(?:launch|access)|will\s+(?:soon\s+)?(?:launch|offer|provide)|plans\s+to)\b/i
+  MAX_DESCRIPTION_WORDS = 130
+
   def self.clean_description(description)
     cleaned = description.to_s.squish
     MARKETING_TERMS.each do |term|
@@ -123,6 +132,11 @@ class CompanyProposalEnrichmentService
     # Word-boundary match so real company names that merely contain a term as a
     # substring (e.g. "BestProfi" containing "best") are not falsely flagged.
     issues << "Draft may contain marketing language." if MARKETING_TERMS.any? { |term| text.match?(/\b#{Regexp.escape(term)}\b/i) }
+    issues << "Draft hedges (appears to, aims to, may be): state what the source states or leave the claim out." if text.match?(HEDGE_PATTERN)
+    issues << "Draft contains pricing or a sales offer; a directory entry describes the company, not its price list." if text.match?(PRICING_PATTERN)
+    issues << "Draft speaks as or to the reader (we, our, you); write in the third person." if text.match?(VOICE_PATTERN)
+    issues << "Draft describes plans or a waitlist rather than what the company offers." if text.match?(ROADMAP_PATTERN)
+    issues << "Draft is longer than a directory entry should be." if text.split.size > MAX_DESCRIPTION_WORDS
     issues << "Draft may copy the source description." if [source_description, full_source_description].compact_blank.any? { |source| text.squish.casecmp?(source.to_s.squish) }
     issues << "Draft may describe source metadata rather than company facts." if text.match?(/\b(available records|directory metadata|stored profiles|source data|current record|listed in techindex)\b/i)
     issues << "Draft describes a web presence instead of the company's product or service." if text.match?(GENERIC_WEB_PRESENCE_PATTERN)
