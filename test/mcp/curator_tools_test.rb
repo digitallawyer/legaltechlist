@@ -97,10 +97,44 @@ module Mcp
 
     test "mark_review reject hides the company" do
       company = companies(:two)
-      call(Mcp::Tools::MarkReviewTool, slug: company.slug, decision: "reject", reason: "Law firm, out of scope")
+      call(Mcp::Tools::MarkReviewTool, slug: company.slug, decision: "reject", reason: "Law firm, out of scope", reason_code: "law_firm")
       company.reload
       assert_equal "rejected", company.quality_status
       assert_not company.visible
+    end
+
+    test "mark_review reject closes the record out for good: coded, never swept, and its domain is recognised" do
+      company = companies(:two)
+      company.update_columns(main_url: "https://acme-law.example/", canonical_domain: "acme-law.example", url_checked_at: 90.days.ago)
+      assert_includes Company.url_check_due, company
+
+      refused = Mcp::Tools::MarkReviewTool.call(server_context: @context, slug: company.slug, decision: "reject", reason: "A law firm")
+      assert refused.error?
+      assert_nil company.reload.closed_out_details
+
+      call(Mcp::Tools::MarkReviewTool, slug: company.slug, decision: "reject", reason: "Law firm: attorneys and practice areas", reason_code: "law_firm", source_url: "https://acme-law.example/about")
+      company.reload
+
+      assert_equal "law_firm", company.closed_out_details["reason_code"]
+      assert_equal "https://acme-law.example/about", company.closed_out_details["source_url"]
+      assert_includes Company.closed_out, company
+      assert_not_includes Company.url_check_due, company
+      assert_equal company, Company.closed_out_for_url("http://www.acme-law.example/contact")
+      assert_nil Company.closed_out_for_url("https://other.example/")
+    end
+
+    test "a proposal on a closed-out domain is blocked from publishing and a public submission is rejected on sight" do
+      company = companies(:two)
+      company.update_columns(main_url: "https://acme-law.example/", canonical_domain: "acme-law.example")
+      call(Mcp::Tools::MarkReviewTool, slug: company.slug, decision: "reject", reason: "Law firm", reason_code: "law_firm")
+      proposal = CompanyProposal.create!(proposal_type: "user_contribution", status: "pending", source: "user_contribution", final_changes: { "name" => "Acme Law Tech", "main_url" => "https://acme-law.example/", "description" => "Acme Law Tech builds contract review software for in-house legal teams across Europe." })
+
+      report = CompanyProposalQualityService.call(proposal)
+      assert(report["blockers"].any? { |blocker| blocker.include?("closed out for good") }, report["blockers"].inspect)
+
+      verdict = UserSubmissionTriageService.call(proposal: proposal)
+      assert_equal "reject", verdict["verdict"]
+      assert_equal "closed_out_domain", verdict["mode"]
     end
 
     test "mark_review refuses to hide a record without a reason" do

@@ -63,6 +63,16 @@ class CompanyProposalQualityService
     missing.uniq
   end
 
+  # The same domain as a record that was closed out for good. Not a duplicate to merge:
+  # a decision already made, so the proposal is rejected rather than reviewed again.
+  def closed_out_blocker
+    return @closed_out_blocker if defined?(@closed_out_blocker)
+
+    match = Company.closed_out_for_url(changes["main_url"])
+    details = match&.closed_out_details
+    @closed_out_blocker = match ? "Matches #{match.name}, closed out for good (#{details&.dig('reason_code')}#{": #{details['reason']}" if details&.dig('reason').present?}). Reject this proposal; do not review it again." : nil
+  end
+
   def missing_publish_blocking_fields
     missing_required_fields & PUBLISH_BLOCKING_FIELDS
   end
@@ -76,6 +86,7 @@ class CompanyProposalQualityService
   def blockers
     @blockers ||= begin
       values = []
+      values << closed_out_blocker if closed_out_blocker
       values << duplicate.recommended_action if duplicate.blocking?
       values << "Complete required fields before publishing: #{missing_publish_blocking_fields.map(&:humanize).to_sentence}." if missing_publish_blocking_fields.any?
       values << "Review low-confidence taxonomy before publishing." if low_confidence_taxonomy?

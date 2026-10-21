@@ -84,7 +84,7 @@ class CompanyReviewMarkService
       requested
     when "reject"
       requested = { "quality_status" => "rejected", "verification_verdict" => "human_rejected", "visible" => false }
-      company.update!(requested.merge(human_reviewed_at: Time.current, quality_reviewed_at: Time.current))
+      company.update!(requested.merge(human_reviewed_at: Time.current, quality_reviewed_at: Time.current, quality_review: with_close_out(company.quality_review)))
       requested
     when "return_to_contributor"
       return_to_contributor!
@@ -95,6 +95,18 @@ class CompanyReviewMarkService
       company.update!(requested.merge(quality_reviewed_at: Time.current))
       requested
     end
+  end
+
+  # A reject is a close-out for good: the code, the reason and the source go on the record
+  # so the next reader knows why, and so the domain can be recognised if it comes back.
+  def with_close_out(review)
+    # The admin screen rejects without choosing a code; the MCP tool requires one.
+    code = context["reason_code"].to_s.presence || "other"
+    raise ArgumentError, "Unknown reason_code #{code}. Use one of: #{Company::CLOSE_OUT_REASONS.join(', ')}." unless Company::CLOSE_OUT_REASONS.include?(code)
+
+    (review.is_a?(Hash) ? review : {}).merge(
+      "closed_out" => { "reason_code" => code, "reason" => context["reason"], "source_url" => context["source_url"].presence, "at" => Time.current.utc.iso8601, "by" => context["operator"] || admin_user&.email }.compact
+    )
   end
 
   def return_to_contributor!
