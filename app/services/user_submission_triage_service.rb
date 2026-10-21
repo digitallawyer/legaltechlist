@@ -54,6 +54,9 @@ class UserSubmissionTriageService
   # leaving a blocker for a curator to notice. The reason names the blocklist so
   # a human can tell these rejections apart from the pattern heuristic.
   def blocklist_verdict(text)
+    closed = Company.closed_out_for_url(proposal.final_changes["main_url"])
+    return verdict("reject", 1.0, "closed_out_domain", "#{closed.name} (same domain) was closed out for good: #{closed.closed_out_details&.dig('reason_code')}.") if closed
+
     domain = SubmissionBlocklist.blocked_domain_for(proposal.final_changes["main_url"])
     return verdict("reject", 1.0, "blocklisted_domain", "Submitted domain #{domain} is on the intake spam blocklist.") if domain
 

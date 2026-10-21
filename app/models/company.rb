@@ -75,6 +75,7 @@ class Company < ActiveRecord::Base
   scope :url_check_due, ->(cooldown = 30.days) {
     with_main_url
       .where("status IS NULL OR LOWER(status) NOT IN (?)", URL_CHECK_SKIP_STATUSES)
+      .where("quality_status IS DISTINCT FROM ?", "rejected")
       .where("url_checked_at IS NULL OR url_checked_at < ?", cooldown.ago)
   }
   scope :missing_main_url, -> { where(main_url: [nil, ""]) }
@@ -95,6 +96,22 @@ class Company < ActiveRecord::Base
   scope :needs_review, -> { where(quality_status: "needs_review") }
   scope :verified_quality, -> { where(quality_status: "verified") }
   scope :rejected_quality, -> { where(quality_status: "rejected") }
+
+  # A rejection that is final: a law firm, a consultancy, a hijacked or parked domain,
+  # something that is not a company. It is never researched, swept or reviewed again, and
+  # the same domain submitted later is turned away on sight (CompanyReviewMarkService).
+  CLOSE_OUT_REASONS = %w[law_firm consultancy not_legal_tech hijacked_domain parked_domain not_a_company spam other].freeze
+  scope :closed_out, -> { where(quality_status: "rejected").where("quality_review ? 'closed_out'") }
+
+  # The closed-out company that owns this URL's domain, or nil.
+  def self.closed_out_for_url(url)
+    domain = canonical_domain_for(url)
+    return nil if domain.blank?
+
+    closed_out.find_by(canonical_domain: domain)
+  end
+
+  def closed_out_details = quality_review.is_a?(Hash) ? quality_review["closed_out"] : nil
   scope :human_reviewed, -> { where.not(human_reviewed_at: nil) }
   scope :unknown_category, -> { left_joins(:category).where(categories: { name: "Unknown" }) }
   scope :unknown_business_model, -> { left_joins(:company_business_models).where(company_business_models: { id: nil }).where(business_model_id: nil) }
