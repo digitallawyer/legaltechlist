@@ -34,6 +34,7 @@ module Mcp
         SetRecordFlagsTool,
         RestoreDescriptionTool,
         RecordAcquisitionTool,
+        RecordFundingTool,
         MergeCompaniesTool,
         BackfillFoundedDatesTool,
         GetBackfillRunTool,

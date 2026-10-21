@@ -193,6 +193,31 @@ module Mcp
       assert_equal "update_company_field", company.quality_review["field_edits"].last["via"]
     end
 
+    test "record_funding needs a source, adds a round to the total, and keeps a history" do
+      company = companies(:one)
+      company.update_columns(total_funding_amount_usd: 2_000_000, number_of_funding_rounds: 1, funding_status: "Seed")
+
+      refused = Mcp::Tools::RecordFundingTool.call(server_context: @context, slug: company.slug, round_amount_usd: 1_000_000)
+      assert refused.error?
+      assert_equal 2_000_000, company.reload.total_funding_amount_usd.to_i
+
+      result = call(Mcp::Tools::RecordFundingTool, slug: company.slug, round: "pre-seed", round_amount_usd: 1_080_000, announced_on: "2026-10-21", funding_status: "Seed",
+                                                  source_url: "https://www.irishtimes.com/business/example", reason: "EUR 1,000,000 converted at 1.08")
+      assert_equal "recorded", result["result"]
+      company.reload
+      assert_equal 3_080_000, company.total_funding_amount_usd.to_i
+      assert_equal 2, company.number_of_funding_rounds
+      assert_equal "https://www.irishtimes.com/business/example", company.quality_review["funding_events"].last["source_url"]
+
+      replaced = call(Mcp::Tools::RecordFundingTool, slug: company.slug, total_funding_amount_usd: 5_000_000, source_url: "https://example.com/news", reason: "Company states 5M raised in total")
+      assert_equal "recorded", replaced["result"]
+      assert_equal 5_000_000, company.reload.total_funding_amount_usd.to_i
+      assert_equal 2, company.number_of_funding_rounds
+
+      bad = Mcp::Tools::RecordFundingTool.call(server_context: @context, slug: company.slug, round_amount_usd: -5, source_url: "https://example.com/n")
+      assert bad.error?
+    end
+
     test "update_company_field rename re-derives the slug and the old slug still finds the record" do
       company = companies(:one)
       company.update_columns(name: "as", slug: "as")
