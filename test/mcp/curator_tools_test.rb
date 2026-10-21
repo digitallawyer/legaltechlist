@@ -139,6 +139,26 @@ module Mcp
       assert_empty company.url_health
     end
 
+    test "update_company_field clears an unsourced founding year, with a reason, and its provenance" do
+      company = companies(:one)
+      company.update_columns(founded_date: "2026", founded_year_provenance: { "source" => "contribution" })
+
+      refused = Mcp::Tools::UpdateCompanyFieldTool.call(server_context: @context, slug: company.slug, clear_founded_date: true)
+      assert refused.error?
+      conflicting = Mcp::Tools::UpdateCompanyFieldTool.call(server_context: @context, slug: company.slug, fields: { "founded_date" => "2019" }, source_url: "https://example.com/about", clear_founded_date: true, reason: "x")
+      assert conflicting.error?
+      assert_equal "2026", company.reload.founded_date
+
+      result = call(Mcp::Tools::UpdateCompanyFieldTool, slug: company.slug, clear_founded_date: true, reason: "The year came from the submission; no source states it")
+
+      assert_equal "updated", result["result"]
+      company.reload
+      assert_nil company.founded_date
+      assert_nil company.founded_year_provenance
+      assert_nil company.quality_review["founded_date_source"]
+      assert_equal "update_company_field", company.quality_review["field_edits"].last["via"]
+    end
+
     test "update_company_field rename re-derives the slug and the old slug still finds the record" do
       company = companies(:one)
       company.update_columns(name: "as", slug: "as")
