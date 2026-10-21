@@ -367,6 +367,22 @@ module Mcp
       assert_equal "published", proposal.reload.status
     end
 
+    test "approve_proposal drops a founding year nobody sourced, and keeps one that has a source" do
+      unsourced = ready_proposal
+      with_env("MCP_CURATOR_AUTOPUBLISH" => "true", "MCP_CURATOR_MIN_CONFIDENCE" => "0.8") do
+        call(Mcp::Tools::ApproveProposalTool, id: unsourced.id, publish: true, confidence: 0.95)
+      end
+      assert_not unsourced.reload.final_changes.key?("founded_date")
+      assert_equal "2022", unsourced.agent_details.dig("founded_year_dropped", "year")
+
+      sourced = ready_proposal
+      sourced.update!(agent_details: sourced.agent_details.merge("founded_date_source" => { "year" => "2022", "source_url" => "https://ready.example/about" }))
+      with_env("MCP_CURATOR_AUTOPUBLISH" => "true", "MCP_CURATOR_MIN_CONFIDENCE" => "0.8") do
+        call(Mcp::Tools::ApproveProposalTool, id: sourced.id, publish: true, confidence: 0.95)
+      end
+      assert_equal "2022", sourced.reload.final_changes["founded_date"]
+    end
+
     test "approve_proposal refuses autonomous publish below the confidence threshold" do
       proposal = ready_proposal
       with_env("MCP_CURATOR_AUTOPUBLISH" => "true", "MCP_CURATOR_MIN_CONFIDENCE" => "0.8") do

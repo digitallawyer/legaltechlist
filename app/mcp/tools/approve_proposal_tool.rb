@@ -28,6 +28,18 @@ module Mcp
         required: ["id"]
       )
 
+      # Cite-only: a founding year nobody sourced (typed into a submission form, copied from a
+      # directory) is dropped before the proposal is approved by the curator tool, not carried
+      # into a public profile. A human approving in the admin is not bound by this.
+      def self.drop_unsourced_founded_date!(proposal)
+        year = proposal.final_changes["founded_date"].presence
+        return if year.blank? || proposal.agent_details["founded_date_source"].to_h["source_url"].present?
+
+        proposal.final_changes = proposal.final_changes.except("founded_date")
+        proposal.agent_details = proposal.agent_details.merge("founded_year_dropped" => { "year" => year, "reason" => "no source", "at" => Time.current.utc.iso8601 })
+        proposal.save!
+      end
+
       def self.call(server_context:, id:, publish: nil, confidence: nil, human_approved: false, duplicate_override: false, status: nil, acquisition: nil)
         proposal = CompanyProposal.find_by(id: id)
         return not_found("Proposal #{id} not found") unless proposal
@@ -48,6 +60,8 @@ module Mcp
 
         already = already_resolved_response(proposal, publish: publish)
         return already if already
+
+        drop_unsourced_founded_date!(proposal) unless human_approved
 
         # Resolved before the suggestion branch, not after it. A user suggestion applies
         # onto a LIVE company and is reachable unattended through autonomous_ok, and the
