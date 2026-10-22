@@ -134,4 +134,13 @@ class RecordJudgeServiceTest < ActiveSupport::TestCase
     assert_equal false, calls.first[:pages].first[:fetched]
     assert_match(/forsale\.godaddy\.com/, calls.first[:pages].first[:final_url])
   end
+
+  test "an earlier judgement made under different instructions is not reused" do
+    judge
+    @company.review_events.judgements.update_all("details = jsonb_set(details, '{judge_version}', '\"older\"')")
+    result, calls = judge
+
+    assert_nil result["reused"]
+    assert_equal 1, calls.size
+  end
 end
