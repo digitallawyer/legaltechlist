@@ -140,4 +140,42 @@ class SiteEvidenceFetcherServiceTest < ActiveSupport::TestCase
     assert blocks.all? { |block| block.start_with?("SOURCE https://") }
     refute blocks.any? { |block| block.include?("linkedin.com") }
   end
+
+  test "a page that only redirects by script is followed to the page it sends the browser to" do
+    lander = '<html><head><script>window.onload=function(){window.location.href="/lander"}</script></head></html>'
+    payload = run_fetch(
+      { "https://parked.example" => ok_response(lander), "https://parked.example/lander" => ok_response("<html><head><title>parked.example</title></head><body>This domain is for sale.</body></html>") },
+      main_url: "https://parked.example", entity_paths: []
+    )
+    page = payload["pages"].first
+
+    assert_equal "fetched", page["status"]
+    assert_equal "https://parked.example/lander", page["final_url"]
+    assert_match(/for sale/, page["text"])
+  end
+
+  test "a JavaScript shell is fetched with its title and meta description and says it renders no text" do
+    shell = '<html><head><title>Acme - Forensic Archive</title><meta name="description" content="Archive public social media for legal matters."></head><body><div id="root"></div></body></html>'
+    page = run_fetch({ default: ok_response(shell) }, main_url: "https://app.example", entity_paths: []).fetch("pages").first
+
+    assert_equal "fetched", page["status"]
+    assert_equal false, page["renders_text"]
+    assert_equal "Acme - Forensic Archive", page["title"]
+    assert_equal "Archive public social media for legal matters.", page["meta_description"]
+  end
+
+  test "a refusal is retried once as a browser before it is reported as blocked" do
+    calls = []
+    service = SiteEvidenceFetcherService.new(main_url: "https://waf.example", entity_paths: [])
+    responses = { SiteEvidenceFetcherService::USER_AGENT => status_response(Net::HTTPForbidden, "403"), SiteEvidenceFetcherService::BROWSER_USER_AGENT => ok_response(HTML) }
+    service.define_singleton_method(:perform_request) do |_uri|
+      agent = instance_variable_get(:@user_agent)
+      calls << agent
+      responses.fetch(agent)
+    end
+    page = with_fetch_enabled { service.call }["pages"].first
+
+    assert_equal "fetched", page["status"]
+    assert_equal [SiteEvidenceFetcherService::USER_AGENT, SiteEvidenceFetcherService::BROWSER_USER_AGENT], calls
+  end
 end

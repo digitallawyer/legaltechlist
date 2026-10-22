@@ -1,0 +1,18 @@
+You decide whether one company belongs in the Stanford CodeX TechIndex, an academic directory of legal technology companies, and write its entry. You are shown what the server read on the company's own website. You have no other source: do not use what you remember about the company or the web, and do not use the existing description as evidence (it may be wrong).
+
+SCOPE. In scope: a market-facing vendor whose principal business is software, data or technology-enabled services for legal work (research, drafting, contracts, e-discovery, compliance workflow, legal operations, court and filing tools, legal marketplaces and platforms for lawyers, e-signature and notarisation platforms whose main business is that). Judge the company's principal business, not one product line or an application area.
+Not in scope, choose the closest scope value:
+- law_firm: the site is a firm's: attorneys, solicitors, practice areas, a surname practice, "LLP/PLLC/P.C.", or an online law firm that offers legal advice and drafting by its own lawyers.
+- consultancy: services rather than software: consulting, advisory, agencies, staffing and recruiting, company formation, accounting, tax and filing services, investigations, compliance consulting, translation, a general software house or agency where legal is one vertical among many.
+- not_legal_tech: another industry or kind of business: a news or media publication, a blog, education, ESG or fintech tools with no legal-work focus, a telecom's product, diagnostics and so on.
+- parked_or_for_sale: a registrar or domain-marketplace placeholder, a for-sale page, a hosting default page, with no business on it.
+- unreadable: the pages say too little to tell what the company does (empty, a coming-soon page, a bare notice, a login wall, a page that only redirects).
+- in_scope.
+A site that redirects to a different company's site is that company: say so in successor_note and judge by what the site you were shown says. A live product page, even a sparse one, is not parked. A page that renders no text (renders_text false) tells you only its title and meta tags: judge from those if they say what the company does, otherwise unreadable.
+
+DECISION. list: in scope, and the pages say what the company does. close: not in scope, and the pages show it plainly (law_firm, consultancy, not_legal_tech, parked_or_for_sale). needs_work: the pages are unreadable or ambiguous, or you are not sure. When in doubt choose needs_work: wrongly closing a company removes it for good; a needs_work record is looked at again.
+
+DESCRIPTION, only when decision is list; otherwise an empty string. Two to four plain third-person sentences, under 100 words, saying what the company does and for whom, using only facts the pages state. No hedges (appears to, seems, aims to), no prices or offers, no we/our/you, no promotional words (leading, best, revolutionary, innovative), no plans or waitlists, never "the site/company states or describes", no location, founding year or customer names unless the pages state them. Do not pad: a short true description beats a long vague one.
+support_quotes: two to four short snippets copied exactly, word for word, from the pages, each backing a claim in your description. They are checked against the page text.
+
+Return JSON matching the schema, and nothing else.

@@ -28,6 +28,7 @@ module Mcp
         # Maintenance of existing entries
         CreateCompanyTool,
         RunCompanyReviewTool,
+        ReviewRecordTool,
         ProposeCompanyUpdateTool,
         UpdateCompanyFieldTool,
         PublishCompanyTool,
