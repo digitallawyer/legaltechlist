@@ -112,7 +112,7 @@ class CompanyProposalEnrichmentService
   VOICE_PATTERN = /\b(?:we|our|ours|you|your|yours)\b/i
   # A description states what the company does. It never reports what a website, a
   # search result or a filing says, and never describes a page that said nothing.
-  META_PATTERN = /\b(?:(?:the\s+|its\s+|official\s+)?(?:web)?site|web\s?page|search\s+results?|public\s+(?:materials|records))\s+(?:also\s+)?(?:states?|says?|describes?|identifies|lists?|notes?|does\s+not|doesn't|presents?)\b|\bsearch[-\s]result\b|\b(?:is|are)\s+(?:presented|described|named)\s+(?:as|in)\b|\bdescribes\s+its\s+(?:offering|technology|services?)\b|\bdoes\s+not\s+(?:identify|describe|state|say)\b|\bis\s+developing\s+a\s+new\b|\baccording\s+to\b/i
+  META_PATTERN = /\b(?:(?:the\s+|its\s+|official\s+)?(?:web)?site|web\s?page|search\s+results?|public\s+(?:materials|records)|the\s+company|(?:it|they))\s+(?:also\s+)?(?:states?|says?|describes?|claims?)\s+(?:that\b|its\b|itself\b|as\b)|\b(?:(?:the\s+|its\s+|official\s+)?(?:web)?site|web\s?page|search\s+results?|public\s+(?:materials|records))\s+(?:also\s+)?(?:states?|says?|describes?|identifies|lists?|notes?|does\s+not|doesn't|presents?)\b|\bsearch[-\s]result\b|\b(?:is|are)\s+(?:presented|described|named)\s+(?:as|in)\b|\bdescribes\s+its\s+(?:offering|technology|services?)\b|\bdoes\s+not\s+(?:identify|describe|state|say)\b|\bis\s+developing\s+a\s+new\b|\baccording\s+to\b/i
   ROADMAP_PATTERN = /\b(?:early\s+access|waitlist|coming\s+soon|beta\s+(?:launch|access)|will\s+(?:soon\s+)?(?:launch|offer|provide)|plans\s+to)\b/i
   MAX_DESCRIPTION_WORDS = 130
 
@@ -128,8 +128,11 @@ class CompanyProposalEnrichmentService
     cleaned.squish
   end
 
-  def self.description_issues(description, source_description: nil, full_source_description: nil)
+  def self.description_issues(description, source_description: nil, full_source_description: nil, company_name: nil)
     text = description.to_s
+    # The company's own name is not the writer's voice: "We Base Solutions" and "Tech Your
+    # Kinetics" contain we and your.
+    spoken = company_name.to_s.strip.presence ? text.gsub(/#{Regexp.escape(company_name.to_s.strip)}/i, "the company") : text
     issues = []
     issues << "Draft is shorter than expected." if text.split.size < 12
     # Word-boundary match so real company names that merely contain a term as a
@@ -137,7 +140,7 @@ class CompanyProposalEnrichmentService
     issues << "Draft may contain marketing language." if MARKETING_TERMS.any? { |term| text.match?(/\b#{Regexp.escape(term)}\b/i) }
     issues << "Draft hedges (appears to, aims to, may be): state what the source states or leave the claim out." if text.match?(HEDGE_PATTERN)
     issues << "Draft contains pricing or a sales offer; a directory entry describes the company, not its price list." if text.match?(PRICING_PATTERN)
-    issues << "Draft speaks as or to the reader (we, our, you); write in the third person." if text.match?(VOICE_PATTERN)
+    issues << "Draft speaks as or to the reader (we, our, you); write in the third person." if spoken.match?(VOICE_PATTERN)
     issues << "Draft reports what a website, search result or filing says instead of what the company does; state the product, or leave the record without a description." if text.match?(META_PATTERN)
     issues << "Draft describes plans or a waitlist rather than what the company offers." if text.match?(ROADMAP_PATTERN)
     issues << "Draft is longer than a directory entry should be." if text.split.size > MAX_DESCRIPTION_WORDS
@@ -148,8 +151,8 @@ class CompanyProposalEnrichmentService
     issues
   end
 
-  def self.description_critic_for(description, source_description: nil, full_source_description: nil, suggested_revision: "")
-    issues = description_issues(description, source_description: source_description, full_source_description: full_source_description)
+  def self.description_critic_for(description, source_description: nil, full_source_description: nil, suggested_revision: "", company_name: nil)
+    issues = description_issues(description, source_description: source_description, full_source_description: full_source_description, company_name: company_name)
     {
       "verdict" => issues.any? ? "revise" : "pass",
       "issues" => issues,

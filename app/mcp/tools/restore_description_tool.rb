@@ -44,7 +44,7 @@ module Mcp
         company = slug.present? ? find_company(slug) : proposal.company
         return not_found("No company to restore onto — pass slug.") unless company
 
-        verdict = CompanyProposalEnrichmentService.description_critic_for(chosen["previous"])
+        verdict = CompanyProposalEnrichmentService.description_critic_for(chosen["previous"], company_name: (slug.present? ? find_company(slug) : proposal.company)&.name)
         unless verdict["verdict"] == "pass"
           return error_response("result" => "blocked", "retryable" => false,
                                 "error" => "The stored wording does not clear the publication gate (#{Array(verdict['issues']).to_sentence}). Edit it by hand with update_company_field.")

@@ -34,4 +34,18 @@ class DescriptionIssuesTest < ActiveSupport::TestCase
     ].each { |text| assert_match(/what a website, search result or filing says/, issues(text).join, text) }
     assert_empty issues("Ocaflow provides Brazilian companies with tools for managing shareholder contracts, incentive programs, equity plans and cap table information in real time.")
   end
+
+  test "a company name that contains we or your is not the writer's voice" do
+    name = "We Base Solutions"
+    text = "We Base Solutions operates an online marketplace in Tunisia where individuals find lawyers by specialty, book appointments and send written consultation requests."
+    assert_match(/third person/, issues(text).join)
+    assert_empty CompanyProposalEnrichmentService.description_issues(text, company_name: name)
+    assert_match(/third person/, CompanyProposalEnrichmentService.description_issues("#{text} We also help you.", company_name: name).join)
+  end
+
+  test "the company says or states that is also reporting, not describing" do
+    assert_match(/what a website, search result or filing says/, issues("#{CLEAN} The company states that it is not a law firm.").join)
+    assert_match(/what a website, search result or filing says/, issues("#{CLEAN} The company describes its product as a workspace.").join)
+    assert_empty issues("#{CLEAN} Acme also states clearly in its contracts that it does not give legal advice.")
+  end
 end

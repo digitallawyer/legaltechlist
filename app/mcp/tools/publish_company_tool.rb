@@ -60,7 +60,7 @@ module Mcp
       def self.description_ok?(company)
         return false if company.description.to_s.strip.blank?
 
-        CompanyProposalEnrichmentService.description_critic_for(company.description)["verdict"] == "pass"
+        CompanyProposalEnrichmentService.description_critic_for(company.description, company_name: company.name)["verdict"] == "pass"
       end
 
       def self.record_publication!(company, reason:)
