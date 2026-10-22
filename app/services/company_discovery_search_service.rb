@@ -43,8 +43,8 @@ class CompanyDiscoverySearchService
 
   def web_search_enabled?
     @search_client_override.present? || (
-      defined?(RubyLLM::ResponsesAPI::BuiltInTools) &&
-        ENV["OPENAI_API_KEY"].present? &&
+      defined?(RubyLLM) &&
+      ENV["OPENAI_API_KEY"].present? &&
         ENV.fetch("DISCOVERY_USE_WEB_SEARCH", "true") == "true"
     )
   end

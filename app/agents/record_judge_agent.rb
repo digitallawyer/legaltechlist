@@ -5,10 +5,10 @@ require "timeout"
 # has no way to fetch, so it cannot misread a page it never saw; RecordJudgeService does the
 # fetching, the quote check and the bookkeeping.
 class RecordJudgeAgent < RubyLLM::Agent
+  include LlmResponseSupport
   model "gpt-5.4-mini"
   instructions
   schema RecordJudgeSchema
-  temperature 0.1
 
   DEFAULT_MODEL = "gpt-5.4-mini".freeze
 
@@ -28,9 +28,10 @@ class RecordJudgeAgent < RubyLLM::Agent
     provider = model.start_with?("claude") ? :anthropic : :openai
     chat = self.class.chat(model: model, provider: provider, assume_model_exists: unknown_model?(model))
     response = Timeout.timeout(ENV.fetch("RECORD_JUDGE_TIMEOUT_SECONDS", "90").to_i) { chat.ask(prompt) }
-    parsed = response.content.is_a?(Hash) ? response.content : JSON.parse(response.content.to_s[/\{.*\}/m].to_s)
-    parsed.merge("model" => response.model_id.presence || model,
-                 "usage" => { "input_tokens" => response.input_tokens, "output_tokens" => response.output_tokens })
+    parsed = response.parsed || JSON.parse(response.content.to_s[/\{.*\}/m].to_s)
+    parsed.merge("model" => response_model(response, model),
+                 "usage" => usage_payload(response).slice("input_tokens", "output_tokens", "cached_tokens"),
+                 "cost_usd" => estimated_cost(response))
   rescue StandardError => e
     Rails.logger.warn("[RecordJudgeAgent] #{model} failed: #{e.class}: #{e.message}")
     nil
@@ -49,10 +50,4 @@ class RecordJudgeAgent < RubyLLM::Agent
     }.to_json
   end
 
-  def unknown_model?(model_id)
-    RubyLLM.models.find(model_id)
-    false
-  rescue RubyLLM::ModelNotFoundError
-    true
-  end
 end

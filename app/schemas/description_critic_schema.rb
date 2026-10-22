@@ -1,4 +1,4 @@
-class DescriptionCriticSchema < RubyLLM::Schema
+class DescriptionCriticSchema < Schematist::Schema
   SCHEMA_VERSION = "2026-04-26.1".freeze
 
   string :verdict, enum: %w[pass revise reject], description: "Whether the proposed description is safe for human review, needs revision, or should be rejected."

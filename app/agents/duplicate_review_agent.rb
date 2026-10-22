@@ -1,4 +1,5 @@
 class DuplicateReviewAgent < RubyLLM::Agent
+  include LlmResponseSupport
   RELATIONSHIPS = %w[duplicate rebrand related distinct].freeze
   OVERALL_RECOMMENDATIONS = %w[
     needs_human_review
@@ -11,7 +12,6 @@ class DuplicateReviewAgent < RubyLLM::Agent
   model "gpt-5.5"
   instructions
   schema DuplicateReviewSchema
-  temperature 0.1
 
   SCHEMA_VERSION = DuplicateReviewSchema::SCHEMA_VERSION
 
@@ -74,7 +74,7 @@ class DuplicateReviewAgent < RubyLLM::Agent
 
     {
       "mode" => "ruby_llm",
-      "model" => response.model_id.presence || model,
+      "model" => response_model(response, model),
       "overall_recommendation" => parsed["overall_recommendation"],
       "pair_reviews" => parsed["pair_reviews"],
       "unresolved_questions" => parsed["unresolved_questions"],
@@ -224,34 +224,6 @@ class DuplicateReviewAgent < RubyLLM::Agent
     ENV.fetch("RUBYLLM_DUPLICATE_MODEL", ENV.fetch("RUBYLLM_HARD_MODEL", "gpt-5.5"))
   end
 
-  def unknown_model?(model)
-    RubyLLM.models.find(model)
-    false
-  rescue RubyLLM::ModelNotFoundError
-    true
-  end
 
-  def usage_payload(response)
-    {
-      "input_tokens" => response.input_tokens,
-      "output_tokens" => response.output_tokens,
-      "cached_tokens" => response.cached_tokens,
-      "cache_creation_tokens" => response.cache_creation_tokens,
-      "thinking_tokens" => response.thinking_tokens,
-      "total_tokens" => [response.input_tokens, response.output_tokens].compact.sum
-    }
-  end
 
-  def estimated_cost(response)
-    model_info = RubyLLM.models.find(response.model_id)
-    return unless model_info&.input_price_per_million && model_info&.output_price_per_million
-
-    input_tokens = response.input_tokens.to_i
-    output_tokens = response.output_tokens.to_i
-    input_cost = input_tokens * model_info.input_price_per_million / 1_000_000.0
-    output_cost = output_tokens * model_info.output_price_per_million / 1_000_000.0
-    (input_cost + output_cost).round(8)
-  rescue StandardError
-    nil
-  end
 end

@@ -1,4 +1,4 @@
-class DuplicatePairReviewSchema < RubyLLM::Schema
+class DuplicatePairReviewSchema < Schematist::Schema
   integer :company_id, description: "Primary company id."
   integer :candidate_company_id, description: "Compared candidate company id."
   string :relationship, enum: %w[duplicate rebrand related distinct], description: "Best relationship between the two company records."
@@ -7,7 +7,7 @@ class DuplicatePairReviewSchema < RubyLLM::Schema
   array :recommended_actions, of: :string, description: "Human review actions; never automatic merge/delete."
 end
 
-class DuplicateReviewSchema < RubyLLM::Schema
+class DuplicateReviewSchema < Schematist::Schema
   SCHEMA_VERSION = "2026-04-26.1".freeze
 
   string :overall_recommendation, enum: %w[needs_human_review likely_duplicate_group likely_rebrand_group related_entities likely_distinct], description: "Overall group-level recommendation."

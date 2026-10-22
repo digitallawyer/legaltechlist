@@ -5,7 +5,7 @@
 # NOTE: OpenAI strict structured outputs require EVERY property to be listed in
 # `required`, so all fields are required. "No value" is expressed as an empty string
 # / empty array / 0.0 confidence, which the downstream mapping treats as absent.
-class TaxonomySuggestionSchema < RubyLLM::Schema
+class TaxonomySuggestionSchema < Schematist::Schema
   SCHEMA_VERSION = "2026-07-02.2".freeze
 
   string :category_name, description: "Primary category, exactly from allowed_category_names (empty string if unknown)."

@@ -1,7 +1,7 @@
 class TaxonomyLookupTool < RubyLLM::Tool
   description "Return available TechIndex taxonomy values and current company taxonomy. Read-only."
 
-  param :company_id, type: :integer, desc: "Company id to inspect.", required: false
+  parameter :company_id, type: :integer, description: "Company id to inspect.", required: false
 
   def execute(company_id: nil)
     company = Company.find_by(id: company_id) if company_id.present?

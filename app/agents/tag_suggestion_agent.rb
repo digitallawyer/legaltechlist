@@ -4,9 +4,9 @@ require "timeout"
 # tag_names + confidence; TagSuggestionService normalizes, filters to the assignable
 # vocabulary, and applies the confidence gate. Cheap-model tier (constrained keywords).
 class TagSuggestionAgent < RubyLLM::Agent
+  include LlmResponseSupport
   model "gpt-5.4-nano"
   schema TagSuggestionSchema
-  temperature 0.1
 
   def self.call(**kwargs)
     new(**kwargs).call
@@ -78,10 +78,4 @@ class TagSuggestionAgent < RubyLLM::Agent
     nil
   end
 
-  def unknown_model?(model)
-    RubyLLM.models.find(model)
-    false
-  rescue RubyLLM::ModelNotFoundError
-    true
-  end
 end

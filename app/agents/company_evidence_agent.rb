@@ -78,22 +78,22 @@ class CompanyEvidenceAgent
   end
 
   def domain_normalization
-    @domain_normalization ||= DomainNormalizationTool.new.call({ name: company.name, url: company.main_url })
+    @domain_normalization ||= DomainNormalizationTool.new.call(name: company.name, url: company.main_url)
   end
 
   def duplicate_lookup
-    @duplicate_lookup ||= DuplicateLookupTool.new.call({ company_id: company.id, name: company.name, url: company.main_url })
+    @duplicate_lookup ||= DuplicateLookupTool.new.call(company_id: company.id, name: company.name, url: company.main_url)
   end
 
   def stored_source_lookup
-    @stored_source_lookup ||= StoredSourceLookupTool.new.call({ company_id: company.id })
+    @stored_source_lookup ||= StoredSourceLookupTool.new.call(company_id: company.id)
   end
 
   def taxonomy_lookup
-    @taxonomy_lookup ||= TaxonomyLookupTool.new.call({ company_id: company.id })
+    @taxonomy_lookup ||= TaxonomyLookupTool.new.call(company_id: company.id)
   end
 
   def web_evidence
-    @web_evidence ||= WebEvidenceTool.new.call({ company_id: company.id })
+    @web_evidence ||= WebEvidenceTool.new.call(company_id: company.id)
   end
 end

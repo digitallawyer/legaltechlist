@@ -51,7 +51,7 @@ class ProposalEnrichmentAgent < RubyLLM::Agent
   attr_reader :proposal, :site_evidence
 
   def enabled?
-    defined?(RubyLLM::ResponsesAPI::BuiltInTools) &&
+    defined?(RubyLLM) &&
       ENV["OPENAI_API_KEY"].present? &&
       ENV.fetch("PROPOSAL_ENRICHMENT_USE_LLM", ENV.fetch("DESCRIPTION_DRAFTS_USE_LLM", "true")) == "true"
   end

@@ -1,6 +1,6 @@
 # Structured output for triaging a public directory submission (spam/quality gate).
 # All fields required (OpenAI strict structured outputs).
-class SubmissionTriageSchema < RubyLLM::Schema
+class SubmissionTriageSchema < Schematist::Schema
   SCHEMA_VERSION = "2026-07-02.2".freeze
 
   string :verdict, enum: %w[accept review reject], description: "Triage verdict."

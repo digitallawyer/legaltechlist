@@ -2,7 +2,7 @@ require "test_helper"
 
 class ReadOnlyEvidenceToolsTest < ActiveSupport::TestCase
   test "domain normalization tool returns canonical read-only identity fields" do
-    result = DomainNormalizationTool.new.call({ name: "Example Co", url: "https://www.example.com/path" })
+    result = DomainNormalizationTool.new.call(name: "Example Co", url: "https://www.example.com/path")
 
     assert_equal "example co", result["normalized_name"]
     assert_equal "example.com", result["canonical_domain"]
@@ -15,7 +15,7 @@ class ReadOnlyEvidenceToolsTest < ActiveSupport::TestCase
     duplicate = companies(:two)
     duplicate.update_columns(name: company.name, main_url: "https://www.example.com")
 
-    result = DuplicateLookupTool.new.call({ company_id: company.id, name: company.name, url: company.main_url })
+    result = DuplicateLookupTool.new.call(company_id: company.id, name: company.name, url: company.main_url)
 
     assert_equal true, result["read_only"]
     assert_includes result["name_candidates"].map { |candidate| candidate["id"] }, duplicate.id
@@ -25,7 +25,7 @@ class ReadOnlyEvidenceToolsTest < ActiveSupport::TestCase
   test "stored source lookup tool returns profile URLs for a company" do
     company = companies(:one)
 
-    result = StoredSourceLookupTool.new.call({ company_id: company.id })
+    result = StoredSourceLookupTool.new.call(company_id: company.id)
 
     assert_equal true, result["read_only"]
     assert_equal company.id, result["company_id"]
@@ -36,7 +36,7 @@ class ReadOnlyEvidenceToolsTest < ActiveSupport::TestCase
   test "taxonomy lookup tool returns current and available taxonomy values" do
     company = companies(:one)
 
-    result = TaxonomyLookupTool.new.call({ company_id: company.id })
+    result = TaxonomyLookupTool.new.call(company_id: company.id)
 
     assert_equal true, result["read_only"]
     assert_equal "Knowledge & Research", result["current"]["category"]
@@ -48,7 +48,7 @@ class ReadOnlyEvidenceToolsTest < ActiveSupport::TestCase
   test "web evidence tool defaults to no network checks" do
     company = companies(:one)
 
-    result = WebEvidenceTool.new.call({ company_id: company.id })
+    result = WebEvidenceTool.new.call(company_id: company.id)
 
     assert_equal true, result["read_only"]
     assert_equal false, result["network_checked"]

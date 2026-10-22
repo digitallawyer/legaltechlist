@@ -1,7 +1,7 @@
 class StoredSourceLookupTool < RubyLLM::Tool
   description "Return stored source and profile URLs for a company record. Read-only."
 
-  param :company_id, type: :integer, desc: "Company id to inspect."
+  parameter :company_id, type: :integer, description: "Company id to inspect."
 
   def execute(company_id:)
     company = Company.find_by(id: company_id)

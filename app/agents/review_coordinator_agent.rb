@@ -1,4 +1,5 @@
 class ReviewCoordinatorAgent < RubyLLM::Agent
+  include LlmResponseSupport
   STATUSES = %w[
     ready_for_human_review
     needs_more_evidence
@@ -18,7 +19,6 @@ class ReviewCoordinatorAgent < RubyLLM::Agent
   model "gpt-5.5"
   instructions
   schema ReviewCoordinatorSchema
-  temperature 0.1
 
   SCHEMA_VERSION = ReviewCoordinatorSchema::SCHEMA_VERSION
 
@@ -93,7 +93,7 @@ class ReviewCoordinatorAgent < RubyLLM::Agent
 
     {
       "mode" => "ruby_llm",
-      "model" => response.model_id.presence || model,
+      "model" => response_model(response, model),
       "status" => normalized_status(parsed["status"]),
       "reasons" => parsed["reasons"],
       "disagreements" => parsed["disagreements"],
@@ -221,34 +221,6 @@ class ReviewCoordinatorAgent < RubyLLM::Agent
     ENV.fetch("RUBYLLM_COORDINATOR_MODEL", ENV.fetch("RUBYLLM_HARD_MODEL", "gpt-5.5"))
   end
 
-  def unknown_model?(model)
-    RubyLLM.models.find(model)
-    false
-  rescue RubyLLM::ModelNotFoundError
-    true
-  end
 
-  def usage_payload(response)
-    {
-      "input_tokens" => response.input_tokens,
-      "output_tokens" => response.output_tokens,
-      "cached_tokens" => response.cached_tokens,
-      "cache_creation_tokens" => response.cache_creation_tokens,
-      "thinking_tokens" => response.thinking_tokens,
-      "total_tokens" => [response.input_tokens, response.output_tokens].compact.sum
-    }
-  end
 
-  def estimated_cost(response)
-    model_info = RubyLLM.models.find(response.model_id)
-    return unless model_info&.input_price_per_million && model_info&.output_price_per_million
-
-    input_tokens = response.input_tokens.to_i
-    output_tokens = response.output_tokens.to_i
-    input_cost = input_tokens * model_info.input_price_per_million / 1_000_000.0
-    output_cost = output_tokens * model_info.output_price_per_million / 1_000_000.0
-    (input_cost + output_cost).round(8)
-  rescue StandardError
-    nil
-  end
 end

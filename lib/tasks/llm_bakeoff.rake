@@ -58,9 +58,9 @@ namespace :llm do
           raw = parsed["proposed_description"].to_s
           cleaned = CompanyProposalEnrichmentService.clean_description(raw)
           critic = CompanyProposalEnrichmentService.description_critic_for(cleaned, source_description: sample[:source_evidence]["short_description"])
-          in_tok = response.input_tokens.to_i
-          out_tok = response.output_tokens.to_i
-          cost = model_cost(response.model_id.presence || model, in_tok, out_tok)
+          in_tok = response.tokens&.input.to_i
+          out_tok = response.tokens&.output.to_i
+          cost = model_cost(response.model.to_s.presence || model, in_tok, out_tok)
           words = cleaned.split.size
 
           t = totals[model]
@@ -189,9 +189,11 @@ def model_cost(model_id, input_tokens, output_tokens)
   end
 
   info = RubyLLM.models.find(model_id)
-  return 0.0 unless info&.input_price_per_million && info&.output_price_per_million
+  input_price = info&.price(:input)
+  output_price = info&.price(:output)
+  return 0.0 unless input_price && output_price
 
-  (input_tokens * info.input_price_per_million + output_tokens * info.output_price_per_million) / 1_000_000.0
+  (input_tokens * input_price + output_tokens * output_price) / 1_000_000.0
 rescue StandardError
   0.0
 end

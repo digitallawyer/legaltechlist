@@ -4,9 +4,9 @@ require "timeout"
 # Returns a structured verdict (or nil when disabled/failed); UserSubmissionTriageService
 # wraps it into the standard verdict payload. Cheapest model tier (nano).
 class SubmissionTriageAgent < RubyLLM::Agent
+  include LlmResponseSupport
   model "gpt-5.4-nano"
   schema SubmissionTriageSchema
-  temperature 0.1
 
   def self.call(**kwargs)
     new(**kwargs).call
@@ -67,10 +67,4 @@ class SubmissionTriageAgent < RubyLLM::Agent
     nil
   end
 
-  def unknown_model?(model)
-    RubyLLM.models.find(model)
-    false
-  rescue RubyLLM::ModelNotFoundError
-    true
-  end
 end

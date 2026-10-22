@@ -5,9 +5,9 @@ require "timeout"
 # (or nil when disabled/failed); CompanyLegalScopeReviewService applies the actions
 # and confidence gating. Cheap-model tier (bounded classification).
 class LegalScopeReviewAgent < RubyLLM::Agent
+  include LlmResponseSupport
   model "gpt-5.4-nano"
   schema LegalScopeReviewSchema
-  temperature 0.1
 
   def self.call(**kwargs)
     new(**kwargs).call
@@ -78,10 +78,4 @@ class LegalScopeReviewAgent < RubyLLM::Agent
     nil
   end
 
-  def unknown_model?(model)
-    RubyLLM.models.find(model)
-    false
-  rescue RubyLLM::ModelNotFoundError
-    true
-  end
 end

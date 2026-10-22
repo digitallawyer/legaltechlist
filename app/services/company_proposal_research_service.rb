@@ -56,7 +56,7 @@ class CompanyProposalResearchService
   end
 
   def responses_web_search_enabled?
-    defined?(RubyLLM::ResponsesAPI::BuiltInTools) &&
+    defined?(RubyLLM) &&
       ENV["OPENAI_API_KEY"].present? &&
       ENV.fetch("PROPOSAL_WEB_SEARCH_USE_RESPONSES", Rails.env.production? ? "true" : "false") == "true"
   end

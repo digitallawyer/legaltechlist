@@ -1,4 +1,4 @@
-class DescriptionDraftSchema < RubyLLM::Schema
+class DescriptionDraftSchema < Schematist::Schema
   SCHEMA_VERSION = "2026-04-26.1".freeze
 
   string :proposed_description, description: "One neutral, factual TechIndex description sentence, 25 to 45 words."
