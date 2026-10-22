@@ -130,7 +130,7 @@ class RecordJudgeServiceTest < ActiveSupport::TestCase
     result, calls = judge(pages: [blocked], answer: parked)
 
     assert_equal "close", result["decision"], "the address itself is the evidence"
-    assert_equal 1, calls.size
+    assert_equal 2, calls.size, "a close is read a second time by the stronger model"
     assert_equal false, calls.first[:pages].first[:fetched]
     assert_match(/forsale\.godaddy\.com/, calls.first[:pages].first[:final_url])
   end
@@ -152,5 +152,46 @@ class RecordJudgeServiceTest < ActiveSupport::TestCase
     assert_equal "list", result["decision"]
     assert_equal "2/2", result["quotes_verified"]
     assert @company.review_events.judgements.last.details["support_quotes"].none? { |quote| quote.include?("\u0000") }
+  end
+
+  CLOSE = GOOD.merge("scope" => "law_firm", "decision" => "close", "description" => "", "support_quotes" => ["contract review software for in-house legal teams"], "reason" => "A law firm.")
+
+  def judge_sequence(*answers)
+    fetcher = Struct.new(:call).new({ "pages" => [PAGE] })
+    models = []
+    result = SiteEvidenceFetcherService.stub(:new, ->(**) { fetcher }) do
+      RecordJudgeAgent.stub(:call, ->(**args) { models << args[:model]; answers.shift&.dup }) do
+        RecordJudgeService.call(company: @company, model: "cheap-model", refresh: true)
+      end
+    end
+    [result, models]
+  end
+
+  test "a close stands only when a second, stronger read of the same pages agrees" do
+    result, models = judge_sequence(CLOSE, CLOSE.merge("scope" => "consultancy"))
+
+    assert_equal "close", result["decision"]
+    assert_equal ["cheap-model", RecordJudgeService.verifier_model], models
+    assert_equal "close", result["second_opinion"]["decision"]
+  end
+
+  test "a close the second read does not confirm becomes needs_work" do
+    result, = judge_sequence(CLOSE, GOOD.merge("decision" => "needs_work", "scope" => "unreadable", "description" => "", "support_quotes" => [], "reason" => "Too little to tell."))
+
+    assert_equal "needs_work", result["decision"]
+    assert_equal "close", result["downgraded_from"]
+    assert_match(/did not confirm/, result["reason"])
+  end
+
+  test "a close with no answer from the second read is not trusted either" do
+    result, = judge_sequence(CLOSE)
+
+    assert_equal "needs_work", result["decision"]
+    assert_match(/did not answer/, result["reason"])
+  end
+
+  test "no second read when the first model is already the verifier, or for a list" do
+    _, models = judge_sequence(GOOD)
+    assert_equal ["cheap-model"], models
   end
 end

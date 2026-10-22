@@ -20,12 +20,15 @@ class RecordJudgeService
 
   # An earlier judgement is only reusable when the same instructions and rules would give it
   # again: the prompt, the schema and this file's logic are all part of the cache key.
+  def self.verifier_model = ENV.fetch("RECORD_JUDGE_VERIFIER_MODEL", "gpt-5.5")
+
   def self.version
-    @version ||= Digest::SHA256.hexdigest([
+    Digest::SHA256.hexdigest([
       File.read(Rails.root.join("app/prompts/record_judge_agent/instructions.txt.erb")),
       RecordJudgeSchema::SCHEMA_VERSION,
       File.read(__FILE__),
-      CompanyProposalEnrichmentService::HEDGE_PATTERN.source, CompanyProposalEnrichmentService::META_PATTERN.source
+      CompanyProposalEnrichmentService::HEDGE_PATTERN.source, CompanyProposalEnrichmentService::META_PATTERN.source,
+      verifier_model
     ].join("\0")).first(12)
   end
 
@@ -107,6 +110,7 @@ class RecordJudgeService
     return { "decision" => "needs_work", "scope" => "unreadable", "description" => "", "reason" => "The review model did not answer; nothing was concluded.", "confidence" => 0.0, "model" => model, "grounded" => false } unless raw
 
     result = ground(raw, readable)
+    result = confirm_close(result, pages, readable) if result["decision"] == "close"
     # One chance to fix a description the gate refused, with the reasons in front of the model.
     if result["downgraded_from"] == "list" && result["description_issues"].present?
       again = RecordJudgeAgent.call(company: company, pages: pages, model: model,
@@ -117,6 +121,25 @@ class RecordJudgeService
       end
     end
     result
+  end
+
+  # A close removes a company for good, so a cheap first read is not enough: a stronger model
+  # reads the same pages, and the close stands only if it agrees. On the first backlog run the
+  # cheap model closed docmatic as a consultancy on a sparse page; the stronger one said it
+  # could not tell. Closes are rare, so the second read costs little.
+  def confirm_close(result, pages, readable)
+    verifier = self.class.verifier_model
+    return result if verifier.blank? || verifier == model
+
+    second = RecordJudgeAgent.call(company: company, pages: pages, model: verifier)
+    confirmed = second && ground(second, readable)
+    result["second_opinion"] = { "model" => second&.dig("model") || verifier, "decision" => confirmed&.dig("decision"), "scope" => confirmed&.dig("scope"), "reason" => confirmed&.dig("reason") }
+    return result if confirmed && confirmed["decision"] == "close"
+
+    result.merge(
+      "decision" => "needs_work", "downgraded_from" => "close", "description" => "",
+      "reason" => "#{result['reason']} Downgraded: a second read of the same pages (#{verifier}) did not confirm the close#{confirmed ? ": #{confirmed['reason']}" : " (it did not answer)"}."
+    )
   end
 
   def redirected_off_site?(snap)
