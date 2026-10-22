@@ -18,6 +18,8 @@ module Mcp
       )
 
       REASON_REQUIRED = %w[reject hide_pending_review].freeze
+      # What a registrar or marketplace placeholder says about itself.
+      PARKED_MARKERS = /\bparked\b|\bfor\s+sale\b|buy\s+this\s+domain|domain\s+(?:name\s+)?(?:is\s+)?(?:available|registered\s+at)|hugedomains|\bsedo\b|afternic|dan\.com/i
 
       def self.call(server_context:, slug:, decision:, reason: nil, reason_code: nil, source_url: nil, instructions: nil)
         company = find_company(slug)
@@ -34,6 +36,11 @@ module Mcp
           return error_response("result" => "blocked", "retryable" => false, "error" => "reject closes a record out for good and requires a `reason_code` (#{Company::CLOSE_OUT_REASONS.join(', ')}).")
         end
 
+        if decision.to_s == "reject" && reason_code.to_s.strip == "parked_domain"
+          blocked = parked_claim_unproven(company, source_url)
+          return error_response("result" => "blocked", "retryable" => false, "error" => blocked) if blocked
+        end
+
         CompanyReviewMarkService.call(company: company, decision: decision.to_s, admin_user: curator,
                                       instructions: instructions, context: { "reason" => reason.to_s.strip.presence, "reason_code" => reason_code.to_s.strip.presence, "source_url" => source_url.to_s.strip.presence, "via" => "mcp", "operator" => Mcp::Current.operator_email }.compact)
         company.reload
@@ -47,6 +54,21 @@ module Mcp
           "verification_verdict" => company.verification_verdict,
           "visible" => company.visible
         )
+      end
+
+      # "Parked" is a claim about a page, so the server reads the page itself. A site that
+      # errors, blocks us, renders nothing without JavaScript, or says anything but "parked"
+      # is not proven parked: a live product (a JS app that sends the root to a login) was
+      # once closed out for good on that guess.
+      def self.parked_claim_unproven(company, source_url)
+        url = company.main_url.presence || source_url.to_s.strip.presence
+        return "parked_domain needs a website to check; use needs_work or hide_pending_review." if url.blank?
+
+        page = Array(SiteEvidenceFetcherService.new(main_url: url).call["pages"]).find { |entry| entry["label"] == "website" } || {}
+        return nil if page["status"] == "fetched" && "#{page['title']} #{page['text']}".match?(PARKED_MARKERS)
+
+        seen = page["status"] == "fetched" ? "it serves a page that does not say it is parked (title: #{page['title'].to_s.truncate(80).inspect})" : "it could not be read (#{page['status']}: #{page['reason']})"
+        "Not closed out: #{url} is not proven parked, #{seen}. An unreadable site is needs_work, not parked_domain; a dead domain is a URL problem."
       end
     end
   end
