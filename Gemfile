@@ -91,9 +91,8 @@ gem 'parallel'
 
 gem 'dotenv'
 
-gem "ruby_llm", "~> 1.16"
+gem "ruby_llm", "~> 2.1.1"
 
-gem "ruby_llm-responses_api", "~> 0.6.1"
 
 # MCP server for the Claude Tag curator connector
 gem "mcp", "~> 1.5"

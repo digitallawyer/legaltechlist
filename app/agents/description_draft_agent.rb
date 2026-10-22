@@ -1,8 +1,8 @@
 class DescriptionDraftAgent < RubyLLM::Agent
+  include LlmResponseSupport
   model "gpt-5.5"
   instructions
   schema DescriptionDraftSchema
-  temperature 0.2
 
   MARKETING_TERMS = %w[
     best
@@ -81,7 +81,7 @@ class DescriptionDraftAgent < RubyLLM::Agent
 
     {
       "mode" => "ruby_llm",
-      "model" => response.model_id.presence || model,
+      "model" => response_model(response, model),
       "proposed_description" => parsed["proposed_description"],
       "rationale" => parsed["rationale"],
       "confidence" => parsed["confidence"],
@@ -124,12 +124,6 @@ class DescriptionDraftAgent < RubyLLM::Agent
     ENV.fetch("RUBYLLM_DESCRIPTION_MODEL", ENV.fetch("RUBYLLM_HARD_MODEL", "gpt-5.5"))
   end
 
-  def unknown_model?(model)
-    RubyLLM.models.find(model)
-    false
-  rescue RubyLLM::ModelNotFoundError
-    true
-  end
 
   def description_prompt
     {
@@ -149,29 +143,7 @@ class DescriptionDraftAgent < RubyLLM::Agent
     }.to_json
   end
 
-  def usage_payload(response)
-    {
-      "input_tokens" => response.input_tokens,
-      "output_tokens" => response.output_tokens,
-      "cached_tokens" => response.cached_tokens,
-      "cache_creation_tokens" => response.cache_creation_tokens,
-      "thinking_tokens" => response.thinking_tokens,
-      "total_tokens" => [response.input_tokens, response.output_tokens].compact.sum
-    }
-  end
 
-  def estimated_cost(response)
-    model_info = RubyLLM.models.find(response.model_id)
-    return unless model_info&.input_price_per_million && model_info&.output_price_per_million
-
-    input_tokens = response.input_tokens.to_i
-    output_tokens = response.output_tokens.to_i
-    input_cost = input_tokens * model_info.input_price_per_million / 1_000_000.0
-    output_cost = output_tokens * model_info.output_price_per_million / 1_000_000.0
-    (input_cost + output_cost).round(8)
-  rescue StandardError
-    nil
-  end
 
   def sanitize_description(description)
     cleaned = description.to_s.squish

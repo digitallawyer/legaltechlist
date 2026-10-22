@@ -1,4 +1,4 @@
-class RecordJudgeSchema < RubyLLM::Schema
+class RecordJudgeSchema < Schematist::Schema
   SCHEMA_VERSION = "2026-10-22.1".freeze
 
   string :scope, enum: %w[in_scope law_firm consultancy not_legal_tech parked_or_for_sale unreadable], description: "What kind of company the pages show."

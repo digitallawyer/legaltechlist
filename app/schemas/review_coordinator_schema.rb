@@ -1,4 +1,4 @@
-class ReviewCoordinatorSchema < RubyLLM::Schema
+class ReviewCoordinatorSchema < Schematist::Schema
   SCHEMA_VERSION = "2026-04-26.1".freeze
 
   string :status, enum: %w[ready_for_human_review needs_more_evidence needs_description_revision possible_duplicate do_not_publish], description: "Overall next review state for the company."

@@ -1,8 +1,8 @@
 class WebEvidenceTool < RubyLLM::Tool
   description "Create read-only web evidence candidates from a company record and optionally check a URL with a HEAD request."
 
-  param :company_id, type: :integer, desc: "Company id to inspect.", required: false
-  param :url, desc: "Specific URL to inspect.", required: false
+  parameter :company_id, type: :integer, description: "Company id to inspect.", required: false
+  parameter :url, description: "Specific URL to inspect.", required: false
 
   def execute(company_id: nil, url: nil)
     company = Company.find_by(id: company_id) if company_id.present?

@@ -6,9 +6,9 @@ require "timeout"
 # maps names->ids and applies confidence/accepted rules and a deterministic fallback.
 # Taxonomy is a constrained classification task, so it routes to a cheaper model tier.
 class TaxonomySuggestionAgent < RubyLLM::Agent
+  include LlmResponseSupport
   model "gpt-5.4-nano"
   schema TaxonomySuggestionSchema
-  temperature 0.1
 
   def self.call(**kwargs)
     new(**kwargs).call
@@ -73,10 +73,4 @@ class TaxonomySuggestionAgent < RubyLLM::Agent
     nil
   end
 
-  def unknown_model?(model)
-    RubyLLM.models.find(model)
-    false
-  rescue RubyLLM::ModelNotFoundError
-    true
-  end
 end

@@ -1,8 +1,8 @@
 class DomainNormalizationTool < RubyLLM::Tool
   description "Normalize company names and URLs into canonical domains and stable fingerprints. Read-only."
 
-  param :name, desc: "Company name to normalize.", required: false
-  param :url, desc: "Company or evidence URL to normalize.", required: false
+  parameter :name, description: "Company name to normalize.", required: false
+  parameter :url, description: "Company or evidence URL to normalize.", required: false
 
   def execute(name: nil, url: nil)
     normalized_name = Company.normalized_name_value(name)

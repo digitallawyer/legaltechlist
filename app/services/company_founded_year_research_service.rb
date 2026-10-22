@@ -40,8 +40,8 @@ class CompanyFoundedYearResearchService
 
   def web_search_enabled?
     @search_client_override.present? || (
-      defined?(RubyLLM::ResponsesAPI::BuiltInTools) &&
-        ENV["OPENAI_API_KEY"].present? &&
+      defined?(RubyLLM) &&
+      ENV["OPENAI_API_KEY"].present? &&
         ENV.fetch("PROPOSAL_WEB_SEARCH_USE_RESPONSES", Rails.env.production? ? "true" : "false") == "true"
     )
   end

@@ -6,7 +6,7 @@
 # year + taxonomy + tags payload that replaces the former 3 separate LLM calls.
 # (Documentation contract only — not passed as a strict schema, so nullable fields are
 # fine here; "no value" is expressed as null in the parsed JSON.)
-class ProposalEnrichmentSchema < RubyLLM::Schema
+class ProposalEnrichmentSchema < Schematist::Schema
   SCHEMA_VERSION = "2026-07-02.1".freeze
 
   string :proposed_description, description: "Neutral, encyclopedic directory description, 2-4 sentences (~45-90 words), grounded only in evidence; no marketing language."
