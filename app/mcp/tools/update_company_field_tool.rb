@@ -94,7 +94,7 @@ module Mcp
         applied["founded_date"] = nil if clearing_year
 
         if applied["description"].present?
-          verdict = CompanyProposalEnrichmentService.description_critic_for(applied["description"])
+          verdict = CompanyProposalEnrichmentService.description_critic_for(applied["description"], company_name: applied["name"].presence || company.name)
           unless verdict["verdict"] == "pass"
             issues = Array(verdict["issues"]).to_sentence.presence
             return error_response("result" => "blocked", "retryable" => false, "error" => "That description does not clear the publication gate#{" (#{issues})" if issues}.")

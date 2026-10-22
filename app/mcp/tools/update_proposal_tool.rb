@@ -75,7 +75,8 @@ module Mcp
           CompanyProposalEnrichmentService.description_critic_for(
             description,
             source_description: proposal.source_payload["source_description"],
-            full_source_description: proposal.source_payload["full_source_description"]
+            full_source_description: proposal.source_payload["full_source_description"],
+            company_name: proposal.final_changes["name"]
           )
         end
         proposal.agent_details = proposal.agent_details.merge("description_critic" => critic)
