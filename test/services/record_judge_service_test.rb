@@ -94,4 +94,16 @@ class RecordJudgeServiceTest < ActiveSupport::TestCase
 
     assert_equal false, calls.first[:pages].first[:renders_text]
   end
+
+  test "a close needs a quote from the pages that shows why; without one it is needs_work" do
+    law = GOOD.merge("scope" => "law_firm", "decision" => "close", "description" => "", "support_quotes" => [])
+    result, = judge(answer: law)
+    assert_equal "needs_work", result["decision"]
+    assert_equal "close", result["downgraded_from"]
+
+    with_quote = law.merge("support_quotes" => ["contract review software for in-house legal teams"])
+    result, = judge(answer: with_quote, refresh: true)
+    assert_equal "close", result["decision"]
+    assert_equal true, result["grounded"]
+  end
 end

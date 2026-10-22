@@ -115,8 +115,14 @@ class RecordJudgeService
         result["reason"] = "#{result['reason']} Downgraded: #{problem}."
       end
     end
+    # Closing removes a company for good, so it needs the page's own words, not a conclusion.
+    if result["decision"] == "close" && verified.empty?
+      result["downgraded_from"] = "close"
+      result["decision"] = "needs_work"
+      result["reason"] = "#{result['reason']} Downgraded: no quote from the pages shows why."
+    end
     result["description"] = "" unless result["decision"] == "list"
-    result["grounded"] = result["decision"] == "list" ? verified.any? : true
+    result["grounded"] = %w[list close].include?(result["decision"]) ? verified.any? : true
     result
   end
 
