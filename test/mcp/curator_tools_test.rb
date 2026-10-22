@@ -137,6 +137,18 @@ module Mcp
       assert_equal "closed_out_domain", verdict["mode"]
     end
 
+    test "update_company_field refuses a website another company already owns" do
+      owner = companies(:one)
+      owner.update_columns(main_url: "https://epiq.example/", canonical_domain: "epiq.example")
+      company = companies(:two)
+
+      refused = Mcp::Tools::UpdateCompanyFieldTool.call(server_context: @context, slug: company.slug, fields: { "main_url" => "https://www.epiq.example/about" }, reason: "rebrand")
+
+      assert refused.error?
+      assert_match(/already the website of/, refused.content.first[:text])
+      assert_not_equal "epiq.example", company.reload.canonical_domain
+    end
+
     test "mark_review refuses to hide a record without a reason" do
       company = companies(:two)
       response = Mcp::Tools::MarkReviewTool.call(server_context: @context, slug: company.slug, decision: "reject")

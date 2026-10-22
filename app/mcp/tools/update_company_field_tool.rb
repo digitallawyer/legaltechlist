@@ -112,6 +112,16 @@ module Mcp
           return error_response("result" => "blocked", "retryable" => false, "error" => "founded_date requires a source_url citation (cite-only — never guess a founding year).") unless valid_http_url?(source_url)
         end
 
+        # Pointing a record at a domain another record already owns creates a duplicate that
+        # no later check removes (a rebrand that turned out to be a second Epiq).
+        if applied["main_url"].present?
+          owner = Company.where(canonical_domain: Company.canonical_domain_for(applied["main_url"])).where.not(id: company.id).order(:id).first
+          if owner
+            return error_response("result" => "blocked", "retryable" => false,
+                                  "error" => "#{applied['main_url']} is already the website of #{owner.name} (id #{owner.id}, #{owner.slug}, #{owner.visible ? 'visible' : 'hidden'}). Updating this record to it would create a duplicate. If they are the same company, fold this one into #{owner.name} with merge_companies (keep_id #{owner.id}); if not, leave the URL.")
+          end
+        end
+
         previous = applied.keys.index_with { |field| company.public_send(field) }
 
         other_fields = applied.except("founded_date")
