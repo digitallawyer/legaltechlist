@@ -18,9 +18,10 @@ class RecordJudgeAgent < RubyLLM::Agent
     new(**kwargs).call
   end
 
-  def initialize(company:, pages:, model: nil)
+  def initialize(company:, pages:, model: nil, feedback: nil)
     @company = company
     @pages = pages
+    @feedback = feedback
     @model = model.presence || self.class.default_model
   end
 
@@ -39,15 +40,16 @@ class RecordJudgeAgent < RubyLLM::Agent
 
   private
 
-  attr_reader :company, :pages, :model
+  attr_reader :company, :pages, :model, :feedback
 
   def prompt
     {
       record: { name: company.name, website: company.main_url },
       pages: pages.map do |page|
-        { url: page[:url], final_url: page[:final_url], renders_text: page[:renders_text], title: page[:title], meta_description: page[:meta_description], text: page[:text].to_s.first(3500) }
-      end
-    }.to_json
+        { url: page[:url], final_url: page[:final_url], fetched: page.fetch(:fetched, true), renders_text: page[:renders_text], title: page[:title], meta_description: page[:meta_description], text: page[:text].to_s.first(3500) }
+      end,
+      feedback_on_your_previous_answer: feedback
+    }.compact.to_json
   end
 
 end

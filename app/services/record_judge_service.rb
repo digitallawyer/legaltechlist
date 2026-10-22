@@ -33,16 +33,20 @@ class RecordJudgeService
     snapshots = evidence
     readable = snapshots.select { |snap| snap.status == "fetched" && (snap.text.present? || snap.title.present?) }
     hash = evidence_hash(readable)
+    # A page that refused us after redirecting somewhere else still tells where it ended up.
+    unread_redirects = readable.empty? ? snapshots.select { |snap| snap.kind == "website" && snap.status != "fetched" && redirected_off_site?(snap) } : []
 
     unless refresh
       cached = reusable_event(hash)
       return result_from_event(cached, snapshots).merge("reused" => true) if cached
     end
 
-    result = if readable.empty?
-      unreadable_result(snapshots)
-    else
+    result = if readable.any?
       judged(readable)
+    elsif unread_redirects.any?
+      judged(unread_redirects, hash_source: unread_redirects)
+    else
+      unreadable_result(snapshots)
     end
 
     result["evidence"] = evidence_summary(snapshots)
@@ -83,21 +87,39 @@ class RecordJudgeService
     end
   end
 
-  def judged(readable)
+  def judged(readable, hash_source: nil)
     pages = readable.map do |snap|
-      { url: snap.url, final_url: snap.final_url, renders_text: snap.renders_text, title: snap.title, meta_description: snap.meta_description, text: snap.text }
+      { url: snap.url, final_url: snap.final_url, fetched: snap.status == "fetched", renders_text: snap.renders_text, title: snap.title, meta_description: snap.meta_description, text: snap.text }
     end
     raw = RecordJudgeAgent.call(company: company, pages: pages, model: model)
     return { "decision" => "needs_work", "scope" => "unreadable", "description" => "", "reason" => "The review model did not answer; nothing was concluded.", "confidence" => 0.0, "model" => model, "grounded" => false } unless raw
 
-    ground(raw, readable)
+    result = ground(raw, readable)
+    # One chance to fix a description the gate refused, with the reasons in front of the model.
+    if result["downgraded_from"] == "list" && result["description_issues"].present?
+      again = RecordJudgeAgent.call(company: company, pages: pages, model: model,
+                                    feedback: "Your description was refused: #{result['description_issues'].join(' ')} Write it again from the pages, stating only what the company does, or answer needs_work.")
+      if again
+        retried = ground(again, readable)
+        result = retried.merge("retried" => true) if retried["decision"] != "needs_work" || retried["description_issues"].blank?
+      end
+    end
+    result
+  end
+
+  def redirected_off_site?(snap)
+    return false if snap.final_url.blank?
+
+    URI.parse(snap.final_url).host.to_s.sub(/\Awww\./, "") != URI.parse(snap.url).host.to_s.sub(/\Awww\./, "")
+  rescue URI::InvalidURIError
+    false
   end
 
   # A listing needs text that is on the pages and clears the gate; otherwise it is not a listing.
   def ground(raw, readable)
     result = raw.slice("scope", "decision", "description", "support_quotes", "successor_note", "reason", "confidence", "model", "usage")
     result["decision"] = "needs_work" unless %w[list close needs_work].include?(result["decision"])
-    corpus = normalise(readable.map(&:readable).join(" "))
+    corpus = normalise(readable.flat_map { |snap| [snap.readable, snap.final_url] }.join(" "))
     quotes = Array(result["support_quotes"]).map(&:to_s).reject(&:blank?)
     verified = quotes.select { |quote| corpus.include?(normalise(quote)) }
     result["quotes_verified"] = "#{verified.size}/#{quotes.size}"
