@@ -106,4 +106,32 @@ class RecordJudgeServiceTest < ActiveSupport::TestCase
     assert_equal "close", result["decision"]
     assert_equal true, result["grounded"]
   end
+
+  test "a refused description is retried once with the reasons, and the better answer is kept" do
+    bad = GOOD.merge("description" => "Acme appears to build contract review software for in-house legal teams across the world today.")
+    answers = [bad, GOOD]
+    feedbacks = []
+    fetcher = Struct.new(:call).new({ "pages" => [PAGE] })
+    result = SiteEvidenceFetcherService.stub(:new, ->(**) { fetcher }) do
+      RecordJudgeAgent.stub(:call, ->(**args) { feedbacks << args[:feedback]; answers.shift.dup }) do
+        RecordJudgeService.call(company: @company)
+      end
+    end
+
+    assert_equal "list", result["decision"]
+    assert result["retried"]
+    assert_nil feedbacks.first
+    assert_match(/was refused/, feedbacks.last)
+  end
+
+  test "a page that refused us after redirecting off-site is still judged from where it ended up" do
+    blocked = { "label" => "website", "url" => "https://acme.example", "final_url" => "https://forsale.godaddy.com/forsale/acme.example", "status" => "blocked", "reason" => "bot_blocked_403" }
+    parked = GOOD.merge("scope" => "parked_or_for_sale", "decision" => "close", "description" => "", "support_quotes" => ["forsale godaddy com forsale acme example"])
+    result, calls = judge(pages: [blocked], answer: parked)
+
+    assert_equal "close", result["decision"], "the address itself is the evidence"
+    assert_equal 1, calls.size
+    assert_equal false, calls.first[:pages].first[:fetched]
+    assert_match(/forsale\.godaddy\.com/, calls.first[:pages].first[:final_url])
+  end
 end
