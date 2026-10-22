@@ -269,6 +269,10 @@ class CompanyDuplicateConsolidationService
     CompanyImportRow.where(company_id: duplicate.id).update_all(company_id: keeper.id, updated_at: Time.current)
     transfer_active_storage_attachments!(duplicate, keeper)
     transfer_company_logo!(duplicate, keeper)
+    # What was fetched is stale next to the keeper's own; what was judged and decided is history
+    # that moves with the company it was about.
+    CompanyEvidenceSnapshot.where(company_id: duplicate.id).delete_all
+    CompanyReviewEvent.where(company_id: duplicate.id).update_all(company_id: keeper.id)
     # The duplicate's profile URL may already be cited, so it redirects to the keeper.
     keeper.remember_previous_slugs!(duplicate.slug, duplicate.previous_slugs)
     keeper.update_column(:previous_slugs, keeper.previous_slugs)
