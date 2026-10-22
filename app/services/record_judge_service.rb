@@ -87,12 +87,12 @@ class RecordJudgeService
       next unless %w[website website_about].include?(page["label"])
       next if page["status"] == "skipped"
 
-      text = page["text"].to_s
+      text = page["text"].to_s.delete("\u0000")
       company.evidence_snapshots.create!(
         kind: page["label"] == "website" ? "website" : "about",
         url: page["url"], final_url: page["final_url"], status: page["status"], reason: page["reason"],
         http_status: page["http_status"], renders_text: page.fetch("renders_text", text.present?),
-        title: page["title"], meta_description: page["meta_description"], text: text.presence,
+        title: page["title"]&.delete("\u0000"), meta_description: page["meta_description"]&.delete("\u0000"), text: text.presence,
         content_hash: text.present? || page["title"].present? ? Digest::SHA256.hexdigest("#{page['title']}|#{page['meta_description']}|#{text}") : nil,
         fetched_at: Time.current
       )
@@ -129,7 +129,7 @@ class RecordJudgeService
 
   # A listing needs text that is on the pages and clears the gate; otherwise it is not a listing.
   def ground(raw, readable)
-    result = raw.slice("scope", "decision", "description", "support_quotes", "successor_note", "reason", "confidence", "model", "usage")
+    result = without_nul(raw).slice("scope", "decision", "description", "support_quotes", "successor_note", "reason", "confidence", "model", "usage")
     result["decision"] = "needs_work" unless %w[list close needs_work].include?(result["decision"])
     corpus = normalise(readable.flat_map { |snap| [snap.readable, snap.final_url] }.join(" "))
     quotes = Array(result["support_quotes"]).map(&:to_s).reject(&:blank?)
@@ -158,6 +158,17 @@ class RecordJudgeService
     result["description"] = "" unless result["decision"] == "list"
     result["grounded"] = %w[list close].include?(result["decision"]) ? verified.any? : true
     result
+  end
+
+  # The model sometimes emits a NUL inside a quoted snippet. Postgres refuses it in text and
+  # jsonb, which turned one answer into an internal error for the whole review.
+  def without_nul(value)
+    case value
+    when String then value.delete("\u0000")
+    when Array then value.map { |item| without_nul(item) }
+    when Hash then value.transform_values { |item| without_nul(item) }
+    else value
+    end
   end
 
   def unreadable_result(snapshots)

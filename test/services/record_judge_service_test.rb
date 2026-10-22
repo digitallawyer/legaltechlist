@@ -143,4 +143,14 @@ class RecordJudgeServiceTest < ActiveSupport::TestCase
     assert_nil result["reused"]
     assert_equal 1, calls.size
   end
+
+  test "a NUL character in the model's quote or on the page does not break the review" do
+    page = PAGE.merge("text" => "#{PAGE['text']}\u0000")
+    answer = GOOD.merge("support_quotes" => ["builds contract review software\u0000 for in-house legal teams", "compares them with playbooks"])
+    result, = judge(pages: [page], answer: answer)
+
+    assert_equal "list", result["decision"]
+    assert_equal "2/2", result["quotes_verified"]
+    assert @company.review_events.judgements.last.details["support_quotes"].none? { |quote| quote.include?("\u0000") }
+  end
 end
