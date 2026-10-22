@@ -194,4 +194,11 @@ class RecordJudgeServiceTest < ActiveSupport::TestCase
     _, models = judge_sequence(GOOD)
     assert_equal ["cheap-model"], models
   end
+
+  test "the successor and lifecycle notes the judge reads on the page come through" do
+    result, = judge(answer: GOOD.merge("successor_note" => "Now Nylon", "lifecycle_note" => "ROSS has shut down"))
+
+    assert_equal "Now Nylon", result["successor_note"]
+    assert_equal "ROSS has shut down", result["lifecycle_note"]
+  end
 end

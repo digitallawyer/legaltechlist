@@ -152,7 +152,7 @@ class RecordJudgeService
 
   # A listing needs text that is on the pages and clears the gate; otherwise it is not a listing.
   def ground(raw, readable)
-    result = without_nul(raw).slice("scope", "decision", "description", "support_quotes", "successor_note", "reason", "confidence", "model", "usage")
+    result = without_nul(raw).slice("scope", "decision", "description", "support_quotes", "successor_note", "lifecycle_note", "reason", "confidence", "model", "usage")
     result["decision"] = "needs_work" unless %w[list close needs_work].include?(result["decision"])
     corpus = normalise(readable.flat_map { |snap| [snap.readable, snap.final_url] }.join(" "))
     quotes = Array(result["support_quotes"]).map(&:to_s).reject(&:blank?)
