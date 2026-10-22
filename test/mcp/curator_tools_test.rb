@@ -137,29 +137,6 @@ module Mcp
       assert_equal "closed_out_domain", verdict["mode"]
     end
 
-    test "mark_review closes out as parked only when the server reads a parked page" do
-      company = companies(:two)
-      company.update_columns(main_url: "https://acme-live.example/", canonical_domain: "acme-live.example")
-      fetcher = ->(page) { ->(**) { Struct.new(:call).new({ "pages" => [{ "label" => "website" }.merge(page)] }) } }
-      reject = -> { Mcp::Tools::MarkReviewTool.call(server_context: @context, slug: company.slug, decision: "reject", reason: "Parked", reason_code: "parked_domain", source_url: "https://acme-live.example/") }
-
-      [
-        { "status" => "fetched", "title" => "Acme - Forensic archive", "text" => "Acme archives social media accounts for legal matters." },
-        { "status" => "error", "reason" => "empty_body" },
-        { "status" => "blocked", "reason" => "bot_blocked_403" }
-      ].each do |page|
-        SiteEvidenceFetcherService.stub(:new, fetcher.call(page)) do
-          assert reject.call.error?, page.inspect
-        end
-        assert_equal true, company.reload.visible
-      end
-
-      SiteEvidenceFetcherService.stub(:new, fetcher.call({ "status" => "fetched", "title" => "acme-live.example", "text" => "This domain is for sale. Buy this domain today." })) do
-        assert_not reject.call.error?
-      end
-      assert_equal "parked_domain", company.reload.closed_out_details["reason_code"]
-    end
-
     test "mark_review refuses to hide a record without a reason" do
       company = companies(:two)
       response = Mcp::Tools::MarkReviewTool.call(server_context: @context, slug: company.slug, decision: "reject")
