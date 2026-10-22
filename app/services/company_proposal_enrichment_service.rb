@@ -110,6 +110,9 @@ class CompanyProposalEnrichmentService
   HEDGE_PATTERN = /\b(?:appears?\s+to|seems?\s+to|seemingly|aims?\s+to|claims?\s+to|reportedly|supposedly|believed\s+to|is\s+said\s+to|may\s+(?:be|offer|provide|support)|likely\s+to|focus(?:es)?\s+on\s+what\s+appears)\b/i
   PRICING_PATTERN = /(?:[$€£]\s?\d|\b\d+(?:[.,]\d+)?\s?(?:usd|eur|gbp)\b|\bper\s+(?:month|year|user|seat)\b|\b(?:free\s+trial|pricing\s+(?:plans?|starts?|from|page)|starting\s+at|starts\s+at|one-time\s+fee|subscription\s+from|book\s+a\s+demo|request\s+a\s+demo)\b)/i
   VOICE_PATTERN = /\b(?:we|our|ours|you|your|yours)\b/i
+  # A description states what the company does. It never reports what a website, a
+  # search result or a filing says, and never describes a page that said nothing.
+  META_PATTERN = /\b(?:(?:the\s+|its\s+|official\s+)?(?:web)?site|web\s?page|search\s+results?|public\s+(?:materials|records))\s+(?:also\s+)?(?:states?|says?|describes?|identifies|lists?|notes?|does\s+not|doesn't|presents?)\b|\bsearch[-\s]result\b|\b(?:is|are)\s+(?:presented|described|named)\s+(?:as|in)\b|\bdescribes\s+its\s+(?:offering|technology|services?)\b|\bdoes\s+not\s+(?:identify|describe|state|say)\b|\bis\s+developing\s+a\s+new\b|\baccording\s+to\b/i
   ROADMAP_PATTERN = /\b(?:early\s+access|waitlist|coming\s+soon|beta\s+(?:launch|access)|will\s+(?:soon\s+)?(?:launch|offer|provide)|plans\s+to)\b/i
   MAX_DESCRIPTION_WORDS = 130
 
@@ -135,6 +138,7 @@ class CompanyProposalEnrichmentService
     issues << "Draft hedges (appears to, aims to, may be): state what the source states or leave the claim out." if text.match?(HEDGE_PATTERN)
     issues << "Draft contains pricing or a sales offer; a directory entry describes the company, not its price list." if text.match?(PRICING_PATTERN)
     issues << "Draft speaks as or to the reader (we, our, you); write in the third person." if text.match?(VOICE_PATTERN)
+    issues << "Draft reports what a website, search result or filing says instead of what the company does; state the product, or leave the record without a description." if text.match?(META_PATTERN)
     issues << "Draft describes plans or a waitlist rather than what the company offers." if text.match?(ROADMAP_PATTERN)
     issues << "Draft is longer than a directory entry should be." if text.split.size > MAX_DESCRIPTION_WORDS
     issues << "Draft may copy the source description." if [source_description, full_source_description].compact_blank.any? { |source| text.squish.casecmp?(source.to_s.squish) }
