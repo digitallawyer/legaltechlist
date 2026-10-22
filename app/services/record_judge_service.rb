@@ -18,6 +18,17 @@ class RecordJudgeService
   PAGE_LIMIT = 2 # the front page and /about
   REUSE_EVENT_FOR = 14.days
 
+  # An earlier judgement is only reusable when the same instructions and rules would give it
+  # again: the prompt, the schema and this file's logic are all part of the cache key.
+  def self.version
+    @version ||= Digest::SHA256.hexdigest([
+      File.read(Rails.root.join("app/prompts/record_judge_agent/instructions.txt.erb")),
+      RecordJudgeSchema::SCHEMA_VERSION,
+      File.read(__FILE__),
+      CompanyProposalEnrichmentService::HEDGE_PATTERN.source, CompanyProposalEnrichmentService::META_PATTERN.source
+    ].join("\0")).first(12)
+  end
+
   def self.call(company:, refresh: false, model: nil, record: true)
     new(company: company, refresh: refresh, model: model, record: record).call
   end
@@ -172,7 +183,7 @@ class RecordJudgeService
   def reusable_event(hash)
     return nil if hash.blank?
 
-    company.review_events.judgements.where(evidence_hash: hash, model: model).where("occurred_at > ?", REUSE_EVENT_FOR.ago).order(occurred_at: :desc).first
+    company.review_events.judgements.where(evidence_hash: hash, model: model).where("details ->> 'judge_version' = ?", self.class.version).where("occurred_at > ?", REUSE_EVENT_FOR.ago).order(occurred_at: :desc).first
   end
 
   def result_from_event(event, snapshots)
@@ -183,7 +194,7 @@ class RecordJudgeService
     company.review_events.create!(
       kind: "judge", actor: Mcp::Current.operator_email || "system", model: model, decision: result["decision"],
       scope: result["scope"], confidence: result["confidence"].to_f, evidence_hash: hash, occurred_at: Time.current,
-      details: result.except("evidence", "evidence_hash", "event_id")
+      details: result.except("evidence", "evidence_hash", "event_id").merge("judge_version" => self.class.version)
     )
   end
 
