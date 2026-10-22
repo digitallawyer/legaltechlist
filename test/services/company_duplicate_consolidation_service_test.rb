@@ -148,6 +148,20 @@ class CompanyDuplicateConsolidationServiceTest < ActiveSupport::TestCase
     assert_includes keeper.reload.previous_slugs, "test-company-two"
   end
 
+  # The review tables reference companies too; a duplicate that had been reviewed failed the merge.
+  test "an explicit merge drops the duplicate's fetched evidence and keeps its review history on the keeper" do
+    keeper = companies(:one)
+    duplicate = companies(:two)
+    duplicate.evidence_snapshots.create!(kind: "website", url: "https://dup.example", status: "fetched", fetched_at: Time.current)
+    event = duplicate.review_events.create!(kind: "judge", decision: "list", occurred_at: Time.current)
+
+    result = CompanyDuplicateConsolidationService.merge_into(keep_id: keeper.id, merge_ids: [duplicate.id])
+
+    assert_equal "merged", result["result"]
+    assert_equal 0, CompanyEvidenceSnapshot.where(company_id: duplicate.id).count
+    assert_equal keeper.id, event.reload.company_id
+  end
+
   test "an explicit merge drops the duplicate's logo when the keeper has its own" do
     keeper = companies(:one)
     duplicate = companies(:two)
