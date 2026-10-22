@@ -28,6 +28,8 @@ class Company < ActiveRecord::Base
   before_validation :sync_structured_location_fields
 
   has_many :taggings,  dependent: :destroy
+  has_many :evidence_snapshots, class_name: "CompanyEvidenceSnapshot", dependent: :delete_all
+  has_many :review_events, class_name: "CompanyReviewEvent", dependent: :delete_all
   has_many :tags, through: :taggings
   has_many :company_business_models, dependent: :destroy
   has_many :business_models, through: :company_business_models

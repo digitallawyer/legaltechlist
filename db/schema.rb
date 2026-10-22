@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_08_120100) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_22_162817) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -174,6 +174,26 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_08_120100) do
     t.index ["company_id"], name: "index_company_business_models_on_company_id"
   end
 
+  create_table "company_evidence_snapshots", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "kind", default: "website", null: false
+    t.string "url", null: false
+    t.string "final_url"
+    t.string "status", null: false
+    t.string "reason"
+    t.integer "http_status"
+    t.boolean "renders_text", default: true, null: false
+    t.string "title"
+    t.text "meta_description"
+    t.text "text"
+    t.string "content_hash"
+    t.datetime "fetched_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "kind", "fetched_at"], name: "index_snapshots_on_company_kind_fetched"
+    t.index ["company_id"], name: "index_company_evidence_snapshots_on_company_id"
+  end
+
   create_table "company_import_rows", force: :cascade do |t|
     t.bigint "company_import_run_id", null: false
     t.bigint "company_proposal_id"
@@ -263,6 +283,25 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_08_120100) do
     t.index ["source_identifier"], name: "index_company_proposals_on_source_identifier"
     t.index ["status"], name: "index_company_proposals_on_status"
     t.index ["submitter_email"], name: "index_company_proposals_on_submitter_email"
+  end
+
+  create_table "company_review_events", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "kind", null: false
+    t.string "actor"
+    t.string "model"
+    t.string "decision"
+    t.string "scope"
+    t.float "confidence"
+    t.string "evidence_hash"
+    t.boolean "applied", default: false, null: false
+    t.jsonb "details", default: {}, null: false
+    t.datetime "occurred_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "occurred_at"], name: "index_company_review_events_on_company_id_and_occurred_at"
+    t.index ["company_id"], name: "index_company_review_events_on_company_id"
+    t.index ["kind", "occurred_at"], name: "index_company_review_events_on_kind_and_occurred_at"
   end
 
   create_table "company_target_clients", force: :cascade do |t|
@@ -475,6 +514,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_08_120100) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "company_evidence_snapshots", "companies"
+  add_foreign_key "company_review_events", "companies"
   add_foreign_key "companies", "business_models"
   add_foreign_key "companies", "categories"
   add_foreign_key "companies", "categories", column: "secondary_category_id"

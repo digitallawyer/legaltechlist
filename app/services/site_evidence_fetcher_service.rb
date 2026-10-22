@@ -28,6 +28,9 @@ class SiteEvidenceFetcherService
   # without bloating agent_details or the enrichment prompt.
   MAX_TEXT_PER_PAGE = 4_000
   USER_AGENT = "CodeX-TechIndex-Research/1.0 (+https://techindex.law.stanford.edu)".freeze
+  # Some WAFs challenge an honest crawler but not a browser (and a few the reverse), so a
+  # refusal is retried once under the other identity before it is reported as blocked.
+  BROWSER_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36".freeze
 
   # Up but refusing robots. Not evidence of a dead site, and not our finding to fix.
   BLOCK_CODES = [401, 403, 405, 406, 429, 451, 999].freeze
@@ -40,7 +43,8 @@ class SiteEvidenceFetcherService
     ENV.fetch("PROPOSAL_SITE_FETCH", Rails.env.test? ? "false" : "true") == "true"
   end
 
-  def initialize(main_url: nil, linkedin_url: nil, crunchbase_url: nil)
+  def initialize(main_url: nil, linkedin_url: nil, crunchbase_url: nil, entity_paths: ENTITY_PATHS)
+    @entity_paths = entity_paths
     @main_url = main_url.to_s.strip.presence
     @linkedin_url = linkedin_url.to_s.strip.presence
     @crunchbase_url = crunchbase_url.to_s.strip.presence
@@ -82,7 +86,7 @@ class SiteEvidenceFetcherService
     list << ["website", main_url, false] if main_url
     # Guessed rather than declared: plenty of sites have no /about, and its absence is
     # not a retrieval failure worth reporting to a reviewer.
-    ENTITY_PATHS.each do |path|
+    @entity_paths.each do |path|
       url = path_url(path)
       list << ["website#{path.tr('/', '_')}", url, true] if url
     end
@@ -114,12 +118,14 @@ class SiteEvidenceFetcherService
   end
 
   # Overridden in tests. Returns the outcome hash for a single URL.
-  def fetch(url, redirects_left: MAX_REDIRECTS)
+  def fetch(url, redirects_left: MAX_REDIRECTS, user_agent: USER_AGENT)
     uri = URI.parse(normalize(url))
     return { "status" => "error", "reason" => "invalid_url" } unless uri.is_a?(URI::HTTP) && uri.host.present?
 
+    @user_agent = user_agent
     response = perform_request(uri)
     code = response.code.to_i
+    return fetch(url, redirects_left: redirects_left, user_agent: BROWSER_USER_AGENT) if BLOCK_CODES.include?(code) && user_agent == USER_AGENT
 
     if response.is_a?(Net::HTTPRedirection)
       location = response["location"]
@@ -132,14 +138,24 @@ class SiteEvidenceFetcherService
     return { "status" => "blocked", "reason" => block_reason(uri, code), "http_status" => code, "final_url" => uri.to_s } if BLOCK_CODES.include?(code)
     return { "status" => "error", "reason" => "http_#{code}", "http_status" => code, "final_url" => uri.to_s } unless code.between?(200, 299)
 
-    extracted = extract(response.body.to_s.byteslice(0, MAX_BYTES).to_s)
-    return { "status" => "error", "reason" => "empty_body", "http_status" => code, "final_url" => uri.to_s } if extracted[:text].blank?
+    body = response.body.to_s.byteslice(0, MAX_BYTES).to_s
+    extracted = extract(body)
+    # A page with no text that only sends the browser on (a parked-domain lander, a script or
+    # meta-refresh redirect) is followed: the page a visitor lands on is the page to judge.
+    if extracted[:body_text].blank? && redirects_left.positive? && (target = script_redirect(body, uri))
+      return fetch(target, redirects_left: redirects_left - 1, user_agent: user_agent)
+    end
+    return { "status" => "error", "reason" => "empty_body", "http_status" => code, "final_url" => uri.to_s } if extracted[:text].blank? && extracted[:title].blank?
 
     {
       "status" => "fetched",
       "http_status" => code,
       "final_url" => uri.to_s,
       "title" => extracted[:title],
+      "meta_description" => extracted[:meta],
+      # false: the page shows nothing without JavaScript. That says nothing about whether the
+      # site is live, parked or empty, only that the title and meta tags are all there is.
+      "renders_text" => extracted[:body_text].present?,
       "text" => extracted[:text],
       "fetched_at" => Time.current.utc.iso8601
     }
@@ -158,7 +174,7 @@ class SiteEvidenceFetcherService
     http.use_ssl = uri.scheme == "https"
     http.open_timeout = OPEN_TIMEOUT
     http.read_timeout = READ_TIMEOUT
-    request = Net::HTTP::Get.new(uri, "User-Agent" => USER_AGENT, "Accept" => "text/html,application/xhtml+xml")
+    request = Net::HTTP::Get.new(uri, "User-Agent" => (@user_agent || USER_AGENT), "Accept" => "text/html,application/xhtml+xml")
     http.request(request)
   end
 
@@ -176,10 +192,25 @@ class SiteEvidenceFetcherService
     doc.search("script, style, noscript, svg, nav, header, form").remove
     title = doc.at("title")&.text.to_s.squish.presence
     meta = doc.at("meta[name='description']")&.attr("content").to_s.squish
-    text = [meta, doc.at("body")&.text.to_s].compact_blank.join(" ").gsub(/\s+/, " ").strip
-    { title: title, text: text.truncate(MAX_TEXT_PER_PAGE) }
+    body_text = doc.at("body")&.text.to_s.gsub(/\s+/, " ").strip
+    text = [meta, body_text].compact_blank.join(" ").gsub(/\s+/, " ").strip
+    { title: title, meta: meta.presence, body_text: body_text, text: text.truncate(MAX_TEXT_PER_PAGE) }
   rescue StandardError
-    { title: nil, text: nil }
+    { title: nil, meta: nil, body_text: nil, text: nil }
+  end
+
+  # Where a page with no text sends the browser: <meta http-equiv=refresh> or a script
+  # assigning window.location. Anchors and javascript: URLs are ignored.
+  def script_redirect(body, base)
+    target = body[/<meta[^>]+http-equiv=["']?refresh["']?[^>]*content=["'][^"']*url=([^"'>\s]+)/i, 1] ||
+             body[/(?:window\.|document\.|top\.|self\.)?location(?:\.href)?\s*=\s*["']([^"']+)["']/i, 1] ||
+             body[/location\.(?:replace|assign)\(\s*["']([^"']+)["']/i, 1]
+    return nil if target.blank? || target.start_with?("#", "javascript:")
+
+    resolved = URI.join(base, target).to_s
+    resolved == base.to_s ? nil : resolved
+  rescue URI::Error
+    nil
   end
 
   def normalize(url)
