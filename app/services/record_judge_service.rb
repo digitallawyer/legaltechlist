@@ -62,6 +62,7 @@ class RecordJudgeService
 
     result["evidence"] = evidence_summary(snapshots)
     result["evidence_hash"] = hash
+    result["judge_version"] = self.class.version
     event = record_event(result, hash) if record
     result["event_id"] = event&.id
     result
@@ -187,7 +188,7 @@ class RecordJudgeService
   end
 
   def result_from_event(event, snapshots)
-    event.details.merge("evidence" => evidence_summary(snapshots), "evidence_hash" => event.evidence_hash, "event_id" => event.id)
+    event.details.merge("evidence" => evidence_summary(snapshots), "evidence_hash" => event.evidence_hash, "event_id" => event.id, "judge_version" => self.class.version)
   end
 
   def record_event(result, hash)
